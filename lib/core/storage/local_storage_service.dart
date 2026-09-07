@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../errors/failures.dart';
 
@@ -21,6 +22,9 @@ class LocalStorageService {
     return LocalStorageService(prefs);
   }
 
+  /// Provides direct access for feature repositories that store JSON blobs.
+  SharedPreferences get raw => _prefs;
+
   /// Session Management
   Future<void> saveSession(String userId, String userJson) async {
     try {
@@ -32,17 +36,11 @@ class LocalStorageService {
     }
   }
 
-  String? getSessionUserId() {
-    return _prefs.getString(LocalStorageKeys.sessionUserId);
-  }
+  String? getSessionUserId() => _prefs.getString(LocalStorageKeys.sessionUserId);
 
-  String? getSessionUserJson() {
-    return _prefs.getString(LocalStorageKeys.sessionUserJson);
-  }
+  String? getSessionUserJson() => _prefs.getString(LocalStorageKeys.sessionUserJson);
 
-  bool isAuthenticated() {
-    return _prefs.getBool(LocalStorageKeys.isAuthenticated) ?? false;
-  }
+  bool isAuthenticated() => _prefs.getBool(LocalStorageKeys.isAuthenticated) ?? false;
 
   Future<void> clearSession() async {
     try {
@@ -55,18 +53,15 @@ class LocalStorageService {
   }
 
   /// Onboarding Status
-  bool hasCompletedOnboarding() {
-    return _prefs.getBool(LocalStorageKeys.hasCompletedOnboarding) ?? false;
-  }
+  bool hasCompletedOnboarding() =>
+      _prefs.getBool(LocalStorageKeys.hasCompletedOnboarding) ?? false;
 
   Future<void> setOnboardingCompleted(bool value) async {
     await _prefs.setBool(LocalStorageKeys.hasCompletedOnboarding, value);
   }
 
   /// Remember Email
-  String? getRememberedEmail() {
-    return _prefs.getString(LocalStorageKeys.rememberedEmail);
-  }
+  String? getRememberedEmail() => _prefs.getString(LocalStorageKeys.rememberedEmail);
 
   Future<void> setRememberedEmail(String email) async {
     await _prefs.setString(LocalStorageKeys.rememberedEmail, email);
@@ -76,3 +71,8 @@ class LocalStorageService {
     await _prefs.remove(LocalStorageKeys.rememberedEmail);
   }
 }
+
+/// Provider overridden with the initialized service in main.dart.
+final localStorageServiceProvider = Provider<LocalStorageService>((ref) {
+  throw StateError('LocalStorageService has not been initialized.');
+});
