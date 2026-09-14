@@ -22,7 +22,6 @@ void main() {
   test('OTP hash is stored, not plaintext', () async {
     final otp = await service.generateOtp(phone);
     final storedHash = storage.raw.getString('otp_${phone}_hash');
-
     expect(storedHash, isNotNull);
     expect(storedHash, isNot(otp));
     expect(storedHash, hasLength(64));
@@ -36,22 +35,16 @@ void main() {
 
   test('five wrong OTP attempts lock the phone', () async {
     await service.generateOtp(phone);
-
-    for (var i = 0; i < 4; i++) {
+    for (var i = 0; i < 5; i++) {
       await expectLater(
         service.verifyOtp(phone, '000000'),
         throwsA(isA<OtpFailure>()),
       );
     }
-
-    await expectLater(
-      service.verifyOtp(phone, '000000'),
-      throwsA(isA<OtpFailure>()),
-    );
     expect(service.isLocked(phone), isTrue);
   });
 
-  test('expired OTP is rejected before code validation', () async {
+  test('expired OTP is rejected', () async {
     await service.generateOtp(phone);
     await storage.raw.setInt(
       'otp_${phone}_generated_at',
