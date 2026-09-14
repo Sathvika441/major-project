@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/failures.dart';
@@ -48,15 +46,10 @@ class AuthController extends StateNotifier<AuthState> {
           profile.arecanutCultivationType.trim().isNotEmpty &&
           profile.soilType.trim().isNotEmpty;
 
-      // Old users already completed the previous single-step onboarding.
-      // Treat those core details as Phase A and only ask for new Phase B
-      // fields that are absent. Complete records are promoted to both phases.
       await _storage.setCompletedPhaseA(true);
       await _storage.setCompletedPhaseB(phaseBComplete);
       await _storage.setPhaseBMigrated(true);
     } catch (_) {
-      // Invalid legacy profile data is left alone; the router will send the
-      // user through the normal onboarding path rather than risking a crash.
       return;
     }
   }
@@ -268,6 +261,5 @@ class AuthController extends StateNotifier<AuthState> {
     state = AuthState.unauthenticated();
   }
 
-  void clearMessages() =>
-      state = state.copyWith(errorMessage: null, successMessage: null);
+  void clearMessages() => state = state.copyWith(errorMessage: null, successMessage: null);
 }
