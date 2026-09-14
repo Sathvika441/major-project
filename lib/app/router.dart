@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/storage/local_storage_service.dart';
-import '../core/services/location_master_service.dart';
 import '../features/auth/controllers/auth_controller.dart';
 import '../features/auth/controllers/auth_state.dart';
 import '../features/auth/screens/email_verification_screen.dart';
@@ -64,8 +63,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           location == '/forgot-password';
       final isPublicRoute = isSplash || isAuthRoute || location == '/verify-email';
 
-      if (authState.status == AuthStatus.initial ||
-          authState.status == AuthStatus.loading) {
+      if (authState.status == AuthStatus.initial || authState.status == AuthStatus.loading) {
         return isSplash ? null : '/splash';
       }
 
@@ -81,20 +79,19 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (authState.status != AuthStatus.authenticated) return null;
 
+      // Task 12: old users that already finished the original onboarding are
+      // migrated in AuthController before authenticated state is published.
       final permissionsDone = storage.hasRequestedPermissions();
       final phaseADone = storage.hasCompletedPhaseA();
       final phaseBDone = storage.hasCompletedPhaseB();
-      final legacyMigrationNeeded = legacyFarmDetailsMissing();
+      final migrationNeeded = legacyFarmDetailsMissing();
 
       if (!permissionsDone) {
         return location == '/permission-setup' ? null : '/permission-setup';
       }
 
-      if (legacyMigrationNeeded) {
-        if (storage.hasCompletedPhaseA()) {
-          return location == '/farm-details' ? null : '/farm-details';
-        }
-        return location == '/onboarding' ? null : '/onboarding';
+      if (migrationNeeded) {
+        return location == '/farm-details' ? null : '/farm-details';
       }
 
       if (!phaseADone) {
