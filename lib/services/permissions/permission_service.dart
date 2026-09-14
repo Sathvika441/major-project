@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -10,11 +11,13 @@ class PermissionResult {
   const PermissionResult({required this.camera, required this.gallery});
 
   bool get allGranted =>
-      (camera.isGranted || camera.isLimited) &&
-      (gallery.isGranted || gallery.isLimited);
+      _isGranted(camera) && _isGranted(gallery);
 
   bool get anyPermanentlyDenied =>
       camera.isPermanentlyDenied || gallery.isPermanentlyDenied;
+
+  static bool _isGranted(PermissionStatus status) =>
+      status.isGranted || status.isLimited;
 }
 
 class PermissionService {
@@ -26,25 +29,49 @@ class PermissionService {
 
   Future<void> markFlowCompleted() => _storage.setHasRequestedPermissions(true);
 
-  Future<PermissionStatus> checkCameraStatus() => Permission.camera.status;
+  Future<PermissionStatus> checkCameraStatus() async {
+    if (kIsWeb) return PermissionStatus.granted;
+    return Permission.camera.status;
+  }
 
-  Future<PermissionStatus> checkGalleryStatus() => Permission.photos.status;
+  Future<PermissionStatus> checkGalleryStatus() async {
+    if (kIsWeb) return PermissionStatus.granted;
+    return Permission.photos.status;
+  }
 
   Future<PermissionResult> requestGalleryAndCamera() async {
+    if (kIsWeb) {
+      return const PermissionResult(
+        camera: PermissionStatus.granted,
+        gallery: PermissionStatus.granted,
+      );
+    }
+
     final statuses = await <Permission>[
       Permission.photos,
       Permission.camera,
     ].request();
+
     return PermissionResult(
       camera: statuses[Permission.camera] ?? PermissionStatus.denied,
       gallery: statuses[Permission.photos] ?? PermissionStatus.denied,
     );
   }
 
-  Future<PermissionStatus> requestCameraOnly() => Permission.camera.request();
-  Future<PermissionStatus> requestGalleryOnly() => Permission.photos.request();
+  Future<PermissionStatus> requestCameraOnly() async {
+    if (kIsWeb) return PermissionStatus.granted;
+    return Permission.camera.request();
+  }
 
-  Future<bool> openSettings() => openAppSettings();
+  Future<PermissionStatus> requestGalleryOnly() async {
+    if (kIsWeb) return PermissionStatus.granted;
+    return Permission.photos.request();
+  }
+
+  Future<bool> openSettings() async {
+    if (kIsWeb) return false;
+    return openAppSettings();
+  }
 
   bool isGranted(PermissionStatus status) =>
       status.isGranted || status.isLimited;
@@ -54,6 +81,5 @@ class PermissionService {
 }
 
 final permissionServiceProvider = Provider<PermissionService>((ref) {
-  final storage = ref.watch(localStorageServiceProvider);
-  return PermissionService(storage);
+  return PermissionService(ref.watch(localStorageServiceProvider));
 });
