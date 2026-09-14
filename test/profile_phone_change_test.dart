@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:major_proj_1/core/storage/local_storage_service.dart';
-import 'package:major_proj_1/models/user/user_model.dart';
 import 'package:major_proj_1/services/auth/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
