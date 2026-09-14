@@ -8,6 +8,25 @@ import '../../../models/farm/farm_profile_model.dart';
 import '../../../repositories/profile/profile_repository.dart';
 import '../../auth/controllers/auth_controller.dart';
 
+const _cultivationTypes = <String>[
+  'Mangala',
+  'Sumangala',
+  'Sreemangala',
+  'SAS-1',
+  'Mohitnagar',
+  'Hirehalli Dwarf',
+  'Other',
+];
+
+const _soilTypes = <String>[
+  'Red Sandy',
+  'Red Loamy',
+  'Black Cotton',
+  'Laterite',
+  'Alluvial',
+  'Clay',
+];
+
 class ProfileEditScreen extends ConsumerStatefulWidget {
   const ProfileEditScreen({super.key});
 
@@ -23,6 +42,8 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   late final TextEditingController _survey;
   late final TextEditingController _farmName;
   late final TextEditingController _farmSize;
+  late final TextEditingController _otp;
+
   String _state = KarnatakaLocations.state;
   String _district = '';
   String _taluk = '';
@@ -36,10 +57,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   DateTime _plantingDate = DateTime.now();
   bool _loading = true;
   bool _saving = false;
-
-  late final TextEditingController _otp;
   String? _pendingPhone;
-  String? _sentOtpForDebug;
 
   @override
   void initState() {
@@ -69,18 +87,18 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   Future<void> _loadExisting() async {
     final user = ref.read(authControllerProvider).user;
     if (user == null) return;
-    final locationService = ref.read(locationMasterServiceProvider);
-    await locationService.load();
+    final locations = ref.read(locationMasterServiceProvider);
+    await locations.load();
     final existing = ref.read(profileRepositoryProvider).load(user.uid);
     if (!mounted) return;
 
-    final districts = locationService.districts.isNotEmpty
-        ? locationService.districts
+    final districts = locations.districts.isNotEmpty
+        ? locations.districts
         : KarnatakaLocations.districts;
     final district = existing?.district.isNotEmpty == true
         ? existing!.district
         : (districts.isNotEmpty ? districts.first : '');
-    final taluks = locationService.taluksFor(district);
+    final taluks = locations.taluksFor(district);
     final taluk = existing?.taluk.isNotEmpty == true
         ? existing!.taluk
         : (taluks.isNotEmpty ? taluks.first : '');
@@ -99,10 +117,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       _language = existing?.language ?? 'English';
       _waterSource = existing?.waterSource ?? 'Borewell';
       _irrigationMethod = existing?.irrigationMethod ?? 'Drip';
-      _cultivation = cultivationTypes.contains(existing?.arecanutCultivationType)
+      _cultivation = _cultivationTypes.contains(existing?.arecanutCultivationType)
           ? existing?.arecanutCultivationType
           : null;
-      _soil = soilTypes.contains(existing?.soilType) ? existing?.soilType : null;
+      _soil = _soilTypes.contains(existing?.soilType) ? existing?.soilType : null;
       _notifications = existing?.notificationsEnabled ?? true;
       _plantingDate = existing?.plantingDate ?? DateTime.now();
       _loading = false;
@@ -123,25 +141,19 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       ref.read(locationMasterServiceProvider).villagesFor(_taluk);
 
   Future<void> _requestPhoneOtp() async {
-    final normalized = _phone.text.trim();
-    if (AuthValidators.validatePhone(normalized) != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AuthValidators.validatePhone(normalized)!)),
-      );
+    final phone = _phone.text.trim();
+    final error = AuthValidators.validatePhone(phone);
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
       return;
     }
-    final code = await ref.read(authControllerProvider.notifier).sendPhoneChangeOtp(normalized);
-    if (!mounted || code == null) return;
-    setState(() {
-      _pendingPhone = normalized;
-      _sentOtpForDebug = code;
-    });
-    await _showPhoneOtpDialog();
-  }
 
-  Future<void> _showPhoneOtpDialog() async {
+    final code = await ref.read(authControllerProvider.notifier).sendPhoneChangeOtp(phone);
+    if (!mounted || code == null) return;
+
+    setState(() => _pendingPhone = phone);
     _otp.clear();
-    final result = await showDialog<bool>(
+    final ok = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
@@ -149,12 +161,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Enter the 6-digit code sent to $_pendingPhone.'),
-            if (_sentOtpForDebug != null) ...[
-              const SizedBox(height: 8),
-              Text('[QA] Mock OTP: $_sentOtpForDebug', style: const TextStyle(fontSize: 12)),
-            ],
-            const SizedBox(height: 16),
+            Text('Enter the 6-digit code sent to $phone.'),
+            const SizedBox(height: 8),
+            Text('[QA] Mock OTP: $code', style: const TextStyle(fontSize: 12)),
+            const SizedBox(height: 12),
             TextField(
               controller: _otp,
               keyboardType: TextInputType.number,
@@ -164,30 +174,27 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () async {
-              final ok = await ref.read(authControllerProvider.notifier).verifyPhoneChangeOtp(
-                    _pendingPhone!,
-                    _otp.text.trim(),
-                  );
-              if (dialogContext.mounted) Navigator.pop(dialogContext, ok);
-              if (!ok && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(ref.read(authControllerProvider).errorMessage ?? 'Invalid OTP')),
-                );
-              }
+              final verified = await ref
+                  .read(authControllerProvider.notifier)
+                  .verifyPhoneChangeOtp(phone, _otp.text.trim());
+              if (dialogContext.mounted) Navigator.pop(dialogContext, verified);
             },
             child: const Text('Verify'),
           ),
         ],
       ),
     );
-    if (result == true && mounted) {
+
+    if (ok == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('New phone number verified.')),
       );
-      setState(() => _sentOtpForDebug = null);
     }
   }
 
@@ -195,18 +202,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     if (!_formKey.currentState!.validate()) return;
     final user = ref.read(authControllerProvider).user;
     if (user == null) return;
-
-    final existing = ref.read(profileRepositoryProvider).load(user.uid);
-    if (_phone.text.trim() != (existing?.phone ?? user.phone).trim()) {
-      if (_pendingPhone != _phone.text.trim() || !user.isPhoneVerified) {
-        await _requestPhoneOtp();
-        final refreshed = ref.read(authControllerProvider).user;
-        if (!mounted || refreshed == null || refreshed.phone.trim() != _phone.text.trim() || !refreshed.isPhoneVerified) {
-          return;
-        }
-      }
-    }
-
     if (_villageCode.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a village from the master list.')),
@@ -214,11 +209,24 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       return;
     }
 
+    final original = ref.read(profileRepositoryProvider).load(user.uid);
+    final newPhone = _phone.text.trim();
+    final oldPhone = (original?.phone ?? user.phone).trim();
+    if (newPhone != oldPhone) {
+      if (_pendingPhone != newPhone || !ref.read(authControllerProvider).user!.isPhoneVerified) {
+        await _requestPhoneOtp();
+        final refreshed = ref.read(authControllerProvider).user;
+        if (!mounted || refreshed == null || refreshed.phone.trim() != newPhone || !refreshed.isPhoneVerified) {
+          return;
+        }
+      }
+    }
+
     setState(() => _saving = true);
     final profile = FarmProfileModel(
       userId: user.uid,
       name: _name.text.trim(),
-      phone: _phone.text.trim(),
+      phone: newPhone,
       location: KarnatakaLocations.formatLocation(
         state: KarnatakaLocations.state,
         district: _district,
@@ -239,18 +247,17 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       crop: 'Arecanut',
       plantingDate: _plantingDate,
       landSurveyNumber: _survey.text.trim(),
-      arecanutCultivationType: _cultivation ?? '',
-      soilType: _soil ?? '',
+      arecanutCultivationType: _cultivation!,
+      soilType: _soil!,
     );
 
     try {
       await ref.read(profileRepositoryProvider).save(profile);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile saved successfully')),
-        );
-        Navigator.of(context).pop(true);
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile saved successfully')),
+      );
+      Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to save: $e')));
     } finally {
@@ -277,84 +284,57 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             const SizedBox(height: 18),
             Text('Location', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              value: KarnatakaLocations.state,
-              decoration: const InputDecoration(labelText: 'State', prefixIcon: Icon(Icons.map)),
-              items: const [DropdownMenuItem(value: 'Karnataka', child: Text('Karnataka'))],
-              onChanged: null,
-            ),
+            DropdownButtonFormField<String>(value: KarnatakaLocations.state, decoration: const InputDecoration(labelText: 'State', prefixIcon: Icon(Icons.map)), items: const [DropdownMenuItem(value: 'Karnataka', child: Text('Karnataka'))], onChanged: null),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: _district.isEmpty ? null : _district,
-              decoration: const InputDecoration(labelText: 'District', prefixIcon: Icon(Icons.location_city)),
-              items: _districts.map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
-              onChanged: (value) {
-                if (value == null) return;
-                final taluks = ref.read(locationMasterServiceProvider).taluksFor(value);
-                setState(() {
-                  _district = value;
-                  _taluk = taluks.isNotEmpty ? taluks.first : '';
-                  _village.clear();
-                  _villageCode = '';
-                });
-              },
-            ),
+            DropdownButtonFormField<String>(value: _district.isEmpty ? null : _district, decoration: const InputDecoration(labelText: 'District', prefixIcon: Icon(Icons.location_city)), items: _districts.map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(), onChanged: (value) {
+              if (value == null) return;
+              final taluks = ref.read(locationMasterServiceProvider).taluksFor(value);
+              setState(() { _district = value; _taluk = taluks.isNotEmpty ? taluks.first : ''; _village.clear(); _villageCode = ''; });
+            }),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: _taluk.isEmpty ? null : _taluk,
-              decoration: const InputDecoration(labelText: 'Taluk', prefixIcon: Icon(Icons.place)),
-              items: _taluks.map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(),
-              onChanged: (value) {
-                if (value == null) return;
-                setState(() {
-                  _taluk = value;
-                  _village.clear();
-                  _villageCode = '';
-                });
-              },
-            ),
+            DropdownButtonFormField<String>(value: _taluk.isEmpty ? null : _taluk, decoration: const InputDecoration(labelText: 'Taluk', prefixIcon: Icon(Icons.place)), items: _taluks.map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(), onChanged: (value) {
+              if (value == null) return;
+              setState(() { _taluk = value; _village.clear(); _villageCode = ''; });
+            }),
             const SizedBox(height: 12),
             Autocomplete<VillageEntry>(
+              initialValue: TextEditingValue(text: _village.text),
               displayStringForOption: (option) => option.name,
               optionsBuilder: (value) {
                 final query = value.text.trim().toLowerCase();
                 final options = _villages;
                 return query.isEmpty ? options : options.where((v) => v.name.toLowerCase().contains(query));
               },
-              initialValue: TextEditingValue(text: _village.text),
-              onSelected: (value) => setState(() {
-                _village.text = value.name;
-                _villageCode = value.code;
-              }),
+              onSelected: (value) => setState(() { _village.text = value.name; _villageCode = value.code; }),
               fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) => TextFormField(
                 controller: controller,
                 focusNode: focusNode,
                 decoration: const InputDecoration(labelText: 'Village', hintText: 'Search village', prefixIcon: Icon(Icons.home_work)),
                 validator: (_) => _villageCode.isEmpty ? 'Select a village from the list' : null,
-                onChanged: (_) => setState(() => _villageCode = ''),
+                onChanged: (_) => _villageCode = '',
               ),
             ),
             const SizedBox(height: 20),
-            Text('Preferences', style: Theme.of(context).textTheme.titleMedium),
-            DropdownButtonFormField<String>(value: _language, decoration: const InputDecoration(labelText: 'Language'), items: const ['English', 'Kannada', 'Malayalam', 'Hindi'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (value) => setState(() => _language = value!)),
-            SwitchListTile(value: _notifications, onChanged: (value) => setState(() => _notifications = value), title: const Text('Enable notifications')),
-            const SizedBox(height: 12),
             Text('Farm details', style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 12),
             TextFormField(controller: _survey, decoration: const InputDecoration(labelText: 'Land survey number'), validator: AuthValidators.validateSurveyNumber),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(value: _cultivation, decoration: const InputDecoration(labelText: 'Arecanut cultivation type'), items: cultivationTypes.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (value) => setState(() => _cultivation = value), validator: (value) => value == null ? 'Required' : null),
+            DropdownButtonFormField<String>(value: _cultivation, decoration: const InputDecoration(labelText: 'Arecanut cultivation type'), items: _cultivationTypes.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (value) => setState(() => _cultivation = value), validator: (value) => value == null ? 'Required' : null),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(value: _soil, decoration: const InputDecoration(labelText: 'Soil type'), items: soilTypes.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (value) => setState(() => _soil = value), validator: (value) => value == null ? 'Required' : null),
+            DropdownButtonFormField<String>(value: _soil, decoration: const InputDecoration(labelText: 'Soil type'), items: _soilTypes.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (value) => setState(() => _soil = value), validator: (value) => value == null ? 'Required' : null),
             const SizedBox(height: 12),
             TextFormField(controller: _farmName, decoration: const InputDecoration(labelText: 'Farm name')),
+            const SizedBox(height: 12),
             TextFormField(controller: _farmSize, decoration: const InputDecoration(labelText: 'Farm size (acres)'), keyboardType: const TextInputType.numberWithOptions(decimal: true), validator: (v) => double.tryParse(v ?? '') == null ? 'Enter valid size' : null),
+            const SizedBox(height: 12),
             DropdownButtonFormField<String>(value: _waterSource, decoration: const InputDecoration(labelText: 'Water source'), items: const ['Borewell', 'Open well', 'Canal', 'Rainwater', 'Other'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (value) => setState(() => _waterSource = value!)),
+            const SizedBox(height: 12),
             DropdownButtonFormField<String>(value: _irrigationMethod, decoration: const InputDecoration(labelText: 'Irrigation method'), items: const ['Drip', 'Sprinkler', 'Flood', 'Other'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (value) => setState(() => _irrigationMethod = value!)),
             ListTile(leading: const Icon(Icons.calendar_month), title: Text('Planting date: ${_plantingDate.day}/${_plantingDate.month}/${_plantingDate.year}'), onTap: () async {
               final selected = await showDatePicker(context: context, firstDate: DateTime(1980), lastDate: DateTime.now(), initialDate: _plantingDate);
               if (selected != null) setState(() => _plantingDate = selected);
             }),
+            SwitchListTile(value: _notifications, onChanged: (value) => setState(() => _notifications = value), title: const Text('Enable notifications')),
             const SizedBox(height: 24),
             FilledButton.icon(onPressed: _saving ? null : _save, icon: const Icon(Icons.check), label: Text(_saving ? 'Saving...' : 'Save profile')),
           ],
