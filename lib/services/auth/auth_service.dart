@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,22 +14,15 @@ abstract class AuthService {
     required String phone,
     required String password,
   });
-
   Future<UserModel> login({required String email, required String password});
-
   Future<UserModel> signInWithGoogle();
-
+  Future<void> updateCurrentUser(UserModel user);
   Future<void> sendPasswordResetEmail(String email);
-
   Future<void> sendEmailVerification();
-
   Future<UserModel?> getCurrentUser();
-
   Future<void> logout();
 }
 
-/// Isolated Service implementation for Phase 0 & Phase 1.
-/// Runs out-of-the-box using isolated local storage without needing immediate cloud credentials.
 class IsolatedAuthService implements AuthService {
   final LocalStorageService _storageService;
   static const String _userDbKey = 'isolated_registered_users_db';
@@ -41,8 +33,7 @@ class IsolatedAuthService implements AuthService {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_userDbKey);
     if (raw == null || raw.isEmpty) {
-      // Seed default demo user for instant testing
-      final Map<String, Map<String, dynamic>> seedUsers = {
+      final seedUsers = <String, Map<String, dynamic>>{
         'farmer@areca.org': {
           'password': 'Password123',
           'user': UserModel(
@@ -77,16 +68,10 @@ class IsolatedAuthService implements AuthService {
     required String password,
   }) async {
     AppLogger.info('Sign up attempt for email: $email', tag: 'AuthService');
-    await Future.delayed(
-      const Duration(milliseconds: 800),
-    ); // Simulate network latency
-
+    await Future.delayed(const Duration(milliseconds: 800));
     final normalizedEmail = email.trim().toLowerCase();
     final db = await _getUsersDb();
-
-    if (db.containsKey(normalizedEmail)) {
-      throw AuthFailure.emailAlreadyInUse();
-    }
+    if (db.containsKey(normalizedEmail)) throw AuthFailure.emailAlreadyInUse();
 
     final newUser = UserModel(
       uid: 'user_${DateTime.now().millisecondsSinceEpoch}',
@@ -94,60 +79,33 @@ class IsolatedAuthService implements AuthService {
       email: normalizedEmail,
       phone: phone.trim(),
       isEmailVerified: false,
+      isPhoneVerified: false,
       createdAt: DateTime.now(),
     );
-
     db[normalizedEmail] = {'password': password, 'user': newUser.toMap()};
-
     await _saveUsersDb(db);
     await _storageService.saveSession(newUser.uid, newUser.toJson());
-
-    AppLogger.info(
-      'User successfully registered: ${newUser.uid}',
-      tag: 'AuthService',
-    );
     return newUser;
   }
 
   @override
-  Future<UserModel> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<UserModel> login({required String email, required String password}) async {
     AppLogger.info('Login attempt for email: $email', tag: 'AuthService');
     await Future.delayed(const Duration(milliseconds: 600));
-
     final normalizedEmail = email.trim().toLowerCase();
     final db = await _getUsersDb();
-
-    if (!db.containsKey(normalizedEmail)) {
-      throw AuthFailure.userNotFound();
-    }
-
+    if (!db.containsKey(normalizedEmail)) throw AuthFailure.userNotFound();
     final userData = db[normalizedEmail]!;
-    final storedPassword = userData['password'] as String;
-
-    if (storedPassword != password) {
+    if ((userData['password'] as String) != password) {
       throw AuthFailure.invalidCredentials();
     }
-
-    final user = UserModel.fromMap(
-      Map<String, dynamic>.from(userData['user'] as Map),
-    );
+    final user = UserModel.fromMap(Map<String, dynamic>.from(userData['user'] as Map));
     await _storageService.saveSession(user.uid, user.toJson());
-
-    AppLogger.info(
-      'User logged in successfully: ${user.uid}',
-      tag: 'AuthService',
-    );
     return user;
   }
 
   @override
   Future<UserModel> signInWithGoogle() async {
-    AppLogger.info('Google sign-in attempt', tag: 'AuthService');
-    await Future.delayed(const Duration(milliseconds: 600));
-
     const googleEmail = 'google.farmer@areca.org';
     final db = await _getUsersDb();
     final existingUser = db[googleEmail];
@@ -160,59 +118,55 @@ class IsolatedAuthService implements AuthService {
             isEmailVerified: true,
             createdAt: DateTime.now(),
           )
-        : UserModel.fromMap(
-            Map<String, dynamic>.from(existingUser['user'] as Map),
-          );
-
+        : UserModel.fromMap(Map<String, dynamic>.from(existingUser['user'] as Map));
     if (existingUser == null) {
       db[googleEmail] = {'password': '', 'user': user.toMap()};
       await _saveUsersDb(db);
     }
     await _storageService.saveSession(user.uid, user.toJson());
-
-    AppLogger.info('Google sign-in completed: ${user.uid}', tag: 'AuthService');
     return user;
   }
 
   @override
-  Future<void> sendPasswordResetEmail(String email) async {
-    AppLogger.info('Password reset requested for: $email', tag: 'AuthService');
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    final normalizedEmail = email.trim().toLowerCase();
+  Future<void> updateCurrentUser(UserModel user) async {
     final db = await _getUsersDb();
-
-    if (!db.containsKey(normalizedEmail)) {
-      throw AuthFailure.userNotFound();
+    String? emailKey;
+    String? password;
+    for (final entry in db.entries) {
+      final stored = UserModel.fromMap(Map<String, dynamic>.from(entry.value['user'] as Map));
+      if (stored.uid == user.uid) {
+        emailKey = entry.key;
+        password = entry.value['password'] as String? ?? '';
+        break;
+      }
     }
+    if (emailKey == null) throw AuthFailure.userNotFound();
+    db[emailKey] = {'password': password, 'user': user.toMap()};
+    await _saveUsersDb(db);
+    await _storageService.saveSession(user.uid, user.toJson());
   }
 
   @override
-  Future<void> sendEmailVerification() async {
-    AppLogger.info('Sending verification email', tag: 'AuthService');
-    await Future.delayed(const Duration(milliseconds: 400));
+  Future<void> sendPasswordResetEmail(String email) async {
+    final db = await _getUsersDb();
+    if (!db.containsKey(email.trim().toLowerCase())) throw AuthFailure.userNotFound();
   }
+
+  @override
+  Future<void> sendEmailVerification() async {}
 
   @override
   Future<UserModel?> getCurrentUser() async {
     final userJson = _storageService.getSessionUserJson();
-    if (userJson != null && userJson.isNotEmpty) {
-      try {
-        return UserModel.fromJson(userJson);
-      } catch (e) {
-        AppLogger.error(
-          'Failed to parse cached session user',
-          tag: 'AuthService',
-          error: e,
-        );
-      }
+    if (userJson == null || userJson.isEmpty) return null;
+    try {
+      return UserModel.fromJson(userJson);
+    } catch (e) {
+      AppLogger.error('Failed to parse cached session user', tag: 'AuthService', error: e);
+      return null;
     }
-    return null;
   }
 
   @override
-  Future<void> logout() async {
-    AppLogger.info('Logging out active session', tag: 'AuthService');
-    await _storageService.clearSession();
-  }
+  Future<void> logout() => _storageService.clearSession();
 }
