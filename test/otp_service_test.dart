@@ -16,7 +16,7 @@ void main() {
 
   test('generates a 6 digit numeric OTP', () async {
     final otp = await service.generateOtp(phone);
-    expect(otp, matches(RegExp(r'^\d{6}\$')));
+    expect(otp, matches(RegExp(r'^\d{6}$')));
   });
 
   test('OTP hash is stored, not plaintext', () async {
@@ -50,7 +50,6 @@ void main() {
       'otp_${phone}_generated_at',
       DateTime.now().subtract(const Duration(minutes: 16)).millisecondsSinceEpoch,
     );
-
     await expectLater(
       service.verifyOtp(phone, '000000'),
       throwsA(isA<OtpFailure>()),
