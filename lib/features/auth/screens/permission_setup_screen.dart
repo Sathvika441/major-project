@@ -12,8 +12,7 @@ class PermissionSetupScreen extends ConsumerStatefulWidget {
       _PermissionSetupScreenState();
 }
 
-class _PermissionSetupScreenState
-    extends ConsumerState<PermissionSetupScreen> {
+class _PermissionSetupScreenState extends ConsumerState<PermissionSetupScreen> {
   bool _requesting = false;
   bool _completed = false;
   bool _permanentlyDenied = false;
@@ -46,11 +45,16 @@ class _PermissionSetupScreenState
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
-            Icon(Icons.photo_camera_back_rounded,
-                size: 56, color: theme.colorScheme.primary),
+            Icon(
+              Icons.photo_camera_back_rounded,
+              size: 56,
+              color: theme.colorScheme.primary,
+            ),
             const SizedBox(height: 20),
-            Text('Help ArecaSmart use images safely',
-                style: theme.textTheme.headlineSmall),
+            Text(
+              'Help ArecaSmart use images safely',
+              style: theme.textTheme.headlineSmall,
+            ),
             const SizedBox(height: 10),
             Text(
               'Before onboarding, please review why ArecaSmart needs access to photos and the camera.',
@@ -78,8 +82,10 @@ class _PermissionSetupScreenState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Permissions denied',
-                          style: TextStyle(fontWeight: FontWeight.w700)),
+                      const Text(
+                        'Permissions denied',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
                       const SizedBox(height: 8),
                       const Text(
                         'You can continue using the app. Image-dependent features will ask you to enable access later.',
@@ -87,7 +93,7 @@ class _PermissionSetupScreenState
                       const SizedBox(height: 12),
                       OutlinedButton.icon(
                         onPressed: () =>
-                            ref.read(permissionServiceProvider).openAppSettings(),
+                            ref.read(permissionServiceProvider).openSettings(),
                         icon: const Icon(Icons.settings_outlined),
                         label: const Text('Open App Settings'),
                       ),
@@ -126,7 +132,11 @@ class _PurposeCard extends StatelessWidget {
   final String title;
   final String text;
 
-  const _PurposeCard({required this.icon, required this.title, required this.text});
+  const _PurposeCard({
+    required this.icon,
+    required this.title,
+    required this.text,
+  });
 
   @override
   Widget build(BuildContext context) {
