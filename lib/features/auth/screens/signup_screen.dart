@@ -24,7 +24,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   String? _termsError;
-
   bool _acceptedTerms = false;
 
   @override
@@ -38,27 +37,22 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   }
 
   Future<void> _submitSignup() async {
-    setState(() {
-      _termsError = AuthValidators.validateTerms(_acceptedTerms);
-    });
-
-    if (!_formKey.currentState!.validate() || _termsError != null) {
-      return;
-    }
+    setState(() => _termsError = AuthValidators.validateTerms(_acceptedTerms));
+    if (!_formKey.currentState!.validate() || _termsError != null) return;
 
     FocusScope.of(context).unfocus();
-    final authController = ref.read(authControllerProvider.notifier);
-    authController.clearMessages();
-
-    final success = await authController.signUp(
+    final controller = ref.read(authControllerProvider.notifier);
+    controller.clearMessages();
+    final success = await controller.signUp(
       name: _nameController.text,
       email: _emailController.text,
       phone: _phoneController.text,
       password: _passwordController.text,
     );
 
-    if (success && mounted) {
-      context.go('/dashboard');
+    if (!mounted || !success) return;
+    if (ref.read(authControllerProvider).status == AuthStatus.otpVerificationPending) {
+      context.go('/otp-verification');
     }
   }
 
@@ -66,7 +60,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
     final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(title: const Text('Create Account')),
       body: SafeArea(
@@ -75,18 +68,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Join ArecaSmart',
-                style: theme.textTheme.displayLarge?.copyWith(fontSize: 26),
-              ),
+              Text('Join ArecaSmart', style: theme.textTheme.displayLarge?.copyWith(fontSize: 26)),
               const SizedBox(height: 6),
-              Text(
-                'Register your profile to manage farms, plots, IoT sensors and disease AI diagnostic tools.',
-                style: theme.textTheme.bodyMedium,
-              ),
+              Text('Register your profile to manage farms, IoT sensors and crop health tools.', style: theme.textTheme.bodyMedium),
               const SizedBox(height: 24),
-
-              // Error Banner
               if (authState.errorMessage != null) ...[
                 Container(
                   padding: const EdgeInsets.all(14),
@@ -95,165 +80,39 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: const Color(0xFFFCA5A5)),
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.error_outline_rounded,
-                        color: Color(0xFFDC2626),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          authState.errorMessage!,
-                          style: const TextStyle(
-                            color: Color(0xFF991B1B),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                  child: Text(authState.errorMessage!, style: const TextStyle(color: Color(0xFF991B1B), fontWeight: FontWeight.w500)),
                 ),
                 const SizedBox(height: 20),
               ],
-
-              // Signup Form Card
               AppCard(
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      AppTextField(
-                        controller: _nameController,
-                        label: 'Full Name',
-                        hint: 'Ramesh Gowda',
-                        prefixIcon: Icons.person_outline_rounded,
-                        validator: AuthValidators.validateName,
-                      ),
+                      AppTextField(controller: _nameController, label: 'Full Name', hint: 'Ramesh Gowda', prefixIcon: Icons.person_outline_rounded, validator: AuthValidators.validateName),
                       const SizedBox(height: 16),
-                      AppTextField(
-                        controller: _emailController,
-                        label: 'Email Address',
-                        hint: 'ramesh@farm.org',
-                        keyboardType: TextInputType.emailAddress,
-                        prefixIcon: Icons.email_outlined,
-                        validator: AuthValidators.validateEmail,
-                      ),
+                      AppTextField(controller: _emailController, label: 'Email Address', hint: 'ramesh@farm.org', keyboardType: TextInputType.emailAddress, prefixIcon: Icons.email_outlined, validator: AuthValidators.validateEmail),
                       const SizedBox(height: 16),
-                      AppTextField(
-                        controller: _phoneController,
-                        label: 'Phone Number',
-                        hint: '+91 9876543210',
-                        keyboardType: TextInputType.phone,
-                        prefixIcon: Icons.phone_outlined,
-                        validator: AuthValidators.validatePhone,
-                      ),
+                      AppTextField(controller: _phoneController, label: 'Phone Number', hint: '+91 9876543210', keyboardType: TextInputType.phone, prefixIcon: Icons.phone_outlined, validator: AuthValidators.validatePhone),
                       const SizedBox(height: 16),
-                      AppTextField(
-                        controller: _passwordController,
-                        label: 'Password',
-                        isPassword: true,
-                        prefixIcon: Icons.lock_outline_rounded,
-                        validator: AuthValidators.validatePassword,
-                      ),
+                      AppTextField(controller: _passwordController, label: 'Password', isPassword: true, prefixIcon: Icons.lock_outline_rounded, validator: AuthValidators.validatePassword),
                       const SizedBox(height: 16),
-                      AppTextField(
-                        controller: _confirmPasswordController,
-                        label: 'Confirm Password',
-                        isPassword: true,
-                        prefixIcon: Icons.lock_clock_outlined,
-                        validator: (val) =>
-                            AuthValidators.validateConfirmPassword(
-                              val,
-                              _passwordController.text,
-                            ),
-                      ),
+                      AppTextField(controller: _confirmPasswordController, label: 'Confirm Password', isPassword: true, prefixIcon: Icons.lock_clock_outlined, validator: (val) => AuthValidators.validateConfirmPassword(val, _passwordController.text)),
                       const SizedBox(height: 16),
-
-                      // Terms and Conditions Checkbox
                       InkWell(
-                        onTap: () {
-                          setState(() {
-                            _acceptedTerms = !_acceptedTerms;
-                            _termsError = null;
-                          });
-                        },
-                        borderRadius: BorderRadius.circular(8),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: Checkbox(
-                                  value: _acceptedTerms,
-                                  activeColor: theme.primaryColor,
-                                  onChanged: (val) {
-                                    setState(() {
-                                      _acceptedTerms = val ?? false;
-                                      _termsError = null;
-                                    });
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: RichText(
-                                  text: TextSpan(
-                                    style: TextStyle(
-                                      color: theme.textTheme.bodyMedium?.color,
-                                      fontSize: 13,
-                                    ),
-                                    children: [
-                                      const TextSpan(text: 'I agree to the '),
-                                      TextSpan(
-                                        text: 'Terms of Service',
-                                        style: TextStyle(
-                                          color: theme.primaryColor,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const TextSpan(text: ' and '),
-                                      TextSpan(
-                                        text: 'Privacy Policy',
-                                        style: TextStyle(
-                                          color: theme.primaryColor,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const TextSpan(
-                                        text: ' for agricultural data usage.',
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                        onTap: () => setState(() { _acceptedTerms = !_acceptedTerms; _termsError = null; }),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Checkbox(value: _acceptedTerms, onChanged: (v) => setState(() { _acceptedTerms = v ?? false; _termsError = null; })),
+                            const SizedBox(width: 8),
+                            const Expanded(child: Padding(padding: EdgeInsets.only(top: 12), child: Text('I agree to the Terms of Service and Privacy Policy for agricultural data usage.'))),
+                          ],
                         ),
                       ),
-
-                      if (_termsError != null) ...[
-                        const SizedBox(height: 6),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 34),
-                          child: Text(
-                            _termsError!,
-                            style: const TextStyle(
-                              color: Color(0xFFDC2626),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-
+                      if (_termsError != null) Padding(padding: const EdgeInsets.only(left: 34), child: Text(_termsError!, style: const TextStyle(color: Color(0xFFDC2626), fontSize: 12))),
                       const SizedBox(height: 24),
-
-                      // Submit Button
                       AppButton(
                         text: 'Register Account',
                         isLoading: authState.status == AuthStatus.loading,
@@ -264,35 +123,18 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 24),
-
-              // Return to Login
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    'Already registered?',
-                    style: theme.textTheme.bodyMedium,
-                  ),
+                  Text('Already registered?', style: theme.textTheme.bodyMedium),
                   const SizedBox(width: 6),
                   GestureDetector(
-                    onTap: () {
-                      ref.read(authControllerProvider.notifier).clearMessages();
-                      context.pop();
-                    },
-                    child: Text(
-                      'Sign In',
-                      style: TextStyle(
-                        color: theme.primaryColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
+                    onTap: () { ref.read(authControllerProvider.notifier).clearMessages(); context.pop(); },
+                    child: Text('Sign In', style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
             ],
           ),
         ),
