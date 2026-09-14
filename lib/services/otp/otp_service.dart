@@ -25,8 +25,7 @@ class OtpService {
   String _hashCode(String code, String phone, String nonce) =>
       sha256.convert(utf8.encode('$code|$phone|$nonce')).toString();
 
-  String _generateCode() =>
-      List.generate(6, (_) => _random.nextInt(10)).join();
+  String _generateCode() => List.generate(6, (_) => _random.nextInt(10)).join();
 
   String _generateNonce() => base64Url.encode(
         List<int>.generate(16, (_) => _random.nextInt(256)),
@@ -41,9 +40,10 @@ class OtpService {
         throw OtpFailure.rateLimited(_resendCooldown - elapsed);
       }
     }
-
     if (isLocked(normalized)) {
-      throw OtpFailure.tooManyAttempts(remainingLockout(normalized) ?? _lockoutDuration);
+      throw OtpFailure.tooManyAttempts(
+        remainingLockout(normalized) ?? _lockoutDuration,
+      );
     }
 
     final code = _generateCode();
@@ -66,7 +66,9 @@ class OtpService {
   Future<bool> verifyOtp(String phone, String code) async {
     final normalized = phone.trim();
     if (isLocked(normalized)) {
-      throw OtpFailure.tooManyAttempts(remainingLockout(normalized) ?? _lockoutDuration);
+      throw OtpFailure.tooManyAttempts(
+        remainingLockout(normalized) ?? _lockoutDuration,
+      );
     }
 
     final storedPhone = _prefs.getString(_key(normalized, '_phone'));
