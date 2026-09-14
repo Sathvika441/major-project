@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'app/router.dart';
 import 'app/theme/app_theme.dart';
 import 'core/storage/local_storage_service.dart';
 import 'core/utils/app_logger.dart';
-import 'features/auth/controllers/auth_controller.dart';
+
+import 'package:firebase_core/firebase_core.dart';
+
+import 'firebase_options.dart';
+
+// import 'features/auth/controllers/auth_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

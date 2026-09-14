@@ -26,7 +26,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   void initState() {
     super.initState();
     // Prefill demo credentials for convenient testing
-    _emailController.text = 'farmer@areca.org';
+    _emailController.text = 'Sathvika@gmail.com';
     _passwordController.text = 'Password123';
   }
 

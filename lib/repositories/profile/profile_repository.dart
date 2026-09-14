@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/storage/local_storage_service.dart';
 import '../../models/farm/farm_profile_model.dart';
 
-final profileRepositoryProvider = Provider<ProfileRepository>((ref) =>
-    ProfileRepository(ref.watch(localStorageServiceProvider)));
+final profileRepositoryProvider = Provider<ProfileRepository>(
+  (ref) => ProfileRepository(ref.watch(localStorageServiceProvider)),
+);
 
 class ProfileRepository {
   final LocalStorageService storage;
@@ -15,4 +17,14 @@ class ProfileRepository {
       storage.raw.setString(_key(profile.userId), profile.toJson());
 
   String? loadRaw(String userId) => storage.raw.getString(_key(userId));
+
+  FarmProfileModel? load(String userId) {
+    final raw = loadRaw(userId);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      return FarmProfileModel.fromJson(raw);
+    } catch (_) {
+      return null;
+    }
+  }
 }

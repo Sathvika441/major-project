@@ -25,7 +25,8 @@ class AuthValidators {
     if (value.length < 8) {
       return 'Password must be at least 8 characters long.';
     }
-    if (!value.contains(RegExp(r'[A-Za-z]')) || !value.contains(RegExp(r'[0-9]'))) {
+    if (!value.contains(RegExp(r'[A-Za-z]')) ||
+        !value.contains(RegExp(r'[0-9]'))) {
       return 'Password must contain both letters and numbers.';
     }
     return null;

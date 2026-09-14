@@ -9,6 +9,10 @@ class FarmModel {
   final DateTime createdAt;
   final DateTime? updatedAt;
   final bool isActive;
+  final String landSurveyNumber;
+  final String arecanutCultivationType;
+  final String soilType;
+  final String villageCode;
 
   const FarmModel({
     required this.id,
@@ -21,6 +25,10 @@ class FarmModel {
     required this.createdAt,
     this.updatedAt,
     this.isActive = true,
+    this.landSurveyNumber = '',
+    this.arecanutCultivationType = '',
+    this.soilType = '',
+    this.villageCode = '',
   });
 
   FarmModel copyWith({
@@ -31,6 +39,10 @@ class FarmModel {
     String? irrigationMethod,
     DateTime? updatedAt,
     bool? isActive,
+    String? landSurveyNumber,
+    String? arecanutCultivationType,
+    String? soilType,
+    String? villageCode,
   }) => FarmModel(
         id: id,
         userId: userId,
@@ -42,6 +54,11 @@ class FarmModel {
         createdAt: createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
         isActive: isActive ?? this.isActive,
+        landSurveyNumber: landSurveyNumber ?? this.landSurveyNumber,
+        arecanutCultivationType:
+            arecanutCultivationType ?? this.arecanutCultivationType,
+        soilType: soilType ?? this.soilType,
+        villageCode: villageCode ?? this.villageCode,
       );
 
   Map<String, dynamic> toMap() => {
@@ -55,6 +72,10 @@ class FarmModel {
         'createdAt': createdAt.toIso8601String(),
         'updatedAt': updatedAt?.toIso8601String(),
         'isActive': isActive,
+        'landSurveyNumber': landSurveyNumber,
+        'arecanutCultivationType': arecanutCultivationType,
+        'soilType': soilType,
+        'villageCode': villageCode,
       };
 
   factory FarmModel.fromMap(Map<String, dynamic> map) => FarmModel(
@@ -62,12 +83,20 @@ class FarmModel {
         userId: map['userId'] as String,
         name: map['name'] as String,
         location: map['location'] as String,
-        sizeAcres: (map['sizeAcres'] as num).toDouble(),
-        waterSource: map['waterSource'] as String,
-        irrigationMethod: map['irrigationMethod'] as String,
-        createdAt: DateTime.parse(map['createdAt'] as String),
-        updatedAt: map['updatedAt'] != null ? DateTime.parse(map['updatedAt'] as String) : null,
+        sizeAcres: (map['sizeAcres'] as num?)?.toDouble() ?? 0.0,
+        waterSource: map['waterSource'] as String? ?? 'Borewell',
+        irrigationMethod: map['irrigationMethod'] as String? ?? 'Drip',
+        createdAt:
+            DateTime.tryParse(map['createdAt'] as String? ?? '') ??
+                DateTime.now(),
+        updatedAt: map['updatedAt'] != null
+            ? DateTime.tryParse(map['updatedAt'] as String)
+            : null,
         isActive: map['isActive'] as bool? ?? true,
+        landSurveyNumber: map['landSurveyNumber'] as String? ?? '',
+        arecanutCultivationType: map['arecanutCultivationType'] as String? ?? '',
+        soilType: map['soilType'] as String? ?? '',
+        villageCode: map['villageCode'] as String? ?? '',
       );
 }
 

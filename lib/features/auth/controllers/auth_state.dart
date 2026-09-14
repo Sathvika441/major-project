@@ -1,7 +1,15 @@
 import 'package:flutter/foundation.dart';
 import '../../../models/user/user_model.dart';
 
-enum AuthStatus { initial, loading, authenticated, unauthenticated, emailVerificationPending, error }
+enum AuthStatus {
+  initial,
+  loading,
+  authenticated,
+  unauthenticated,
+  emailVerificationPending,
+  otpVerificationPending,
+  error,
+}
 
 @immutable
 class AuthState {
@@ -9,12 +17,16 @@ class AuthState {
   final UserModel? user;
   final String? errorMessage;
   final String? successMessage;
+  final String? pendingOtpPhone;
+  final String? pendingOtpFor;
 
   const AuthState({
     required this.status,
     this.user,
     this.errorMessage,
     this.successMessage,
+    this.pendingOtpPhone,
+    this.pendingOtpFor,
   });
 
   factory AuthState.initial() => const AuthState(status: AuthStatus.initial);
@@ -25,6 +37,17 @@ class AuthState {
       AuthState(status: AuthStatus.unauthenticated, errorMessage: message);
   factory AuthState.emailVerificationPending(UserModel user) =>
       AuthState(status: AuthStatus.emailVerificationPending, user: user);
+  factory AuthState.otpVerificationPending({
+    required UserModel user,
+    required String phone,
+    String forPurpose = 'login',
+  }) =>
+      AuthState(
+        status: AuthStatus.otpVerificationPending,
+        user: user,
+        pendingOtpPhone: phone,
+        pendingOtpFor: forPurpose,
+      );
   factory AuthState.error(String message) =>
       AuthState(status: AuthStatus.error, errorMessage: message);
 
@@ -33,12 +56,16 @@ class AuthState {
     UserModel? user,
     String? errorMessage,
     String? successMessage,
+    String? pendingOtpPhone,
+    String? pendingOtpFor,
   }) {
     return AuthState(
       status: status ?? this.status,
       user: user ?? this.user,
       errorMessage: errorMessage,
       successMessage: successMessage,
+      pendingOtpPhone: pendingOtpPhone ?? this.pendingOtpPhone,
+      pendingOtpFor: pendingOtpFor ?? this.pendingOtpFor,
     );
   }
 }

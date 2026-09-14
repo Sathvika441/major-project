@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "72972800038",
+    "project_id": "major-project-efb40",
+    "storage_bucket": "major-project-efb40.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:72972800038:android:fd85fead792119f2cf56e7",
+        "android_client_info": {
+          "package_name": "com.example.major_proj_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCpBmwVgjR7gyBgMHloNUy5SmRPr83fwYY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

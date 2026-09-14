@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../core/storage/local_storage_service.dart';
+import '../controllers/auth_controller.dart';
+import '../controllers/auth_state.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -12,6 +17,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
   late AnimationController _animController;
   late Animation<double> _fadeAnimation;
 
+  static const _minSplashDuration = Duration(milliseconds: 2000);
+  bool _animationDone = false;
+  bool _authCheckDone = false;
+  bool _navigated = false;
+
   @override
   void initState() {
     super.initState();
@@ -20,7 +30,22 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
       duration: const Duration(milliseconds: 1200),
     );
     _fadeAnimation = CurvedAnimation(parent: _animController, curve: Curves.easeIn);
-    _animController.forward();
+
+    _animController.forward().then((_) async {
+      await Future.delayed(_minSplashDuration - const Duration(milliseconds: 1200));
+      if (mounted) {
+        setState(() => _animationDone = true);
+        _tryNavigate();
+      }
+    });
+
+    Future.microtask(() {
+      final authState = ref.read(authControllerProvider);
+      if (authState.status != AuthStatus.initial && authState.status != AuthStatus.loading) {
+        _authCheckDone = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _tryNavigate());
+      }
+    });
   }
 
   @override
@@ -29,8 +54,39 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
     super.dispose();
   }
 
+  void _tryNavigate() {
+    if (!mounted || _navigated) return;
+    if (!_animationDone || !_authCheckDone) return;
+
+    final authState = ref.read(authControllerProvider);
+    final storage = ref.read(localStorageServiceProvider);
+    _navigated = true;
+
+    switch (authState.status) {
+      case AuthStatus.authenticated:
+        final completed = storage.hasCompletedOnboarding();
+        context.go(completed ? '/dashboard' : '/onboarding');
+        break;
+      case AuthStatus.unauthenticated:
+      case AuthStatus.error:
+      case AuthStatus.emailVerificationPending:
+      default:
+        context.go('/login');
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    ref.listen<AuthState>(authControllerProvider, (prev, next) {
+      if (next.status != AuthStatus.initial && next.status != AuthStatus.loading) {
+        if (!_authCheckDone) {
+          _authCheckDone = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) => _tryNavigate());
+        }
+      }
+    });
+
     final theme = Theme.of(context);
 
     return Scaffold(

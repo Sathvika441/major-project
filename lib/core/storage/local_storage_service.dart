@@ -9,6 +9,11 @@ class LocalStorageKeys {
   static const String hasCompletedOnboarding = 'has_completed_onboarding';
   static const String rememberedEmail = 'remembered_email';
   static const String themeMode = 'app_theme_mode';
+  static const String otpVerified = 'otp_verified';
+  static const String hasRequestedPermissions = 'has_requested_permissions';
+  static const String hasCompletedPhaseA = 'has_completed_phase_a';
+  static const String hasCompletedPhaseB = 'has_completed_phase_b';
+  static const String phaseBMigrated = 'phase_b_migrated';
 }
 
 /// Service wrapping persistent local storage via SharedPreferences.
@@ -69,6 +74,40 @@ class LocalStorageService {
 
   Future<void> clearRememberedEmail() async {
     await _prefs.remove(LocalStorageKeys.rememberedEmail);
+  }
+
+  bool isOtpVerified() => _prefs.getBool(LocalStorageKeys.otpVerified) ?? false;
+
+  Future<void> setOtpVerified(bool value) async {
+    await _prefs.setBool(LocalStorageKeys.otpVerified, value);
+  }
+
+  bool hasRequestedPermissions() =>
+      _prefs.getBool(LocalStorageKeys.hasRequestedPermissions) ?? false;
+
+  Future<void> setHasRequestedPermissions(bool value) async {
+    await _prefs.setBool(LocalStorageKeys.hasRequestedPermissions, value);
+  }
+
+  bool hasCompletedPhaseA() =>
+      _prefs.getBool(LocalStorageKeys.hasCompletedPhaseA) ?? false;
+
+  Future<void> setCompletedPhaseA(bool value) async {
+    await _prefs.setBool(LocalStorageKeys.hasCompletedPhaseA, value);
+  }
+
+  bool hasCompletedPhaseB() =>
+      _prefs.getBool(LocalStorageKeys.hasCompletedPhaseB) ?? false;
+
+  Future<void> setCompletedPhaseB(bool value) async {
+    await _prefs.setBool(LocalStorageKeys.hasCompletedPhaseB, value);
+  }
+
+  bool hasPhaseBMigrated() =>
+      _prefs.getBool(LocalStorageKeys.phaseBMigrated) ?? false;
+
+  Future<void> setPhaseBMigrated(bool value) async {
+    await _prefs.setBool(LocalStorageKeys.phaseBMigrated, value);
   }
 }
 

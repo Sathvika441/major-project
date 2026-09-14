@@ -11,6 +11,7 @@ import '../features/dashboard/screens/dashboard_screen.dart';
 import '../features/onboarding/screens/onboarding_screen.dart';
 import '../features/farm/screens/farm_management_screen.dart';
 import '../features/devices/screens/device_management_screen.dart';
+import '../features/profile/screens/profile_edit_screen.dart';
 import '../core/storage/local_storage_service.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -29,6 +30,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/dashboard', builder: (context, state) => const DashboardScreen()),
       GoRoute(path: '/farms', builder: (context, state) => const FarmManagementScreen()),
       GoRoute(path: '/devices', builder: (context, state) => const DeviceManagementScreen()),
+      GoRoute(path: '/profile', builder: (context, state) => const ProfileEditScreen()),
     ],
     redirect: (context, state) {
       final location = state.matchedLocation;
@@ -39,7 +41,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (authState.status == AuthStatus.initial || authState.status == AuthStatus.loading) {
         return isSplash ? null : '/splash';
       }
-      if (authState.status == AuthStatus.unauthenticated || authState.status == AuthStatus.error) {
+      if (authState.status == AuthStatus.unauthenticated ||
+          authState.status == AuthStatus.error ||
+          authState.status == AuthStatus.emailVerificationPending) {
         return isPublicRoute ? null : '/login';
       }
       if (authState.status == AuthStatus.authenticated) {

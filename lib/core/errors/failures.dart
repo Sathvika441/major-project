@@ -35,6 +35,29 @@ class AuthFailure extends Failure {
       const AuthFailure('Please verify your email address before logging in.', code: 'EMAIL_NOT_VERIFIED');
 }
 
+/// OTP verification specific failures
+class OtpFailure extends Failure {
+  const OtpFailure(super.message, {super.code});
+
+  factory OtpFailure.invalidOtp() =>
+      const OtpFailure('Invalid OTP. Please check and try again.', code: 'OTP_INVALID');
+
+  factory OtpFailure.expired() =>
+      const OtpFailure('OTP has expired. Please request a new one.', code: 'OTP_EXPIRED');
+
+  factory OtpFailure.rateLimited(Duration cooldown) =>
+      OtpFailure('Too many requests. Please wait ${cooldown.inSeconds}s before requesting a new OTP.', code: 'OTP_RATE_LIMITED');
+
+  factory OtpFailure.tooManyAttempts(Duration lockout) =>
+      OtpFailure('Too many failed attempts. Please try again after ${lockout.inMinutes} minute(s).', code: 'OTP_LOCKED');
+
+  factory OtpFailure.phoneMismatch() =>
+      const OtpFailure('Phone number does not match the OTP session.', code: 'OTP_PHONE_MISMATCH');
+
+  factory OtpFailure.notFound() =>
+      const OtpFailure('No active OTP session found. Request a new OTP.', code: 'OTP_NOT_FOUND');
+}
+
 /// Network connectivity failures
 class NetworkFailure extends Failure {
   const NetworkFailure([super.message = 'Network connection unavailable. Please check your internet connection.'])
