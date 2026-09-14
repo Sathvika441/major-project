@@ -178,8 +178,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
           child: ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              Text('Farm details',
-                  style: Theme.of(context).textTheme.headlineSmall),
+              Text('Farm details', style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 6),
               const Text('Step 2 of 2 • Farm-specific details'),
               const SizedBox(height: 20),
@@ -201,14 +200,10 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
                   prefixIcon: Icon(Icons.spa_outlined),
                 ),
                 items: cultivationTypes
-                    .map((value) => DropdownMenuItem(
-                          value: value,
-                          child: Text(value),
-                        ))
+                    .map((value) => DropdownMenuItem(value: value, child: Text(value)))
                     .toList(),
                 onChanged: (value) => setState(() => _cultivation = value),
-                validator: (value) =>
-                    value == null ? 'Please select cultivation type' : null,
+                validator: (value) => value == null ? 'Please select cultivation type' : null,
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
@@ -218,24 +213,16 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
                   prefixIcon: Icon(Icons.grass_outlined),
                 ),
                 items: soilTypes
-                    .map((value) => DropdownMenuItem(
-                          value: value,
-                          child: Text(value),
-                        ))
+                    .map((value) => DropdownMenuItem(value: value, child: Text(value)))
                     .toList(),
                 onChanged: (value) => setState(() => _soil = value),
-                validator: (value) =>
-                    value == null ? 'Please select soil type' : null,
+                validator: (value) => value == null ? 'Please select soil type' : null,
               ),
               const SizedBox(height: 28),
               FilledButton.icon(
                 onPressed: _saving ? null : _save,
                 icon: _saving
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                     : const Icon(Icons.check_circle_outline),
                 label: Text(_saving ? 'Saving...' : 'Complete setup'),
               ),
