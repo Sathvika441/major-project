@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -27,23 +26,11 @@ class PermissionService {
 
   Future<void> markFlowCompleted() => _storage.setHasRequestedPermissions(true);
 
-  Future<PermissionStatus> checkCameraStatus() async {
-    if (kIsWeb) return PermissionStatus.granted;
-    return Permission.camera.status;
-  }
+  Future<PermissionStatus> checkCameraStatus() => Permission.camera.status;
 
-  Future<PermissionStatus> checkGalleryStatus() async {
-    if (kIsWeb) return PermissionStatus.granted;
-    return Permission.photos.status;
-  }
+  Future<PermissionStatus> checkGalleryStatus() => Permission.photos.status;
 
   Future<PermissionResult> requestGalleryAndCamera() async {
-    if (kIsWeb) {
-      return const PermissionResult(
-        camera: PermissionStatus.granted,
-        gallery: PermissionStatus.granted,
-      );
-    }
     final statuses = await <Permission>[
       Permission.photos,
       Permission.camera,
@@ -54,20 +41,10 @@ class PermissionService {
     );
   }
 
-  Future<PermissionStatus> requestCameraOnly() async {
-    if (kIsWeb) return PermissionStatus.granted;
-    return Permission.camera.request();
-  }
+  Future<PermissionStatus> requestCameraOnly() => Permission.camera.request();
+  Future<PermissionStatus> requestGalleryOnly() => Permission.photos.request();
 
-  Future<PermissionStatus> requestGalleryOnly() async {
-    if (kIsWeb) return PermissionStatus.granted;
-    return Permission.photos.request();
-  }
-
-  Future<bool> openAppSettings() async {
-    if (kIsWeb) return false;
-    return openAppSettings();
-  }
+  Future<bool> openSettings() => openAppSettings();
 
   bool isGranted(PermissionStatus status) =>
       status.isGranted || status.isLimited;
