@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/failures.dart';
 import '../../../core/storage/local_storage_service.dart';
+import '../../../models/farm/farm_profile_model.dart';
 import '../../../repositories/auth/auth_repository.dart';
 import '../../../services/auth/auth_service.dart';
 import '../../../services/otp/otp_service.dart';
@@ -31,18 +34,48 @@ class AuthController extends StateNotifier<AuthState> {
     checkSession();
   }
 
+  Future<void> _migrateLegacyOnboarding(String uid) async {
+    if (!_storage.hasCompletedOnboarding() || _storage.hasPhaseBMigrated()) {
+      return;
+    }
+
+    final raw = _storage.raw.getString('phase25_profile_$uid');
+    if (raw == null || raw.isEmpty) return;
+
+    try {
+      final profile = FarmProfileModel.fromJson(raw);
+      final phaseBComplete = profile.landSurveyNumber.trim().isNotEmpty &&
+          profile.arecanutCultivationType.trim().isNotEmpty &&
+          profile.soilType.trim().isNotEmpty;
+
+      // Old users already completed the previous single-step onboarding.
+      // Treat those core details as Phase A and only ask for new Phase B
+      // fields that are absent. Complete records are promoted to both phases.
+      await _storage.setCompletedPhaseA(true);
+      await _storage.setCompletedPhaseB(phaseBComplete);
+      await _storage.setPhaseBMigrated(true);
+    } catch (_) {
+      // Invalid legacy profile data is left alone; the router will send the
+      // user through the normal onboarding path rather than risking a crash.
+      return;
+    }
+  }
+
   Future<void> checkSession() async {
     state = AuthState.loading();
     try {
       final user = await _repository.getSavedSession();
       if (user != null && _storage.isAuthenticated()) {
-        state = _storage.isOtpVerified()
-            ? AuthState.authenticated(user)
-            : AuthState.otpVerificationPending(
-                user: user,
-                phone: user.phone,
-                forPurpose: 'login',
-              );
+        if (!_storage.isOtpVerified()) {
+          state = AuthState.otpVerificationPending(
+            user: user,
+            phone: user.phone,
+            forPurpose: 'login',
+          );
+          return;
+        }
+        await _migrateLegacyOnboarding(user.uid);
+        state = AuthState.authenticated(user);
       } else {
         state = AuthState.unauthenticated();
       }
@@ -95,6 +128,7 @@ class AuthController extends StateNotifier<AuthState> {
         state = AuthState.otpVerificationPending(user: user, phone: user.phone, forPurpose: 'login');
       } else {
         await _storage.setOtpVerified(true);
+        await _migrateLegacyOnboarding(user.uid);
         state = AuthState.authenticated(user);
       }
       return true;
@@ -135,6 +169,7 @@ class AuthController extends StateNotifier<AuthState> {
       await _storage.setOtpVerified(true);
       final updated = user.copyWith(isPhoneVerified: true);
       await _repository.updateCurrentUser(updated);
+      await _migrateLegacyOnboarding(updated.uid);
       state = AuthState.authenticated(updated);
       return true;
     } on OtpFailure catch (f) {
