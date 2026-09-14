@@ -7,13 +7,11 @@ import '../../../services/auth/auth_service.dart';
 import '../../../services/otp/otp_service.dart';
 import 'auth_state.dart';
 
-final authServiceProvider = Provider<AuthService>((ref) {
-  return IsolatedAuthService(ref.watch(localStorageServiceProvider));
-});
+final authServiceProvider = Provider<AuthService>((ref) =>
+    IsolatedAuthService(ref.watch(localStorageServiceProvider)));
 
-final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepositoryImpl(ref.watch(authServiceProvider));
-});
+final authRepositoryProvider = Provider<AuthRepository>((ref) =>
+    AuthRepositoryImpl(ref.watch(authServiceProvider)));
 
 final authControllerProvider = StateNotifierProvider<AuthController, AuthState>(
   (ref) => AuthController(
@@ -135,9 +133,14 @@ class AuthController extends StateNotifier<AuthState> {
     try {
       await _otpService.verifyOtp(phone, code);
       await _storage.setOtpVerified(true);
-      state = AuthState.authenticated(user.copyWith(isPhoneVerified: true));
+      final updated = user.copyWith(isPhoneVerified: true);
+      await _repository.updateCurrentUser(updated);
+      state = AuthState.authenticated(updated);
       return true;
     } on OtpFailure catch (f) {
+      state = state.copyWith(errorMessage: f.message, successMessage: null);
+      return false;
+    } on Failure catch (f) {
       state = state.copyWith(errorMessage: f.message, successMessage: null);
       return false;
     } catch (e) {
@@ -159,16 +162,15 @@ class AuthController extends StateNotifier<AuthState> {
     try {
       await _otpService.verifyOtp(newPhone.trim(), code);
       final current = state.user;
-      if (current != null) {
-        final updated = current.copyWith(
-          phone: newPhone.trim(),
-          isPhoneVerified: true,
-          clearPhoneOtp: true,
-          updatedAt: DateTime.now(),
-        );
-        await _repository.updateCurrentUser(updated);
-        state = AuthState.authenticated(updated);
-      }
+      if (current == null) return false;
+      final updated = current.copyWith(
+        phone: newPhone.trim(),
+        isPhoneVerified: true,
+        clearPhoneOtp: true,
+        updatedAt: DateTime.now(),
+      );
+      await _repository.updateCurrentUser(updated);
+      state = AuthState.authenticated(updated);
       return true;
     } on OtpFailure catch (f) {
       state = state.copyWith(errorMessage: f.message, successMessage: null);
@@ -231,5 +233,6 @@ class AuthController extends StateNotifier<AuthState> {
     state = AuthState.unauthenticated();
   }
 
-  void clearMessages() => state = state.copyWith(errorMessage: null, successMessage: null);
+  void clearMessages() =>
+      state = state.copyWith(errorMessage: null, successMessage: null);
 }
