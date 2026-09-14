@@ -3,6 +3,20 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/storage/local_storage_service.dart';
 
+class PermissionResult {
+  final PermissionStatus camera;
+  final PermissionStatus gallery;
+
+  const PermissionResult({required this.camera, required this.gallery});
+
+  bool get allGranted =>
+      (camera.isGranted || camera.isLimited) &&
+      (gallery.isGranted || gallery.isLimited);
+
+  bool get anyPermanentlyDenied =>
+      camera.isPermanentlyDenied || gallery.isPermanentlyDenied;
+}
+
 class PermissionService {
   final LocalStorageService _storage;
 
@@ -16,23 +30,27 @@ class PermissionService {
 
   Future<PermissionStatus> checkGalleryStatus() => Permission.photos.status;
 
-  Future<Map<Permission, PermissionStatus>> requestGalleryAndCamera() async {
-    final statuses = await [
+  Future<PermissionResult> requestGalleryAndCamera() async {
+    final statuses = await <Permission>[
       Permission.photos,
       Permission.camera,
     ].request();
-    return statuses;
+    return PermissionResult(
+      camera: statuses[Permission.camera] ?? PermissionStatus.denied,
+      gallery: statuses[Permission.photos] ?? PermissionStatus.denied,
+    );
   }
 
   Future<PermissionStatus> requestCameraOnly() => Permission.camera.request();
-
   Future<PermissionStatus> requestGalleryOnly() => Permission.photos.request();
 
-  Future<bool> openAppSettings() => openAppSettings();
+  Future<bool> openSettings() => openAppSettings();
 
-  bool isGranted(PermissionStatus status) => status.isGranted || status.isLimited;
+  bool isGranted(PermissionStatus status) =>
+      status.isGranted || status.isLimited;
 
-  bool isPermanentlyDenied(PermissionStatus status) => status.isPermanentlyDenied;
+  bool isPermanentlyDenied(PermissionStatus status) =>
+      status.isPermanentlyDenied;
 }
 
 final permissionServiceProvider = Provider<PermissionService>((ref) {
