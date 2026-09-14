@@ -91,8 +91,8 @@ class AuthController extends StateNotifier<AuthState> {
     state = AuthState.loading();
     try {
       final user = await _repository.signInWithGoogle();
-      await _storage.setOtpVerified(false);
       if (user.phone.isNotEmpty) {
+        await _storage.setOtpVerified(false);
         await _otpService.generateOtp(user.phone);
         state = AuthState.otpVerificationPending(user: user, phone: user.phone, forPurpose: 'login');
       } else {
