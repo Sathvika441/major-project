@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -139,7 +139,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Onboarding — Phase A')),
+      appBar: AppBar(title: const Text('Onboarding â€” Phase A')),
       body: SafeArea(
         child: _loadingMaster
             ? const Center(child: CircularProgressIndicator())
@@ -150,7 +150,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   children: [
                     Text('Farmer details', style: Theme.of(context).textTheme.headlineSmall),
                     const SizedBox(height: 6),
-                    const Text('Step 1 of 2 • Core farmer and location details'),
+                    const Text('Step 1 of 2 â€¢ Core farmer and location details'),
                     const SizedBox(height: 20),
                     if (_loadError != null) ...[
                       Card(
@@ -178,14 +178,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     Text('Location', style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
-                      value: _state,
+                      initialValue: _state,
                       decoration: const InputDecoration(labelText: 'State', prefixIcon: Icon(Icons.map_outlined)),
                       items: const [DropdownMenuItem(value: 'Karnataka', child: Text('Karnataka'))],
                       onChanged: null,
                     ),
                     const SizedBox(height: 14),
                     DropdownButtonFormField<String>(
-                      value: _district.isEmpty ? null : _district,
+                      initialValue: _district.isEmpty ? null : _district,
                       decoration: const InputDecoration(labelText: 'District', prefixIcon: Icon(Icons.location_city_outlined)),
                       items: _districts.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
                       onChanged: (value) {
@@ -202,7 +202,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     ),
                     const SizedBox(height: 14),
                     DropdownButtonFormField<String>(
-                      value: _taluk.isEmpty ? null : _taluk,
+                      initialValue: _taluk.isEmpty ? null : _taluk,
                       decoration: const InputDecoration(labelText: 'Taluk', prefixIcon: Icon(Icons.place_outlined)),
                       items: _taluks.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
                       onChanged: (value) {
@@ -274,3 +274,4 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 }
+

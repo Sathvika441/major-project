@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -171,7 +171,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Farm Details — Phase B')),
+      appBar: AppBar(title: const Text('Farm Details â€” Phase B')),
       body: SafeArea(
         child: Form(
           key: _formKey,
@@ -180,7 +180,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
             children: [
               Text('Farm details', style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 6),
-              const Text('Step 2 of 2 • Farm-specific details'),
+              const Text('Step 2 of 2 â€¢ Farm-specific details'),
               const SizedBox(height: 20),
               TextFormField(
                 controller: _survey,
@@ -194,7 +194,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _cultivation,
+                initialValue: _cultivation,
                 decoration: const InputDecoration(
                   labelText: 'Arecanut cultivation type',
                   prefixIcon: Icon(Icons.spa_outlined),
@@ -207,7 +207,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _soil,
+                initialValue: _soil,
                 decoration: const InputDecoration(
                   labelText: 'Soil type',
                   prefixIcon: Icon(Icons.grass_outlined),
@@ -233,3 +233,4 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
     );
   }
 }
+

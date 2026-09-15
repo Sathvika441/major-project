@@ -57,7 +57,6 @@ class DefaultFirebaseOptions {
     projectId: 'major-project-efb40',
     storageBucket: 'major-project-efb40.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyDlxiwM5bChcXMyMZq1cjccw2F7cC0aYJk',
     appId: '1:72972800038:ios:9b3fd0e9238bdca3cf56e7',

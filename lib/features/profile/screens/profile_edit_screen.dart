@@ -35,6 +35,7 @@ class ProfileEditScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
+  String _state = KarnatakaLocations.state;
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _name;
   late final TextEditingController _phone;
@@ -43,8 +44,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   late final TextEditingController _farmName;
   late final TextEditingController _farmSize;
   late final TextEditingController _otp;
-
-  String _state = KarnatakaLocations.state;
   String _district = '';
   String _taluk = '';
   String _villageCode = '';
@@ -284,15 +283,15 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             const SizedBox(height: 18),
             Text('Location', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            DropdownButtonFormField<String>(value: KarnatakaLocations.state, decoration: const InputDecoration(labelText: 'State', prefixIcon: Icon(Icons.map)), items: const [DropdownMenuItem(value: 'Karnataka', child: Text('Karnataka'))], onChanged: null),
+            DropdownButtonFormField<String>(initialValue: KarnatakaLocations.state, decoration: const InputDecoration(labelText: 'State', prefixIcon: Icon(Icons.map)), items: const [DropdownMenuItem(value: 'Karnataka', child: Text('Karnataka'))], onChanged: null),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(value: _district.isEmpty ? null : _district, decoration: const InputDecoration(labelText: 'District', prefixIcon: Icon(Icons.location_city)), items: _districts.map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(), onChanged: (value) {
+            DropdownButtonFormField<String>(initialValue: _district.isEmpty ? null : _district, decoration: const InputDecoration(labelText: 'District', prefixIcon: Icon(Icons.location_city)), items: _districts.map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(), onChanged: (value) {
               if (value == null) return;
               final taluks = ref.read(locationMasterServiceProvider).taluksFor(value);
               setState(() { _district = value; _taluk = taluks.isNotEmpty ? taluks.first : ''; _village.clear(); _villageCode = ''; });
             }),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(value: _taluk.isEmpty ? null : _taluk, decoration: const InputDecoration(labelText: 'Taluk', prefixIcon: Icon(Icons.place)), items: _taluks.map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(), onChanged: (value) {
+            DropdownButtonFormField<String>(initialValue: _taluk.isEmpty ? null : _taluk, decoration: const InputDecoration(labelText: 'Taluk', prefixIcon: Icon(Icons.place)), items: _taluks.map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(), onChanged: (value) {
               if (value == null) return;
               setState(() { _taluk = value; _village.clear(); _villageCode = ''; });
             }),
@@ -319,17 +318,17 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             const SizedBox(height: 12),
             TextFormField(controller: _survey, decoration: const InputDecoration(labelText: 'Land survey number'), validator: AuthValidators.validateSurveyNumber),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(value: _cultivation, decoration: const InputDecoration(labelText: 'Arecanut cultivation type'), items: _cultivationTypes.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (value) => setState(() => _cultivation = value), validator: (value) => value == null ? 'Required' : null),
+            DropdownButtonFormField<String>(initialValue: _cultivation, decoration: const InputDecoration(labelText: 'Arecanut cultivation type'), items: _cultivationTypes.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (value) => setState(() => _cultivation = value), validator: (value) => value == null ? 'Required' : null),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(value: _soil, decoration: const InputDecoration(labelText: 'Soil type'), items: _soilTypes.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (value) => setState(() => _soil = value), validator: (value) => value == null ? 'Required' : null),
+            DropdownButtonFormField<String>(initialValue: _soil, decoration: const InputDecoration(labelText: 'Soil type'), items: _soilTypes.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (value) => setState(() => _soil = value), validator: (value) => value == null ? 'Required' : null),
             const SizedBox(height: 12),
             TextFormField(controller: _farmName, decoration: const InputDecoration(labelText: 'Farm name')),
             const SizedBox(height: 12),
             TextFormField(controller: _farmSize, decoration: const InputDecoration(labelText: 'Farm size (acres)'), keyboardType: const TextInputType.numberWithOptions(decimal: true), validator: (v) => double.tryParse(v ?? '') == null ? 'Enter valid size' : null),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(value: _waterSource, decoration: const InputDecoration(labelText: 'Water source'), items: const ['Borewell', 'Open well', 'Canal', 'Rainwater', 'Other'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (value) => setState(() => _waterSource = value!)),
+            DropdownButtonFormField<String>(initialValue: _waterSource, decoration: const InputDecoration(labelText: 'Water source'), items: const ['Borewell', 'Open well', 'Canal', 'Rainwater', 'Other'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (value) => setState(() => _waterSource = value!)),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(value: _irrigationMethod, decoration: const InputDecoration(labelText: 'Irrigation method'), items: const ['Drip', 'Sprinkler', 'Flood', 'Other'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (value) => setState(() => _irrigationMethod = value!)),
+            DropdownButtonFormField<String>(initialValue: _irrigationMethod, decoration: const InputDecoration(labelText: 'Irrigation method'), items: const ['Drip', 'Sprinkler', 'Flood', 'Other'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (value) => setState(() => _irrigationMethod = value!)),
             ListTile(leading: const Icon(Icons.calendar_month), title: Text('Planting date: ${_plantingDate.day}/${_plantingDate.month}/${_plantingDate.year}'), onTap: () async {
               final selected = await showDatePicker(context: context, firstDate: DateTime(1980), lastDate: DateTime.now(), initialDate: _plantingDate);
               if (selected != null) setState(() => _plantingDate = selected);
@@ -343,3 +342,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     );
   }
 }
+
+
+

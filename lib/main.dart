@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,13 +7,28 @@ import 'app/theme/app_theme.dart';
 import 'core/services/location_master_service.dart';
 import 'core/storage/local_storage_service.dart';
 import 'core/utils/app_logger.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  AppLogger.info('Initializing ArecaSmart application...', tag: 'Main');
+
+  AppLogger.info(
+    'Initializing ArecaSmart application...',
+    tag: 'Main',
+  );
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  AppLogger.info(
+    'Firebase initialized successfully',
+    tag: 'Main',
+  );
 
   final localStorageService = await LocalStorageService.init();
   final locationMasterService = LocationMasterService();
+
   await locationMasterService.load();
 
   runApp(
@@ -32,6 +48,7 @@ class ArecaSmartApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+
     return MaterialApp.router(
       title: 'ArecaSmart',
       debugShowCheckedModeBanner: false,
