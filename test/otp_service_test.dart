@@ -1,4 +1,4 @@
-﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:major_proj_1/core/errors/failures.dart';
 import 'package:major_proj_1/core/storage/local_storage_service.dart';
 import 'package:major_proj_1/services/otp/otp_service.dart';
