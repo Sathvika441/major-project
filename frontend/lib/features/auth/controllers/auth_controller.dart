@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/errors/failures.dart';
 import '../../../core/storage/local_storage_service.dart';
 import '../../../models/farm/farm_profile_model.dart';
+import '../../../models/user/user_model.dart';
 import '../../../repositories/auth/auth_repository.dart';
 import '../../../services/auth/auth_service.dart';
 import '../../../services/otp/otp_service.dart';
