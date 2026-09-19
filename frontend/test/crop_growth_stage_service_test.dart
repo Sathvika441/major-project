@@ -19,28 +19,28 @@ void main() {
   test('maps project-approved age bands deterministically', () {
     expect(
       service.calculate(
-        plantingDate: DateTime(2025, 9, 19),
+        plantingDate: DateTime(2025, 9, 18),
         asOf: asOf,
       ).stage,
       CropGrowthStage.youngPalm,
     );
     expect(
       service.calculate(
-        plantingDate: DateTime(2023, 9, 19),
+        plantingDate: DateTime(2023, 9, 18),
         asOf: asOf,
       ).stage,
       CropGrowthStage.juvenilePreBearing,
     );
     expect(
       service.calculate(
-        plantingDate: DateTime(2020, 9, 19),
+        plantingDate: DateTime(2020, 9, 18),
         asOf: asOf,
       ).stage,
       CropGrowthStage.bearing,
     );
     expect(
       service.calculate(
-        plantingDate: DateTime(2014, 9, 19),
+        plantingDate: DateTime(2014, 9, 18),
         asOf: asOf,
       ).stage,
       CropGrowthStage.matureBearing,
