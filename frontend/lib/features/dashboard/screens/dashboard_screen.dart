@@ -449,14 +449,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 const SizedBox(width: 8),
                                 Column(
                                   children: [
-                                    FilledButton(
-                                      onPressed: _generateDemoReading,
-                                      child: const Text('Generate'),
+                                    SizedBox(
+                                      width: 92,
+                                      child: FilledButton(
+                                        onPressed: _generateDemoReading,
+                                        child: const Text('Generate'),
+                                      ),
                                     ),
                                     const SizedBox(height: 6),
-                                    OutlinedButton(
-                                      onPressed: () => _testDemoBackend(context, ref),
-                                      child: const Text('Test ML'),
+                                    SizedBox(
+                                      width: 92,
+                                      child: OutlinedButton(
+                                        onPressed: () =>
+                                            _testDemoBackend(context, ref),
+                                        child: const Text('Test ML'),
+                                      ),
                                     ),
                                   ],
                                 ),
