@@ -7,6 +7,7 @@ import '../../../core/services/location_master_service.dart';
 import '../../../core/storage/local_storage_service.dart';
 import '../../../core/validators/auth_validators.dart';
 import '../../../models/farm/farm_profile_model.dart';
+import '../../../repositories/profile/profile_repository.dart';
 import '../../auth/controllers/auth_controller.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -119,8 +120,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         crop: 'Arecanut',
         plantingDate: DateTime.now(),
       );
-      final storage = ref.read(localStorageServiceProvider);
-      await storage.raw.setString('phase25_profile_${user.uid}', profile.toJson());
+      await ref.read(profileRepositoryProvider).save(profile);
       await storage.setCompletedPhaseA(true);
       await storage.setCompletedPhaseB(false);
       await storage.setOnboardingCompleted(false);
