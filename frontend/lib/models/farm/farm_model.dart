@@ -15,6 +15,10 @@ class FarmModel {
   final String arecanutCultivationType;
   final String soilType;
   final String villageCode;
+  final String state;
+  final String district;
+  final String taluk;
+  final String village;
   final String crop;
   final DateTime? plantingDate;
 
@@ -33,6 +37,10 @@ class FarmModel {
     this.arecanutCultivationType = '',
     this.soilType = '',
     this.villageCode = '',
+    this.state = 'Karnataka',
+    this.district = '',
+    this.taluk = '',
+    this.village = '',
     this.crop = 'Arecanut',
     this.plantingDate,
   });
@@ -49,6 +57,10 @@ class FarmModel {
     String? arecanutCultivationType,
     String? soilType,
     String? villageCode,
+    String? state,
+    String? district,
+    String? taluk,
+    String? village,
     String? crop,
     DateTime? plantingDate,
   }) => FarmModel(
@@ -67,6 +79,10 @@ class FarmModel {
             arecanutCultivationType ?? this.arecanutCultivationType,
         soilType: soilType ?? this.soilType,
         villageCode: villageCode ?? this.villageCode,
+        state: state ?? this.state,
+        district: district ?? this.district,
+        taluk: taluk ?? this.taluk,
+        village: village ?? this.village,
         crop: crop ?? this.crop,
         plantingDate: plantingDate ?? this.plantingDate,
       );
@@ -86,6 +102,10 @@ class FarmModel {
         'arecanutCultivationType': arecanutCultivationType,
         'soilType': soilType,
         'villageCode': villageCode,
+        'state': state,
+        'district': district,
+        'taluk': taluk,
+        'village': village,
         'crop': crop,
         'plantingDate': plantingDate?.toIso8601String(),
       };
@@ -105,6 +125,10 @@ class FarmModel {
         arecanutCultivationType: map['arecanutCultivationType'] as String? ?? '',
         soilType: map['soilType'] as String? ?? '',
         villageCode: map['villageCode'] as String? ?? '',
+        state: map['state'] as String? ?? 'Karnataka',
+        district: map['district'] as String? ?? '',
+        taluk: map['taluk'] as String? ?? '',
+        village: map['village'] as String? ?? '',
         crop: map['crop'] as String? ?? 'Arecanut',
         plantingDate: _readDateTime(map['plantingDate']),
       );
