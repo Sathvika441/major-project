@@ -24,8 +24,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _emailController.text = 'farmer@areca.org';
-    _passwordController.text = 'Password123';
+    // Keep the form empty so the example text is clearly a friendly placeholder.
   }
 
   @override
@@ -104,7 +103,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        AppTextField(controller: _emailController, label: 'Email Address', hint: 'farmer@areca.org', keyboardType: TextInputType.emailAddress, prefixIcon: Icons.email_outlined, validator: AuthValidators.validateEmail),
+                        AppTextField(controller: _emailController, label: 'Email Address', hint: 'ramesh@gmail.com', keyboardType: TextInputType.emailAddress, prefixIcon: Icons.email_outlined, validator: AuthValidators.validateEmail),
                         const SizedBox(height: 20),
                         AppTextField(controller: _passwordController, label: 'Password', isPassword: true, prefixIcon: Icons.lock_outline_rounded, validator: AuthValidators.validatePassword),
                         const SizedBox(height: 12),
