@@ -79,6 +79,20 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (authState.status != AuthStatus.authenticated) return null;
 
+      // Normal login is an existing-user flow. Never restart onboarding
+      // just because local phase flags are incomplete or stale.
+      if (!storage.isOnboardingRequired()) {
+        if (isAuthRoute ||
+            isSplash ||
+            location == '/otp-verification' ||
+            location == '/permission-setup' ||
+            location == '/onboarding' ||
+            location == '/farm-details') {
+          return '/dashboard';
+        }
+        return null;
+      }
+
       // Task 12: old users that already finished the original onboarding are
       // migrated in AuthController before authenticated state is published.
       final permissionsDone = storage.hasRequestedPermissions();
