@@ -181,10 +181,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (farmsSnapshot.hasError) {
-                  return _empty(
+                  return _syncError(
                     context,
-                    'Could not load farms',
-                    'Please try again.',
+                    'Could not synchronize farms',
+                    'The dashboard could not reach farm data. Check your connection and try again.',
+                    () => setState(() {}),
                   );
                 }
 
