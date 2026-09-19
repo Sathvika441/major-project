@@ -15,6 +15,8 @@ class FarmModel {
   final String arecanutCultivationType;
   final String soilType;
   final String villageCode;
+  final String crop;
+  final DateTime? plantingDate;
 
   const FarmModel({
     required this.id,
@@ -31,6 +33,8 @@ class FarmModel {
     this.arecanutCultivationType = '',
     this.soilType = '',
     this.villageCode = '',
+    this.crop = 'Arecanut',
+    this.plantingDate,
   });
 
   FarmModel copyWith({
@@ -45,6 +49,8 @@ class FarmModel {
     String? arecanutCultivationType,
     String? soilType,
     String? villageCode,
+    String? crop,
+    DateTime? plantingDate,
   }) => FarmModel(
         id: id,
         userId: userId,
@@ -61,6 +67,8 @@ class FarmModel {
             arecanutCultivationType ?? this.arecanutCultivationType,
         soilType: soilType ?? this.soilType,
         villageCode: villageCode ?? this.villageCode,
+        crop: crop ?? this.crop,
+        plantingDate: plantingDate ?? this.plantingDate,
       );
 
   Map<String, dynamic> toMap() => {
@@ -78,6 +86,8 @@ class FarmModel {
         'arecanutCultivationType': arecanutCultivationType,
         'soilType': soilType,
         'villageCode': villageCode,
+        'crop': crop,
+        'plantingDate': plantingDate?.toIso8601String(),
       };
 
   factory FarmModel.fromMap(Map<String, dynamic> map) => FarmModel(
@@ -95,6 +105,8 @@ class FarmModel {
         arecanutCultivationType: map['arecanutCultivationType'] as String? ?? '',
         soilType: map['soilType'] as String? ?? '',
         villageCode: map['villageCode'] as String? ?? '',
+        crop: map['crop'] as String? ?? 'Arecanut',
+        plantingDate: _readDateTime(map['plantingDate']),
       );
 
   static DateTime? _readDateTime(dynamic value) {
