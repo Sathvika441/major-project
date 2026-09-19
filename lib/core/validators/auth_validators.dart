@@ -4,8 +4,8 @@ class AuthValidators {
   );
 
   static final RegExp _phoneRegExp = RegExp(r'^\+?[0-9]{7,15}$');
+  static final RegExp _surveyNumberRegExp = RegExp(r'^[0-9]+(?:/[0-9]+)*[A-Za-z]?$');
 
-  /// Validates email address format
   static String? validateEmail(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'Email address is required.';
@@ -17,7 +17,6 @@ class AuthValidators {
     return null;
   }
 
-  /// Validates password strength (minimum 8 characters, at least one letter and one number)
   static String? validatePassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Password is required.';
@@ -32,7 +31,6 @@ class AuthValidators {
     return null;
   }
 
-  /// Validates matching confirm password
   static String? validateConfirmPassword(String? value, String password) {
     if (value == null || value.isEmpty) {
       return 'Please confirm your password.';
@@ -43,7 +41,6 @@ class AuthValidators {
     return null;
   }
 
-  /// Validates user full name
   static String? validateName(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'Full name is required.';
@@ -54,7 +51,6 @@ class AuthValidators {
     return null;
   }
 
-  /// Validates phone number
   static String? validatePhone(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'Phone number is required.';
@@ -66,7 +62,20 @@ class AuthValidators {
     return null;
   }
 
-  /// Validates Terms and Conditions acceptance
+  static String? validateSurveyNumber(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Land survey number is required.';
+    }
+    final trimmed = value.trim();
+    if (trimmed.length > 8) {
+      return 'Survey number is too long.';
+    }
+    if (!_surveyNumberRegExp.hasMatch(trimmed)) {
+      return 'Enter a valid Karnataka survey number (e.g. 12/3A).';
+    }
+    return null;
+  }
+
   static String? validateTerms(bool? value) {
     if (value != true) {
       return 'You must accept the Terms and Conditions to register.';

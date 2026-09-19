@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../utils/app_logger.dart';
+import '../utils/app_logger.dart';
 import '../constants/karnataka_locations.dart';
 
 class VillageEntry {
@@ -48,9 +48,7 @@ class LocationMasterService {
     final villages = villagesFor(taluk);
     final lower = villageName.trim().toLowerCase();
     for (final v in villages) {
-      if (v.name.trim().toLowerCase() == lower) {
-        return v.code;
-      }
+      if (v.name.trim().toLowerCase() == lower) return v.code;
     }
     return '';
   }
@@ -58,9 +56,7 @@ class LocationMasterService {
   String findVillageNameByCode(String taluk, String code) {
     final villages = villagesFor(taluk);
     for (final v in villages) {
-      if (v.code == code) {
-        return v.name;
-      }
+      if (v.code == code) return v.name;
     }
     return '';
   }
@@ -73,10 +69,9 @@ class LocationMasterService {
     return input
         .split(RegExp(r'\s+'))
         .where((s) => s.isNotEmpty)
-        .map((word) {
-          if (word.length <= 2) return word.toUpperCase();
-          return word[0].toUpperCase() + word.substring(1).toLowerCase();
-        })
+        .map((word) => word.length <= 2
+            ? word.toUpperCase()
+            : word[0].toUpperCase() + word.substring(1).toLowerCase())
         .join(' ');
   }
 
@@ -90,8 +85,7 @@ class LocationMasterService {
       final seenDistrictKeys = <String>{};
       for (final d in districtsRaw) {
         final dMap = d as Map<String, dynamic>;
-        final rawName = (dMap['district_name'] as String?) ?? '';
-        final districtName = _toTitleCase(rawName);
+        final districtName = _toTitleCase((dMap['district_name'] as String?) ?? '');
         if (districtName.isEmpty) continue;
         final dKey = _normalizeKey(districtName);
         if (!seenDistrictKeys.contains(dKey)) {
@@ -104,8 +98,7 @@ class LocationMasterService {
         final seenTalukKeys = <String>{};
         for (final t in taluksRaw) {
           final tMap = t as Map<String, dynamic>;
-          final rawTName = (tMap['taluk_name'] as String?) ?? '';
-          final talukName = _toTitleCase(rawTName);
+          final talukName = _toTitleCase((tMap['taluk_name'] as String?) ?? '');
           if (talukName.isEmpty) continue;
           final tKey = _normalizeKey(talukName);
           if (!seenTalukKeys.contains(tKey)) {
@@ -123,11 +116,11 @@ class LocationMasterService {
               final vMap = v as Map<String, dynamic>;
               final vName = (vMap['village_name'] as String?) ?? '';
               final vCode = (vMap['village_code'] as String?) ?? '';
-              if (vName.isEmpty || vCode.isEmpty) continue;
-              if (seenCodes.contains(vCode)) continue;
+              if (vName.isEmpty || vCode.isEmpty || seenCodes.contains(vCode)) continue;
               seenCodes.add(vCode);
-              _villagesByTaluk[tKey]!
-                  .add(VillageEntry(name: vName.trim(), code: vCode));
+              _villagesByTaluk[tKey]!.add(
+                VillageEntry(name: vName.trim(), code: vCode),
+              );
             }
           }
         }

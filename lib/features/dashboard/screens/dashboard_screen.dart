@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../models/device/device_model.dart';
@@ -134,7 +134,7 @@ class DashboardScreen extends ConsumerWidget {
                             children: [
                               Expanded(
                                 child: Text(
-                                  '${farm.name} • ${farm.location}',
+                                  '${farm.name} â€¢ ${farm.location}',
                                   style:
                                       Theme.of(context).textTheme.bodyLarge,
                                 ),
@@ -168,7 +168,7 @@ class DashboardScreen extends ConsumerWidget {
                                   ),
                                   const SizedBox(height: 10),
                                   Text(
-                                    '${farm.sizeAcres} acres • ${farm.irrigationMethod} irrigation',
+                                    '${farm.sizeAcres} acres â€¢ ${farm.irrigationMethod} irrigation',
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
@@ -227,7 +227,7 @@ class DashboardScreen extends ConsumerWidget {
                                 icon: Icons.water_drop,
                                 label: 'Soil moisture',
                                 value: agg.soilMoisture == null
-                                    ? '—'
+                                    ? 'â€”'
                                     : '${agg.soilMoisture!.toStringAsFixed(1)} %',
                                 warn: agg.soilMoisture != null &&
                                     (agg.soilMoisture! < 20 ||
@@ -237,8 +237,8 @@ class DashboardScreen extends ConsumerWidget {
                                 icon: Icons.thermostat,
                                 label: 'Temperature',
                                 value: agg.temperature == null
-                                    ? '—'
-                                    : '${agg.temperature!.toStringAsFixed(1)} °C',
+                                    ? 'â€”'
+                                    : '${agg.temperature!.toStringAsFixed(1)} Â°C',
                                 warn: agg.temperature != null &&
                                     (agg.temperature! < 10 ||
                                         agg.temperature! > 42),
@@ -247,14 +247,14 @@ class DashboardScreen extends ConsumerWidget {
                                 icon: Icons.cloud,
                                 label: 'Humidity',
                                 value: agg.humidity == null
-                                    ? '—'
+                                    ? 'â€”'
                                     : '${agg.humidity!.toStringAsFixed(1)} %',
                               ),
                               _MetricCard(
                                 icon: Icons.water,
                                 label: 'Rainfall',
                                 value: agg.rainfall == null
-                                    ? '—'
+                                    ? 'â€”'
                                     : '${agg.rainfall!.toStringAsFixed(1)} mm',
                                 warn: agg.rainfall != null &&
                                     agg.rainfall! > 150,
@@ -285,7 +285,7 @@ class DashboardScreen extends ConsumerWidget {
                                 farmDevices.isEmpty
                                     ? 'No sensors assigned to this farm yet.'
                                     : agg.hasReading
-                                        ? 'Decision engine ready — sensor data available.'
+                                        ? 'Decision engine ready â€” sensor data available.'
                                         : 'Sensors online, awaiting first reading.',
                               ),
                               trailing: const Icon(Icons.chevron_right),
@@ -376,9 +376,9 @@ class DashboardScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.4)),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
       child: Text(
         text,
@@ -435,7 +435,7 @@ class DashboardScreen extends ConsumerWidget {
             severity: _AlertSeverity.critical,
             title: 'Low soil moisture on ${d.name}',
             message:
-                '${r.soilMoisture!.toStringAsFixed(1)}% — irrigation recommended.',
+                '${r.soilMoisture!.toStringAsFixed(1)}% â€” irrigation recommended.',
           ));
         }
         if (r.soilMoisture != null && r.soilMoisture! > 90) {
@@ -443,13 +443,13 @@ class DashboardScreen extends ConsumerWidget {
             severity: _AlertSeverity.warning,
             title: 'High soil moisture on ${d.name}',
             message:
-                '${r.soilMoisture!.toStringAsFixed(1)}% — risk of waterlogging.',
+                '${r.soilMoisture!.toStringAsFixed(1)}% â€” risk of waterlogging.',
           ));
         }
         if (r.temperature != null && r.temperature! > 40) {
           alerts.add(_FarmAlert(
             severity: _AlertSeverity.warning,
-            title: 'High temperature (${r.temperature!.toStringAsFixed(1)}°C)',
+            title: 'High temperature (${r.temperature!.toStringAsFixed(1)}Â°C)',
             message: 'Monitor crop stress on ${d.name}.',
           ));
         }
@@ -502,11 +502,11 @@ class DashboardScreen extends ConsumerWidget {
                   Chip(
                     label: Text('${alerts.length}'),
                     backgroundColor: alerts.isEmpty
-                        ? Colors.grey.withOpacity(0.2)
+                        ? Colors.grey.withValues(alpha: 0.2)
                         : (alerts.any((a) =>
                                 a.severity == _AlertSeverity.critical)
-                            ? Colors.red.withOpacity(0.2)
-                            : Colors.orange.withOpacity(0.2)),
+                            ? Colors.red.withValues(alpha: 0.2)
+                            : Colors.orange.withValues(alpha: 0.2)),
                   ),
                 ],
               ),
@@ -674,3 +674,4 @@ class _MetricCard extends StatelessWidget {
     );
   }
 }
+

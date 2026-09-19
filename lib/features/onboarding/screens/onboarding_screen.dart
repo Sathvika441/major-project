@@ -1,12 +1,13 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/constants/karnataka_locations.dart';
+import '../../../core/services/location_master_service.dart';
 import '../../../core/storage/local_storage_service.dart';
-import '../../auth/controllers/auth_controller.dart';
+import '../../../core/validators/auth_validators.dart';
 import '../../../models/farm/farm_profile_model.dart';
-import '../../../models/farm/farm_model.dart';
-import '../../../repositories/farm/farm_repository.dart';
+import '../../auth/controllers/auth_controller.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -16,28 +17,24 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _name = TextEditingController();
-  final _phone = TextEditingController();
-  final _village = TextEditingController();
-  final _farmName = TextEditingController();
-  final _size = TextEditingController();
-  DateTime? _plantingDate;
-  String _state = KarnatakaLocations.state;
-  late String _district;
-  late String _taluk;
-  String _language = 'English';
-  String _waterSource = 'Borewell';
-  String _irrigationMethod = 'Drip';
-  bool _notifications = true;
+  late final TextEditingController _name;
+  late final TextEditingController _phone;
+  late final TextEditingController _village;
+  final _state = KarnatakaLocations.state;
+  String _district = '';
+  String _taluk = '';
+  String _villageCode = '';
+  bool _loadingMaster = true;
   bool _saving = false;
+  String? _loadError;
 
   @override
   void initState() {
     super.initState();
-    final districts = KarnatakaLocations.districtsFor(_state);
-    _district = districts.isNotEmpty ? districts.first : '';
-    final taluks = KarnatakaLocations.taluksFor(_district);
-    _taluk = taluks.isNotEmpty ? taluks.first : 'General';
+    _name = TextEditingController();
+    _phone = TextEditingController();
+    _village = TextEditingController();
+    _loadMaster();
   }
 
   @override
@@ -45,216 +42,236 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     _name.dispose();
     _phone.dispose();
     _village.dispose();
-    _farmName.dispose();
-    _size.dispose();
     super.dispose();
   }
 
-  Future<void> _complete() async {
-    if (!_formKey.currentState!.validate() || _plantingDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Please complete all required fields.')));
+  Future<void> _loadMaster() async {
+    final service = ref.read(locationMasterServiceProvider);
+    try {
+      await service.load();
+      if (!mounted) return;
+      final districts = service.districts.isNotEmpty
+          ? service.districts
+          : KarnatakaLocations.districts;
+      final district = districts.isNotEmpty ? districts.first : '';
+      final taluks = service.taluksFor(district);
+      setState(() {
+        _loadingMaster = false;
+        _loadError = null;
+        _district = district;
+        _taluk = taluks.isNotEmpty ? taluks.first : '';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loadingMaster = false;
+        _loadError = 'Could not load location master. Please try again.';
+      });
+    }
+  }
+
+  LocationMasterService get _locations => ref.read(locationMasterServiceProvider);
+
+  List<String> get _districts => _locations.districts.isNotEmpty
+      ? _locations.districts
+      : KarnatakaLocations.districts;
+
+  List<String> get _taluks => _locations.taluksFor(_district).isNotEmpty
+      ? _locations.taluksFor(_district)
+      : KarnatakaLocations.taluksFor(_district);
+
+  List<VillageEntry> get _villages => _locations.villagesFor(_taluk);
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_villageCode.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a village from the list.')),
+      );
       return;
     }
     final user = ref.read(authControllerProvider).user;
     if (user == null) return;
+
     setState(() => _saving = true);
-    final location = KarnatakaLocations.formatLocation(
-      state: _state,
-      district: _district,
-      taluk: _taluk,
-      village: _village.text.trim(),
-    );
-    final profile = FarmProfileModel(
-      userId: user.uid,
-      name: _name.text.trim(),
-      phone: _phone.text.trim(),
-      location: location,
-      state: _state,
-      district: _district,
-      taluk: _taluk,
-      village: _village.text.trim(),
-      language: _language,
-      notificationsEnabled: _notifications,
-      farmName: _farmName.text.trim(),
-      farmSizeAcres: double.parse(_size.text),
-      waterSource: _waterSource,
-      irrigationMethod: _irrigationMethod,
-      crop: 'Arecanut',
-      plantingDate: _plantingDate!,
-    );
-    await ref.read(farmRepositoryProvider).saveFarm(FarmModel(
-          id: 'farm_${DateTime.now().microsecondsSinceEpoch}',
-          userId: user.uid,
-          name: profile.farmName,
-          location: profile.location,
-          sizeAcres: profile.farmSizeAcres,
-          waterSource: profile.waterSource,
-          irrigationMethod: profile.irrigationMethod,
-          createdAt: DateTime.now(),
-        ));
-    await ref
-        .read(localStorageServiceProvider)
-        .raw
-        .setString('phase25_profile_${user.uid}', profile.toJson());
-    await ref.read(localStorageServiceProvider).setOnboardingCompleted(true);
-    if (mounted) context.go('/dashboard');
+    try {
+      final profile = FarmProfileModel(
+        userId: user.uid,
+        name: _name.text.trim(),
+        phone: _phone.text.trim(),
+        location: KarnatakaLocations.formatLocation(
+          state: _state,
+          district: _district,
+          taluk: _taluk,
+          village: _village.text.trim(),
+        ),
+        state: _state,
+        district: _district,
+        taluk: _taluk,
+        village: _village.text.trim(),
+        villageCode: _villageCode,
+        language: 'English',
+        notificationsEnabled: true,
+        farmName: '',
+        farmSizeAcres: 0,
+        waterSource: 'Borewell',
+        irrigationMethod: 'Drip',
+        crop: 'Arecanut',
+        plantingDate: DateTime.now(),
+      );
+      final storage = ref.read(localStorageServiceProvider);
+      await storage.raw.setString('phase25_profile_${user.uid}', profile.toJson());
+      await storage.setCompletedPhaseA(true);
+      await storage.setCompletedPhaseB(false);
+      await storage.setOnboardingCompleted(false);
+      if (mounted) context.go('/farm-details');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Unable to save onboarding: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Set up your farm')),
+      appBar: AppBar(title: const Text('Onboarding â€” Phase A')),
       body: SafeArea(
-          child: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            Text('Farmer profile',
-                style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 12),
-            _field(_name, 'Full name'),
-            _field(_phone, 'Phone number', keyboard: TextInputType.phone),
-            const SizedBox(height: 6),
-            Text('Location', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              value: _state,
-              decoration: const InputDecoration(
-                labelText: 'State',
-                prefixIcon: Icon(Icons.map, size: 20),
+        child: _loadingMaster
+            ? const Center(child: CircularProgressIndicator())
+            : Form(
+                key: _formKey,
+                child: ListView(
+                  padding: const EdgeInsets.all(20),
+                  children: [
+                    Text('Farmer details', style: Theme.of(context).textTheme.headlineSmall),
+                    const SizedBox(height: 6),
+                    const Text('Step 1 of 2 â€¢ Core farmer and location details'),
+                    const SizedBox(height: 20),
+                    if (_loadError != null) ...[
+                      Card(
+                        child: ListTile(
+                          leading: const Icon(Icons.error_outline),
+                          title: Text(_loadError!),
+                          trailing: TextButton(onPressed: _loadMaster, child: const Text('Retry')),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    TextFormField(
+                      controller: _name,
+                      decoration: const InputDecoration(labelText: 'Full name', prefixIcon: Icon(Icons.person_outline)),
+                      validator: AuthValidators.validateName,
+                    ),
+                    const SizedBox(height: 14),
+                    TextFormField(
+                      controller: _phone,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(labelText: 'Phone number', prefixIcon: Icon(Icons.phone_outlined)),
+                      validator: AuthValidators.validatePhone,
+                    ),
+                    const SizedBox(height: 18),
+                    Text('Location', style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      initialValue: _state,
+                      decoration: const InputDecoration(labelText: 'State', prefixIcon: Icon(Icons.map_outlined)),
+                      items: const [DropdownMenuItem(value: 'Karnataka', child: Text('Karnataka'))],
+                      onChanged: null,
+                    ),
+                    const SizedBox(height: 14),
+                    DropdownButtonFormField<String>(
+                      initialValue: _district.isEmpty ? null : _district,
+                      decoration: const InputDecoration(labelText: 'District', prefixIcon: Icon(Icons.location_city_outlined)),
+                      items: _districts.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        final taluks = _locations.taluksFor(value);
+                        setState(() {
+                          _district = value;
+                          _taluk = taluks.isNotEmpty ? taluks.first : '';
+                          _village.clear();
+                          _villageCode = '';
+                        });
+                      },
+                      validator: (value) => value == null || value.isEmpty ? 'Select a district' : null,
+                    ),
+                    const SizedBox(height: 14),
+                    DropdownButtonFormField<String>(
+                      initialValue: _taluk.isEmpty ? null : _taluk,
+                      decoration: const InputDecoration(labelText: 'Taluk', prefixIcon: Icon(Icons.place_outlined)),
+                      items: _taluks.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setState(() {
+                          _taluk = value;
+                          _village.clear();
+                          _villageCode = '';
+                        });
+                      },
+                      validator: (value) => value == null || value.isEmpty ? 'Select a taluk' : null,
+                    ),
+                    const SizedBox(height: 14),
+                    Autocomplete<VillageEntry>(
+                      displayStringForOption: (option) => option.name,
+                      optionsBuilder: (value) {
+                        final query = value.text.trim().toLowerCase();
+                        final options = _villages;
+                        return query.isEmpty ? options : options.where((v) => v.name.toLowerCase().contains(query));
+                      },
+                      onSelected: (village) => setState(() {
+                        _village.text = village.name;
+                        _villageCode = village.code;
+                      }),
+                      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) => TextFormField(
+                        controller: controller,
+                        focusNode: focusNode,
+                        decoration: const InputDecoration(labelText: 'Village', hintText: 'Search village', prefixIcon: Icon(Icons.home_work_outlined)),
+                        validator: (_) => _villageCode.isEmpty ? 'Select a village from the list' : null,
+                        onChanged: (_) => _villageCode = '',
+                      ),
+                      optionsViewBuilder: (context, onSelected, options) {
+                        final values = options.toList();
+                        return Align(
+                          alignment: Alignment.topLeft,
+                          child: Material(
+                            elevation: 4,
+                            borderRadius: BorderRadius.circular(12),
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxHeight: 260),
+                              child: ListView.builder(
+                                padding: EdgeInsets.zero,
+                                shrinkWrap: true,
+                                itemCount: values.length,
+                                itemBuilder: (context, index) {
+                                  final village = values[index];
+                                  return ListTile(
+                                    title: Text(village.name),
+                                    subtitle: Text(village.code),
+                                    onTap: () => onSelected(village),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 28),
+                    FilledButton.icon(
+                      onPressed: _saving ? null : _save,
+                      icon: _saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.arrow_forward),
+                      label: Text(_saving ? 'Saving...' : 'Continue to Farm Details'),
+                    ),
+                  ],
+                ),
               ),
-              items: KarnatakaLocations.states
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                  .toList(),
-              onChanged: (v) {
-                if (v == null) return;
-                setState(() {
-                  _state = v;
-                  final districts = KarnatakaLocations.districtsFor(v);
-                  _district =
-                      districts.isNotEmpty ? districts.first : '';
-                  final taluks = KarnatakaLocations.taluksFor(_district);
-                  _taluk = taluks.isNotEmpty ? taluks.first : 'General';
-                });
-              },
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: _district.isEmpty ? null : _district,
-              decoration: const InputDecoration(
-                labelText: 'District',
-                prefixIcon: Icon(Icons.location_city, size: 20),
-              ),
-              items: KarnatakaLocations.districtsFor(_state)
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                  .toList(),
-              onChanged: (v) {
-                if (v == null) return;
-                setState(() {
-                  _district = v;
-                  final taluks = KarnatakaLocations.taluksFor(v);
-                  _taluk = taluks.isNotEmpty ? taluks.first : 'General';
-                });
-              },
-              validator: (v) =>
-                  v == null || v.isEmpty ? 'Select a district' : null,
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: _taluk,
-              decoration: const InputDecoration(
-                labelText: 'Taluk',
-                prefixIcon: Icon(Icons.location_on, size: 20),
-              ),
-              items: KarnatakaLocations.taluksFor(_district)
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                  .toList(),
-              onChanged: (v) => v != null ? setState(() => _taluk = v) : null,
-            ),
-            const SizedBox(height: 12),
-            _field(_village, 'Village'),
-            const SizedBox(height: 6),
-            DropdownButtonFormField<String>(
-              value: _language,
-              decoration: const InputDecoration(labelText: 'Language'),
-              items: const ['English', 'Kannada', 'Malayalam', 'Hindi']
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                  .toList(),
-              onChanged: (v) => setState(() => _language = v!),
-            ),
-            SwitchListTile(
-                value: _notifications,
-                onChanged: (v) => setState(() => _notifications = v),
-                title: const Text('Enable notifications')),
-            const SizedBox(height: 18),
-            Text('Farm & crop',
-                style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 12),
-            _field(_farmName, 'Farm name'),
-            _field(_size, 'Farm size (acres)',
-                keyboard:
-                    const TextInputType.numberWithOptions(decimal: true)),
-            DropdownButtonFormField<String>(
-              value: _waterSource,
-              decoration: const InputDecoration(labelText: 'Water source'),
-              items: const [
-                'Borewell',
-                'Open well',
-                'Canal',
-                'Rainwater',
-                'Other'
-              ]
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                  .toList(),
-              onChanged: (v) => setState(() => _waterSource = v!),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: _irrigationMethod,
-              decoration: const InputDecoration(labelText: 'Irrigation method'),
-              items: const ['Drip', 'Sprinkler', 'Flood', 'Other']
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                  .toList(),
-              onChanged: (v) => setState(() => _irrigationMethod = v!),
-            ),
-            ListTile(
-                title: Text(_plantingDate == null
-                    ? 'Planting date'
-                    : 'Planted ${_plantingDate!.day}/${_plantingDate!.month}/${_plantingDate!.year}'),
-                trailing: const Icon(Icons.calendar_month),
-                onTap: () async {
-                  final d = await showDatePicker(
-                      context: context,
-                      firstDate: DateTime(1980),
-                      lastDate: DateTime.now(),
-                      initialDate: DateTime.now());
-                  if (d != null) setState(() => _plantingDate = d);
-                }),
-            const ListTile(
-                leading: Icon(Icons.eco),
-                title: Text('Crop'),
-                subtitle: Text('Arecanut')),
-            const SizedBox(height: 20),
-            FilledButton.icon(
-                onPressed: _saving ? null : _complete,
-                icon: const Icon(Icons.check),
-                label: Text(_saving ? 'Saving...' : 'Complete setup')),
-          ],
-        ),
-      )),
+      ),
     );
   }
-
-  Widget _field(TextEditingController controller, String label,
-          {TextInputType? keyboard}) =>
-      Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: TextFormField(
-              controller: controller,
-              keyboardType: keyboard,
-              decoration: InputDecoration(labelText: label),
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Required' : null));
 }
+
