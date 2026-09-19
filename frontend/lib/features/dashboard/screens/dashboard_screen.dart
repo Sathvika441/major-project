@@ -1061,7 +1061,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     String auditKey,
     String uid,
   ) async {
-    _decisionAuditKey = auditKey;
     if (!mounted) return;
     try {
       await FirestoreIrrigationAuditLog(
@@ -1081,6 +1080,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           details: decision.toMap(),
         ),
       );
+      _decisionAuditKey = auditKey;
     } catch (_) {
       // The decision remains visible locally even if audit persistence is offline.
     }
