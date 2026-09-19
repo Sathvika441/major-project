@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/farm/farm_model.dart';
+import '../../core/services/crop_growth_stage_service.dart';
 
 abstract class FarmRepository {
   Future<List<FarmModel>> getFarms(String userId);
@@ -33,12 +34,56 @@ class FirestoreFarmRepository implements FarmRepository {
 
   @override
   Future<FarmModel> saveFarm(FarmModel farm) async {
-    await _farms(farm.userId).doc(farm.id).set({
-      ...farm.toMap(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    const growthStageService = CropGrowthStageService();
+    if (farm.plantingDate != null) {
+      growthStageService.validatePlantingDate(farm.plantingDate!);
+    }
+
+    final farmRef = _farms(farm.userId).doc(farm.id);
+    await db.runTransaction((transaction) async {
+      final snapshot = await transaction.get(farmRef);
+      final data = <String, dynamic>{
+        ...farm.toMap(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      final previousDate = _readDateTime(snapshot.data()?['plantingDate']);
+      final newDate = farm.plantingDate;
+
+      if (snapshot.exists &&
+          previousDate != null &&
+          newDate != null &&
+          !_sameCalendarDate(previousDate, newDate)) {
+        final history = <Map<String, dynamic>>[
+          ...((snapshot.data()?['plantingDateHistory'] as List?)
+                  ?.whereType<Map>()
+                  .map((entry) => Map<String, dynamic>.from(entry)) ??
+              const <Map<String, dynamic>>[]),
+          {
+            'previousDate': previousDate.toIso8601String(),
+            'newDate': newDate.toIso8601String(),
+            'recordedAt': DateTime.now().toUtc().toIso8601String(),
+            'source': 'farm_details_edit',
+          },
+        ];
+        data['plantingDateHistory'] = history;
+      }
+
+      transaction.set(farmRef, data, SetOptions(merge: true));
+    });
+
     return farm;
   }
+
+  DateTime? _readDateTime(dynamic value) {
+    if (value is Timestamp) return value.toDate();
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value);
+    return null;
+  }
+
+  bool _sameCalendarDate(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
   @override
   Future<void> deactivateFarm(String userId, String farmId) =>
