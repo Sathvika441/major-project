@@ -112,6 +112,8 @@ class AuthController extends StateNotifier<AuthState> {
     state = AuthState.loading();
     try {
       final user = await _repository.signUp(name: name, email: email, phone: phone, password: password);
+      // A signup is the only flow that should enter onboarding.
+      await _storage.setOnboardingRequired(true);
       await _storage.setOtpVerified(false);
       final otpKey = _otpKeyForUser(user);
       await _otpService.generateOtp(otpKey);
@@ -130,6 +132,8 @@ class AuthController extends StateNotifier<AuthState> {
     state = AuthState.loading();
     try {
       final user = await _repository.login(email: email, password: password);
+      // Existing-user login always goes to the dashboard after OTP.
+      await _storage.setOnboardingRequired(false);
       await _storage.setOtpVerified(false);
       final otpKey = _otpKeyForUser(user);
       await _otpService.generateOtp(otpKey);
@@ -148,6 +152,9 @@ class AuthController extends StateNotifier<AuthState> {
     state = AuthState.loading();
     try {
       final user = await _repository.signInWithGoogle();
+      // Google sign-in is treated as an existing-user login. New users can
+      // still start onboarding from the dashboard's farm management flow.
+      await _storage.setOnboardingRequired(false);
       if (user.phone.isNotEmpty) {
         await _storage.setOtpVerified(false);
         final otpKey = _otpKeyForUser(user);
