@@ -59,7 +59,28 @@ class FirebaseAuthService implements AuthService {
     final user = credential.user!;
     await user.updateDisplayName(name.trim());
     await user.sendEmailVerification();
-    return _userModel(user, name: name.trim(), phone: phone.trim());
+    try {
+      return await _userModel(user, name: name.trim(), phone: phone.trim());
+    } on FirebaseException catch (e) {
+      AppLogger.error(
+        'Firebase Auth signup succeeded, but Firestore profile write/read failed',
+        tag: 'AuthService',
+        error: e,
+      );
+      // Authentication is already complete; keep a local session so the user
+      // can continue while Firestore connectivity/rules are repaired.
+      final fallback = UserModel(
+        uid: user.uid,
+        name: name.trim(),
+        email: user.email ?? email.trim(),
+        phone: phone.trim(),
+        isEmailVerified: user.emailVerified,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+      await _storage.saveSession(fallback.uid, fallback.toJson());
+      return fallback;
+    }
   }
 
   @override
