@@ -49,7 +49,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final ref = this.ref;
     final user = ref.watch(authControllerProvider).user;
     final uid = user?.uid;
 
