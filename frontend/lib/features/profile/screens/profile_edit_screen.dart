@@ -88,7 +88,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     if (user == null) return;
     final locations = ref.read(locationMasterServiceProvider);
     await locations.load();
-    final existing = ref.read(profileRepositoryProvider).load(user.uid);
+    final existing = await ref.read(profileRepositoryProvider).load(user.uid);
     if (!mounted) return;
 
     final districts = locations.districts.isNotEmpty
