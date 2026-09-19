@@ -37,7 +37,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
 
   void _startResendCountdown() {
     _tickTimer?.cancel();
-    setState(() => _resendSeconds = 60);
+    setState(() => _resendSeconds = 2);
     _tickTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
         timer.cancel();
