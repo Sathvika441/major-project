@@ -208,7 +208,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       return;
     }
 
-    final original = ref.read(profileRepositoryProvider).load(user.uid);
+    final original = await ref.read(profileRepositoryProvider).load(user.uid);
     final newPhone = _phone.text.trim();
     final oldPhone = (original?.phone ?? user.phone).trim();
     if (newPhone != oldPhone) {

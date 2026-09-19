@@ -121,6 +121,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         plantingDate: DateTime.now(),
       );
       await ref.read(profileRepositoryProvider).save(profile);
+      final storage = ref.read(localStorageServiceProvider);
       await storage.setCompletedPhaseA(true);
       await storage.setCompletedPhaseB(false);
       await storage.setOnboardingCompleted(false);
