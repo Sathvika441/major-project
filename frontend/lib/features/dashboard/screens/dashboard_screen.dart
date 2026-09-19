@@ -936,7 +936,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   _ReadingSummary _aggregateReading(SensorReading reading) {
-    return AggregateReading(
+    return _ReadingSummary(
       soilMoisture: reading.soilMoisture,
       temperature: reading.temperature,
       humidity: reading.humidity,
