@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../models/device/device_model.dart';
@@ -6,6 +7,9 @@ import '../../../models/farm/farm_model.dart';
 import '../../../repositories/device/device_repository.dart';
 import '../../../repositories/farm/farm_repository.dart';
 import '../../../services/backend/backend_api.dart';
+import '../../../core/irrigation/irrigation_audit.dart';
+import '../../../core/irrigation/irrigation_decision_engine.dart';
+import '../../../core/irrigation/irrigation_models.dart';
 import '../../../services/sensors/simulated_sensor_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../devices/screens/device_management_screen.dart';
@@ -27,6 +31,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   double? _selectedFarmCropAgeYears;
   String? _selectedFarmGrowthStage;
   String? _selectedFarmPlantingDate;
+  String? _decisionAuditKey;
+  IrrigationDecision? _dashboardDecision;
 
   SensorReading _presetReading(String preset) {
     final now = DateTime.now();
@@ -229,6 +235,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     final agg = _demoReading == null
                         ? _aggregate(farmDevices)
                         : _aggregateReading(_demoReading!);
+                    final irrigationDecision =
+                        _buildIrrigationDecision(farm, agg);
+                    if (irrigationDecision != null) {
+                      final auditKey = _decisionKey(
+                        farm,
+                        agg,
+                        irrigationDecision,
+                      );
+                      if (_decisionAuditKey != auditKey) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          _recordDashboardRecommendation(
+                            irrigationDecision,
+                            auditKey,
+                            uid,
+                          );
+                        });
+                      }
+                    }
 
                     return RefreshIndicator(
                       onRefresh: () async {
@@ -517,7 +541,73 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               ),
                               trailing: const Icon(Icons.auto_graph_outlined),
                             ),
-                          ),                          const SizedBox(height: 18),
+                          ),                          if (irrigationDecision != null) ...[
+                            Card(
+                              child: ExpansionTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: irrigationDecision.irrigationRecommended
+                                      ? Theme.of(context).colorScheme.primaryContainer
+                                      : Theme.of(context).colorScheme.surfaceContainerHighest,
+                                  child: Icon(
+                                    irrigationDecision.irrigationRecommended
+                                        ? Icons.water_drop_outlined
+                                        : Icons.water_drop_outlined,
+                                  ),
+                                ),
+                                title: Text(
+                                  irrigationDecision.irrigationRecommended
+                                      ? 'Irrigation recommended'
+                                      : 'No irrigation recommended',
+                                  style: const TextStyle(fontWeight: FontWeight.w700),
+                                ),
+                                subtitle: Text(
+                                  irrigationDecision.reason,
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                children: [
+                                  ListTile(
+                                    title: Text(
+                                      'Decision strength: ' +
+                                          irrigationDecision.decisionStrength +
+                                          ' (' +
+                                          (irrigationDecision.confidence * 100)
+                                              .round()
+                                              .toString() +
+                                          '%)',
+                                    ),
+                                    subtitle: Text(
+                                      irrigationDecision.irrigationRecommended
+                                          ? 'Suggested runtime: ' +
+                                              irrigationDecision.suggestedDuration
+                                                  .inMinutes
+                                                  .toString() +
+                                              ' minutes'
+                                          : 'Suggested runtime: 0 minutes',
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                                    child: Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      children: irrigationDecision.factors
+                                          .map((factor) => Chip(label: Text(factor)))
+                                          .toList(),
+                                    ),
+                                  ),
+                                  const Padding(
+                                    padding: EdgeInsets.fromLTRB(20, 0, 20, 16),
+                                    child: Text(
+                                      'Mode: Recommendation only. No pump command is issued from this dashboard card.',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                          const SizedBox(height: 18),
                           Row(
                             children: [
                               Text(
@@ -919,6 +1009,83 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ),
       ),
     );
+  }
+
+  IrrigationDecision? _buildIrrigationDecision(
+    FarmModel farm,
+    _ReadingSummary agg,
+  ) {
+    final stage = farm.growthStage;
+    final ageDays = farm.cropAgeDays;
+    if (stage == null || ageDays == null) return null;
+
+    final weather = (agg.rainfall ?? 0) >= 20
+        ? 'heavy rain'
+        : (agg.temperature ?? 0) >= 36
+            ? 'hot'
+            : 'normal';
+
+    return const IrrigationDecisionEngine().decide(
+      input: IrrigationInput(
+        soilMoisture: null,
+        cropAgeDays: 0,
+        growthStage: CropGrowthStage.establishment,
+        temperature: null,
+        humidity: null,
+        rainfall: null,
+        weatherContext: '',
+        recentIrrigation: RecentIrrigation(),
+        observedAt: DateTime(2000),
+      ),
+      mode: IrrigationMode.recommendationOnly,
+      now: DateTime(2000),
+    );
+  }
+
+  String _decisionKey(
+    FarmModel farm,
+    _ReadingSummary agg,
+    IrrigationDecision decision,
+  ) {
+    return [
+      farm.id,
+      agg.soilMoisture,
+      agg.temperature,
+      agg.humidity,
+      agg.rainfall,
+      decision.decisionId,
+    ].join('|');
+  }
+
+  Future<void> _recordDashboardRecommendation(
+    IrrigationDecision decision,
+    String auditKey,
+    String uid,
+  ) async {
+    _decisionAuditKey = auditKey;
+    if (!mounted) return;
+    setState(() => _dashboardDecision = decision);
+    try {
+      await FirestoreIrrigationAuditLog(
+        db: FirebaseFirestore.instance,
+        userId: uid,
+      ).record(
+        IrrigationAuditRecord(
+          id: 'recommendation_' + decision.decisionId,
+          type: IrrigationAuditType.recommendation,
+          decisionId: decision.decisionId,
+          action: 'recommendation',
+          status: decision.irrigationRecommended
+              ? 'recommended'
+              : 'not_recommended',
+          reason: decision.reason,
+          timestamp: decision.createdAt,
+          details: decision.toMap(),
+        ),
+      );
+    } catch (_) {
+      // The decision remains visible locally even if audit persistence is offline.
+    }
   }
 
   Future<void> _showFarmSwitcher(
