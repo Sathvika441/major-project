@@ -4,6 +4,7 @@ import '../../models/device/device_model.dart';
 
 abstract class DeviceRepository {
   Future<List<DeviceModel>> getDevices(String userId);
+  Stream<List<DeviceModel>> watchDevices(String userId);
   Future<DeviceModel> register(DeviceModel device);
 }
 
@@ -25,6 +26,16 @@ class FirestoreDeviceRepository implements DeviceRepository {
     return snapshot.docs
         .map((d) => DeviceModel.fromMap({...d.data(), 'id': d.id}))
         .toList();
+  }
+
+  @override
+  Stream<List<DeviceModel>> watchDevices(String userId) {
+    return _devices(userId)
+        .where('isActive', isEqualTo: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((d) => DeviceModel.fromMap({...d.data(), 'id': d.id}))
+            .toList());
   }
 
   @override
