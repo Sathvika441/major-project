@@ -5,6 +5,8 @@ import '../../../models/device/device_model.dart';
 import '../../../models/farm/farm_model.dart';
 import '../../../repositories/device/device_repository.dart';
 import '../../../repositories/farm/farm_repository.dart';
+import '../../../services/backend/backend_api.dart';
+import '../../../services/sensors/simulated_sensor_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../devices/screens/device_management_screen.dart';
 import '../../farm/screens/farm_management_screen.dart';
@@ -12,6 +14,30 @@ import '../../profile/screens/profile_edit_screen.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
+
+  Future<void> _testDemoBackend(BuildContext context, WidgetRef ref) async {
+    final reading = ref.read(simulatedSensorProvider).generateReading();
+    try {
+      final result = await ref.read(backendApiProvider).predict({
+        'soil_moisture': reading.soilMoisture,
+        'temperature': reading.temperature,
+        'humidity': reading.humidity,
+        'rainfall': reading.rainfall,
+        'source': 'simulated',
+      });
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result['detail']?.toString() ?? 'Backend response received.')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Demo backend call: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -153,6 +179,18 @@ class DashboardScreen extends ConsumerWidget {
                             ],
                           ),
                           const SizedBox(height: 16),
+                          Card(
+                            child: ListTile(
+                              leading: const Icon(Icons.science_outlined),
+                              title: const Text('Simulated sensor data'),
+                              subtitle: const Text('Development-only readings until real sensors are available.'),
+                              trailing: FilledButton(
+                                onPressed: () => _testDemoBackend(context, ref),
+                                child: const Text('Test backend'),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
                           Card(
                             child: Padding(
                               padding: const EdgeInsets.all(18),
