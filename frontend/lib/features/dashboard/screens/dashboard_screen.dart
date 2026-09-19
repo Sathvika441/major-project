@@ -21,9 +21,50 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   String? _selectedFarmId;
+  SensorReading? _demoReading;
+  String _demoPreset = 'Normal';
+
+  SensorReading _presetReading(String preset) {
+    final now = DateTime.now();
+    switch (preset) {
+      case 'Dry soil':
+        return SensorReading(
+          soilMoisture: 12,
+          temperature: 33,
+          humidity: 48,
+          rainfall: 0,
+          timestamp: now,
+        );
+      case 'Hot day':
+        return SensorReading(
+          soilMoisture: 24,
+          temperature: 41,
+          humidity: 42,
+          rainfall: 0,
+          timestamp: now,
+        );
+      case 'Heavy rain':
+        return SensorReading(
+          soilMoisture: 82,
+          temperature: 27,
+          humidity: 86,
+          rainfall: 38,
+          timestamp: now,
+        );
+      default:
+        return ref.read(simulatedSensorProvider).generateReading();
+    }
+  }
+
+  void _generateDemoReading() {
+    setState(() {
+      _demoReading = _presetReading(_demoPreset);
+    });
+  }
 
   Future<void> _testDemoBackend(BuildContext context, WidgetRef ref) async {
-    final reading = ref.read(simulatedSensorProvider).generateReading();
+    final reading = _demoReading ?? _presetReading(_demoPreset);
+    setState(() => _demoReading = reading);
     try {
       final result = await ref.read(backendApiProvider).predict({
         'soil_moisture': reading.soilMoisture,
@@ -158,8 +199,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     final devices = deviceSnapshot.data ?? [];
                     final farmDevices =
                         devices.where((d) => d.farmId == farm.id).toList();
-                    final alerts = _generateAlerts(farmDevices);
-                    final agg = _aggregate(farmDevices);
+                    final alerts = _demoReading == null
+                        ? _generateAlerts(farmDevices)
+                        : _generateAlertsFromReading(_demoReading!);
+                    final agg = _demoReading == null
+                        ? _aggregate(farmDevices)
+                        : _aggregateReading(_demoReading!);
 
                     return RefreshIndicator(
                       onRefresh: () async {
@@ -361,6 +406,36 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                               fontWeight: FontWeight.w700,
                                             ),
                                       ),
+                                      const SizedBox(height: 6),
+                                      DropdownButtonHideUnderline(
+                                        child: DropdownButton<String>(
+                                          value: _demoPreset,
+                                          isDense: true,
+                                          items: const [
+                                            DropdownMenuItem(
+                                              value: 'Normal',
+                                              child: Text('Normal'),
+                                            ),
+                                            DropdownMenuItem(
+                                              value: 'Dry soil',
+                                              child: Text('Dry soil'),
+                                            ),
+                                            DropdownMenuItem(
+                                              value: 'Hot day',
+                                              child: Text('Hot day'),
+                                            ),
+                                            DropdownMenuItem(
+                                              value: 'Heavy rain',
+                                              child: Text('Heavy rain'),
+                                            ),
+                                          ],
+                                          onChanged: (value) {
+                                            if (value != null) {
+                                              setState(() => _demoPreset = value);
+                                            }
+                                          },
+                                        ),
+                                      ),
                                       const SizedBox(height: 2),
                                       Text(
                                         'Simulated readings only - physical sensors are not connected.',
@@ -372,10 +447,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                FilledButton(
-                                  onPressed: () =>
-                                      _testDemoBackend(context, ref),
-                                  child: const Text('Test ML'),
+                                Column(
+                                  children: [
+                                    FilledButton(
+                                      onPressed: _generateDemoReading,
+                                      child: const Text('Generate'),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    OutlinedButton(
+                                      onPressed: () => _testDemoBackend(context, ref),
+                                      child: const Text('Test ML'),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -477,6 +560,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             ],
                           ),
                           const SizedBox(height: 14),
+                          if (_demoReading != null)
+                            Card(
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: Theme.of(context)
+                                      .colorScheme
+                                      .secondaryContainer,
+                                  child: const Icon(Icons.water_drop_outlined),
+                                ),
+                                title: const Text(
+                                  'Demo irrigation recommendation',
+                                  style: TextStyle(fontWeight: FontWeight.w700),
+                                ),
+                                subtitle: Text(
+                                  _demoRecommendation(_demoReading!),
+                                ),
+                              ),
+                            ),
+                          if (_demoReading != null) const SizedBox(height: 10),
                           Card(
                             child: ListTile(
                               contentPadding: const EdgeInsets.symmetric(
@@ -790,6 +892,55 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  String _demoRecommendation(SensorReading reading) {
+    final moisture = reading.soilMoisture ?? 0;
+    if (moisture < 20) {
+      return 'Irrigation recommended in this demo scenario. Soil moisture is low.';
+    }
+    if (moisture > 80 || (reading.rainfall ?? 0) > 25) {
+      return 'Irrigation can be delayed in this demo scenario because moisture or rainfall is high.';
+    }
+    return 'No immediate irrigation recommended in this demo scenario.';
+  }
+
+  List<AlertItem> _generateAlertsFromReading(SensorReading reading) {
+    final alerts = <AlertItem>[];
+    final moisture = reading.soilMoisture;
+    final temperature = reading.temperature;
+    final rainfall = reading.rainfall;
+    if (moisture != null && moisture < 20) {
+      alerts.add(AlertItem(
+        title: 'Low soil moisture',
+        message: 'Demo reading is below 20%.',
+        severity: AlertSeverity.warning,
+      ));
+    }
+    if (temperature != null && temperature > 40) {
+      alerts.add(AlertItem(
+        title: 'High temperature',
+        message: 'Demo temperature is above 40 C.',
+        severity: AlertSeverity.warning,
+      ));
+    }
+    if (rainfall != null && rainfall > 25) {
+      alerts.add(AlertItem(
+        title: 'Heavy rainfall',
+        message: 'Demo rainfall is above 25 mm.',
+        severity: AlertSeverity.info,
+      ));
+    }
+    return alerts;
+  }
+
+  AggregateReading _aggregateReading(SensorReading reading) {
+    return AggregateReading(
+      soilMoisture: reading.soilMoisture,
+      temperature: reading.temperature,
+      humidity: reading.humidity,
+      rainfall: reading.rainfall,
     );
   }
 
