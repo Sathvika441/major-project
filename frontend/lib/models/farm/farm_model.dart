@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../core/services/crop_growth_stage_service.dart';
+
 class FarmModel {
   final String id;
   final String userId;
@@ -21,6 +23,7 @@ class FarmModel {
   final String village;
   final String crop;
   final DateTime? plantingDate;
+  final List<Map<String, dynamic>> plantingDateHistory;
 
   const FarmModel({
     required this.id,
@@ -43,6 +46,7 @@ class FarmModel {
     this.village = '',
     this.crop = 'Arecanut',
     this.plantingDate,
+    this.plantingDateHistory = const [],
   });
 
   FarmModel copyWith({
@@ -63,6 +67,7 @@ class FarmModel {
     String? village,
     String? crop,
     DateTime? plantingDate,
+    List<Map<String, dynamic>>? plantingDateHistory,
   }) => FarmModel(
         id: id,
         userId: userId,
@@ -85,6 +90,7 @@ class FarmModel {
         village: village ?? this.village,
         crop: crop ?? this.crop,
         plantingDate: plantingDate ?? this.plantingDate,
+        plantingDateHistory: plantingDateHistory ?? this.plantingDateHistory,
       );
 
   Map<String, dynamic> toMap() => {
@@ -108,6 +114,7 @@ class FarmModel {
         'village': village,
         'crop': crop,
         'plantingDate': plantingDate?.toIso8601String(),
+        'plantingDateHistory': plantingDateHistory,
       };
 
   factory FarmModel.fromMap(Map<String, dynamic> map) => FarmModel(
@@ -131,7 +138,32 @@ class FarmModel {
         village: map['village'] as String? ?? '',
         crop: map['crop'] as String? ?? 'Arecanut',
         plantingDate: _readDateTime(map['plantingDate']),
+        plantingDateHistory: (map['plantingDateHistory'] as List?)
+                ?.whereType<Map>()
+                .map((entry) => Map<String, dynamic>.from(entry))
+                .toList() ??
+            const [],
       );
+
+  int? get cropAgeDays {
+    final date = plantingDate;
+    if (date == null) return null;
+    return const CropGrowthStageService().calculate(plantingDate: date).ageDays;
+  }
+
+  double? get cropAgeYears {
+    final date = plantingDate;
+    if (date == null) return null;
+    return const CropGrowthStageService().calculate(plantingDate: date).ageYears;
+  }
+
+  CropGrowthStage? get growthStage {
+    final date = plantingDate;
+    if (date == null) return null;
+    return const CropGrowthStageService().calculate(plantingDate: date).stage;
+  }
+
+  String? get growthStageLabel => growthStage?.label;
 
   static DateTime? _readDateTime(dynamic value) {
     if (value is Timestamp) return value.toDate();
