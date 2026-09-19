@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../core/storage/local_storage_service.dart';
 import '../../core/utils/app_logger.dart';
@@ -69,7 +70,27 @@ class FirebaseAuthService implements AuthService {
 
   @override
   Future<UserModel> signInWithGoogle() async {
-    throw UnsupportedError('Google sign-in provider is not configured in this build.');
+    if (!kIsWeb) {
+      throw UnsupportedError(
+        'Google sign-in is currently configured for the web build. '
+        'Native Google sign-in requires the platform Google Sign-In configuration.',
+      );
+    }
+
+    AppLogger.info('Starting Google sign-in popup', tag: 'AuthService');
+    final provider = GoogleAuthProvider();
+    provider.addScope('email');
+    provider.setCustomParameters({
+      'prompt': 'select_account',
+    });
+
+    final credential = await _auth.signInWithPopup(provider);
+    final user = credential.user;
+    if (user == null) {
+      throw StateError('Google sign-in completed without a Firebase user.');
+    }
+
+    return _userModel(user);
   }
 
   @override
