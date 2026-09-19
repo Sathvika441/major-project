@@ -12,8 +12,15 @@ import '../../devices/screens/device_management_screen.dart';
 import '../../farm/screens/farm_management_screen.dart';
 import '../../profile/screens/profile_edit_screen.dart';
 
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  String? _selectedFarmId;
 
   Future<void> _testDemoBackend(BuildContext context, WidgetRef ref) async {
     final reading = ref.read(simulatedSensorProvider).generateReading();
@@ -118,7 +125,16 @@ class DashboardScreen extends ConsumerWidget {
                   );
                 }
 
-                final farm = farms.first;
+                final selectedId = _selectedFarmId;
+                final farm = farms.firstWhere(
+                  (item) => item.id == selectedId,
+                  orElse: () => farms.first,
+                );
+                if (_selectedFarmId != farm.id) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) setState(() => _selectedFarmId = farm.id);
+                  });
+                }
                 return FutureBuilder<List<DeviceModel>>(
                   future: ref
                       .read(deviceRepositoryProvider)
@@ -146,8 +162,7 @@ class DashboardScreen extends ConsumerWidget {
 
                     return RefreshIndicator(
                       onRefresh: () async {
-                        ref.invalidate(farmsProvider);
-                        ref.invalidate(devicesProvider);
+                        setState(() {});
                       },
                       child: ListView(
                         padding: const EdgeInsets.all(16),
@@ -238,6 +253,70 @@ class DashboardScreen extends ConsumerWidget {
                               ],
                             ),
                           ),
+                          const SizedBox(height: 14),
+                          if (farms.length > 1)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surface,
+                                borderRadius: BorderRadius.circular(18),
+                                border: Border.all(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .outlineVariant,
+                                ),
+                              ),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: farm.id,
+                                  isExpanded: true,
+                                  icon: const Icon(Icons.keyboard_arrow_down),
+                                  items: farms
+                                      .map(
+                                        (item) => DropdownMenuItem<String>(
+                                          value: item.id,
+                                          child: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.agriculture_outlined,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .primary,
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Expanded(
+                                                child: Text(
+                                                  item.name.isEmpty
+                                                      ? 'Unnamed farm'
+                                                      : item.name,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                                  onChanged: (value) {
+                                    if (value != null) {
+                                      setState(() => _selectedFarmId = value);
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                          if (farms.length > 1)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(
+                                'Viewing 1 of ${farms.length} farms',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ),
                           const SizedBox(height: 14),
                           Container(
                             padding: const EdgeInsets.all(16),
