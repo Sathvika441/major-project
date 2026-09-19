@@ -17,7 +17,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   final _pinController = TextEditingController();
   final _focusNode = FocusNode();
   Timer? _tickTimer;
-  int _resendSeconds = 60;
+  int _resendSeconds = 2;
   bool _verifying = false;
   bool _resentOnce = false;
 
