@@ -837,7 +837,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                       ActionChip(avatar: const Icon(Icons.refresh, size: 18), label: Text(_syncing ? 'Syncing...' : 'Sync now'), onPressed: _syncing ? null : () => _refreshDashboard(uid)),
                                       ActionChip(avatar: const Icon(Icons.agriculture_outlined, size: 18), label: const Text('Manage farm'), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FarmManagementScreen()))),
                                       ActionChip(avatar: const Icon(Icons.sensors_outlined, size: 18), label: const Text('Manage devices'), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DeviceManagementScreen()))),
-                                      ActionChip(avatar: const Icon(Icons.notifications_outlined, size: 18), label: const Text('View alerts'), onPressed: () => _showAlertsSheet(context, ref, uid)),
+                                      ActionChip(avatar: const Icon(Icons.notifications_outlined, size: 18), label: const Text('View alerts'), onPressed: () => _showAlertsSheet(context, ref, uid, _selectedFarmId)),
                                     ],
                                   ),
                                 ],
