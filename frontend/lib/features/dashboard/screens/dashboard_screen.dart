@@ -607,9 +607,9 @@ class DashboardScreen extends ConsumerWidget {
             Text(subtitle, textAlign: TextAlign.center),
             const SizedBox(height: 16),
             FilledButton.icon(
-              onPressed: () => context.go('/onboarding'),
+              onPressed: () => context.go('/farms'),
               icon: const Icon(Icons.add_business),
-              label: const Text('Set up farm'),
+              label: const Text('Manage farms'),
             ),
           ],
         ),
