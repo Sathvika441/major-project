@@ -301,67 +301,35 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           ),
                           const SizedBox(height: 14),
                           if (farms.length > 1)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.surface,
-                                borderRadius: BorderRadius.circular(18),
-                                border: Border.all(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .outlineVariant,
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                OutlinedButton.icon(
+                                  onPressed: () => _showFarmSwitcher(
+                                    context,
+                                    farms,
+                                    farm.id,
+                                  ),
+                                  icon: const Icon(Icons.swap_horiz),
+                                  label: const Text('Switch farm'),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              child: DropdownButtonHideUnderline(
-                                child: DropdownButton<String>(
-                                  value: farm.id,
-                                  isExpanded: true,
-                                  icon: const Icon(Icons.keyboard_arrow_down),
-                                  items: farms
-                                      .map(
-                                        (item) => DropdownMenuItem<String>(
-                                          value: item.id,
-                                          child: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.agriculture_outlined,
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .primary,
-                                              ),
-                                              const SizedBox(width: 10),
-                                              Expanded(
-                                                child: Text(
-                                                  item.name.isEmpty
-                                                      ? 'Unnamed farm'
-                                                      : item.name,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      )
-                                      .toList(),
-                                  onChanged: (value) {
-                                    if (value != null) {
-                                      setState(() => _selectedFarmId = value);
-                                    }
-                                  },
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Viewing ' +
+                                  (farm.name.isEmpty ? 'Unnamed farm' : farm.name) +
+                                  ' • Farm ' +
+                                  '${farms.indexOf(farm) + 1} of ${farms.length}',
+                                  style: Theme.of(context).textTheme.bodySmall,
                                 ),
-                              ),
-                            ),
-                          if (farms.length > 1)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8),
-                              child: Text(
-                                'Viewing 1 of ${farms.length} farms',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
+                              ],
                             ),
                           const SizedBox(height: 14),
                           Container(
@@ -902,6 +870,58 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
+  Future<void> _showFarmSwitcher(
+    BuildContext context,
+    List<FarmModel> farms,
+    String currentFarmId,
+  ) async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.only(bottom: 16),
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                child: Text(
+                  'Switch farm',
+                  style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              ...farms.map(
+                (item) => ListTile(
+                  leading: CircleAvatar(
+                    child: Icon(
+                      item.id == currentFarmId
+                          ? Icons.check
+                          : Icons.agriculture_outlined,
+                    ),
+                  ),
+                  title: Text(
+                    item.name.isEmpty ? 'Unnamed farm' : item.name,
+                  ),
+                  subtitle: item.location.isEmpty ? null : Text(item.location),
+                  trailing: item.id == currentFarmId
+                      ? const Icon(Icons.check_circle)
+                      : null,
+                  onTap: () => Navigator.of(sheetContext).pop(item.id),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (selected != null && mounted && selected != currentFarmId) {
+      setState(() => _selectedFarmId = selected);
+    }
+  }
   String _demoRecommendation(SensorReading reading) {
     final moisture = reading.soilMoisture ?? 0;
     if (moisture < 20) {
