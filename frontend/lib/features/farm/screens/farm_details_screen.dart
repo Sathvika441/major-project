@@ -372,7 +372,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
       await storage.setOnboardingCompleted(true);
       await storage.setPhaseBMigrated(true);
 
-      if (mounted) context.go('/dashboard');
+      if (mounted) context.go('/farms');
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
