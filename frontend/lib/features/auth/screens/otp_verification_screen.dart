@@ -110,7 +110,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
     final theme = Theme.of(context);
-    final phone = authState.pendingOtpPhone ?? authState.user?.phone ?? 'your phone';
+    final otpTarget = authState.pendingOtpPhone ?? authState.user?.phone ?? '';
+    final displayTarget = otpTarget.startsWith('mock:')
+        ? 'your account (mock OTP)'
+        : (otpTarget.isEmpty ? 'your account' : otpTarget);
     final purpose = authState.pendingOtpFor == 'signup' ? 'sign up' : 'log in';
     final lock = ref.read(authControllerProvider.notifier).remainingLockout();
 
@@ -133,7 +136,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                 const SizedBox(height: 20),
                 Text('Enter the 6-digit code', textAlign: TextAlign.center, style: theme.textTheme.headlineSmall),
                 const SizedBox(height: 8),
-                Text('We sent a verification code to $phone to complete your $purpose.', textAlign: TextAlign.center),
+                Text('We sent a verification code to $displayTarget to complete your $purpose.', textAlign: TextAlign.center),
                 const SizedBox(height: 24),
                 if (authState.errorMessage != null)
                   Card(
