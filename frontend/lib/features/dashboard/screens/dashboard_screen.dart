@@ -130,7 +130,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         title: const Text('ArecaSmart'),
         actions: [
           IconButton(
-            onPressed: () => _showAlertsSheet(context, ref, uid),
+            onPressed: () => _showAlertsSheet(context, ref, uid, _selectedFarmId),
             icon: const Icon(Icons.notifications_active_outlined),
             tooltip: 'Alerts',
           ),
@@ -1094,13 +1094,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Future<void> _showAlertsSheet(
-      BuildContext context, WidgetRef ref, String? uid) async {
+      BuildContext context, WidgetRef ref, String? uid, String? selectedFarmId) async {
     if (uid == null) return;
     final farms = await ref.read(farmRepositoryProvider).getFarms(uid);
     final devices = await ref.read(deviceRepositoryProvider).getDevices(uid);
-    final farmDevices = farms.isEmpty
+    final selectedFarmIdResolved = farms.isEmpty
+        ? null
+        : farms.any((farm) => farm.id == selectedFarmId)
+            ? selectedFarmId
+            : farms.first.id;
+    final farmDevices = selectedFarmIdResolved == null
         ? devices
-        : devices.where((d) => d.farmId == farms.first.id).toList();
+        : devices.where((d) => d.farmId == selectedFarmIdResolved).toList();
     final alerts = _generateAlerts(farmDevices);
     if (!context.mounted) return;
     showModalBottomSheet(
