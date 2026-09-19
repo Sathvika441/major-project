@@ -34,3 +34,7 @@ android/build/
 .env
 .env.*
 !.env.example
+
+#python virtual environment
+.venv
+venv
