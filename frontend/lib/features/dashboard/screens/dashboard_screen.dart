@@ -27,13 +27,15 @@ class DashboardScreen extends ConsumerWidget {
       });
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['detail']?.toString() ?? 'Backend response received.')),
+          SnackBar(content: Text(
+            result['detail']?.toString() ?? 'Backend response received.',
+          )),
         );
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Demo backend call: $e')),
+          SnackBar(content: Text('Demo backend call (ML placeholder): $e')),
         );
       }
     }
@@ -183,7 +185,7 @@ class DashboardScreen extends ConsumerWidget {
                             child: ListTile(
                               leading: const Icon(Icons.science_outlined),
                               title: const Text('Simulated sensor data'),
-                              subtitle: const Text('Development-only readings until real sensors are available.'),
+                              subtitle: const Text('Demo readings only — no physical sensor is connected yet.'),
                               trailing: FilledButton(
                                 onPressed: () => _testDemoBackend(context, ref),
                                 child: const Text('Test backend'),
@@ -324,7 +326,7 @@ class DashboardScreen extends ConsumerWidget {
                                     ? 'No sensors assigned to this farm yet.'
                                     : agg.hasReading
                                         ? 'Decision engine ready â€” sensor data available.'
-                                        : 'Sensors online, awaiting first reading.',
+                                        : 'Sensors online, awaiting first reading. ML model is not connected yet.',
                               ),
                               trailing: const Icon(Icons.chevron_right),
                             ),
@@ -377,9 +379,7 @@ class DashboardScreen extends ConsumerWidget {
                             child: ListTile(
                               leading: Icon(Icons.history),
                               title: Text('Recent activity'),
-                              subtitle: Text(
-                                'Sensor and irrigation history will be shown here.',
-                              ),
+                              subtitle: Text('No activity events have been recorded yet.'),
                             ),
                           ),
                         ],
