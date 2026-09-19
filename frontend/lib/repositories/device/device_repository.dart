@@ -1,6 +1,5 @@
-import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/storage/local_storage_service.dart';
 import '../../models/device/device_model.dart';
 
 abstract class DeviceRepository {
@@ -9,29 +8,24 @@ abstract class DeviceRepository {
 }
 
 final deviceRepositoryProvider = Provider<DeviceRepository>((ref) =>
-    LocalDeviceRepository(ref.watch(localStorageServiceProvider)));
+    FirestoreDeviceRepository(FirebaseFirestore.instance));
 
-class LocalDeviceRepository implements DeviceRepository {
-  static const _key = 'phase25_devices';
-  final LocalStorageService storage;
-  LocalDeviceRepository(this.storage);
+class FirestoreDeviceRepository implements DeviceRepository {
+  final FirebaseFirestore db;
+  FirestoreDeviceRepository(this.db);
 
-  List<Map<String, dynamic>> _read() {
-    final raw = storage.raw.getString(_key);
-    if (raw == null || raw.isEmpty) return [];
-    return List<Map<String, dynamic>>.from(
-      (jsonDecode(raw) as List).map((e) => Map<String, dynamic>.from(e as Map)),
-    );
-  }
-
-  Future<void> _write(List<Map<String, dynamic>> values) =>
-      storage.raw.setString(_key, jsonEncode(values));
+  CollectionReference<Map<String, dynamic>> _devices(String uid) =>
+      db.collection('users').doc(uid).collection('devices');
 
   @override
-  Future<List<DeviceModel>> getDevices(String userId) async => _read()
-      .map(DeviceModel.fromMap)
-      .where((device) => device.userId == userId && device.isActive)
-      .toList();
+  Future<List<DeviceModel>> getDevices(String userId) async {
+    final snapshot = await _devices(userId)
+        .where('isActive', isEqualTo: true)
+        .get();
+    return snapshot.docs
+        .map((d) => DeviceModel.fromMap({...d.data(), 'id': d.id}))
+        .toList();
+  }
 
   @override
   Future<DeviceModel> register(DeviceModel device) async {
@@ -39,10 +33,9 @@ class LocalDeviceRepository implements DeviceRepository {
     if (reading != null && !reading.isValid) {
       throw ArgumentError('Sensor reading contains an abnormal value.');
     }
-    final values = _read();
-    values.removeWhere((e) => e['id'] == device.id);
-    values.add(device.toMap());
-    await _write(values);
+    await _devices(device.userId)
+        .doc(device.id)
+        .set(device.toMap(), SetOptions(merge: true));
     return device;
   }
 }
