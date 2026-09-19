@@ -64,7 +64,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
     if (user == null) return;
     final profileRepo = ref.read(profileRepositoryProvider);
     final farmRepo = ref.read(farmRepositoryProvider);
-    final profile = profileRepo.load(user.uid);
+    final profile = await profileRepo.load(user.uid);
     final farms = await farmRepo.getFarms(user.uid);
 
     if (!mounted) return;
