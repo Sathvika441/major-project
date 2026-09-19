@@ -5,27 +5,10 @@ import '../../../core/constants/karnataka_locations.dart';
 import '../../../core/services/location_master_service.dart';
 import '../../../core/validators/auth_validators.dart';
 import '../../../models/farm/farm_profile_model.dart';
+import '../../../models/farm/farm_model.dart';
+import '../../../repositories/farm/farm_repository.dart';
 import '../../../repositories/profile/profile_repository.dart';
 import '../../auth/controllers/auth_controller.dart';
-
-const _cultivationTypes = <String>[
-  'Mangala',
-  'Sumangala',
-  'Sreemangala',
-  'SAS-1',
-  'Mohitnagar',
-  'Hirehalli Dwarf',
-  'Other',
-];
-
-const _soilTypes = <String>[
-  'Red Sandy',
-  'Red Loamy',
-  'Black Cotton',
-  'Laterite',
-  'Alluvial',
-  'Clay',
-];
 
 class ProfileEditScreen extends ConsumerStatefulWidget {
   const ProfileEditScreen({super.key});
@@ -40,22 +23,16 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   late final TextEditingController _name;
   late final TextEditingController _phone;
   late final TextEditingController _village;
-  late final TextEditingController _survey;
-  late final TextEditingController _farmName;
-  late final TextEditingController _farmSize;
   late final TextEditingController _otp;
   String _district = '';
   String _taluk = '';
   String _villageCode = '';
   String _language = 'English';
-  String _waterSource = 'Borewell';
-  String _irrigationMethod = 'Drip';
-  String? _cultivation;
-  String? _soil;
   bool _notifications = true;
-  DateTime _plantingDate = DateTime.now();
   bool _loading = true;
   bool _saving = false;
+  List<FarmModel> _farms = [];
+  final Map<String, List<PlotModel>> _farmPlots = {};
   String? _pendingPhone;
 
   @override
@@ -64,9 +41,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     _name = TextEditingController();
     _phone = TextEditingController();
     _village = TextEditingController();
-    _survey = TextEditingController();
-    _farmName = TextEditingController();
-    _farmSize = TextEditingController();
     _otp = TextEditingController();
     _loadExisting();
   }
@@ -76,9 +50,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     _name.dispose();
     _phone.dispose();
     _village.dispose();
-    _survey.dispose();
-    _farmName.dispose();
-    _farmSize.dispose();
     _otp.dispose();
     super.dispose();
   }
@@ -89,6 +60,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     final locations = ref.read(locationMasterServiceProvider);
     await locations.load();
     final existing = await ref.read(profileRepositoryProvider).load(user.uid);
+    final farms = await ref.read(farmRepositoryProvider).getFarms(user.uid);
+    for (final farm in farms) {
+      _farmPlots[farm.id] = await ref.read(farmRepositoryProvider).getPlots(user.uid, farm.id);
+    }
     if (!mounted) return;
 
     final districts = locations.districts.isNotEmpty
@@ -107,21 +82,12 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       _phone.text = existing?.phone ?? user.phone;
       _village.text = existing?.village ?? '';
       _villageCode = existing?.villageCode ?? '';
-      _survey.text = existing?.landSurveyNumber ?? '';
-      _farmName.text = existing?.farmName ?? '';
-      _farmSize.text = (existing?.farmSizeAcres ?? 0).toString();
       _state = KarnatakaLocations.state;
       _district = district;
       _taluk = taluk;
       _language = existing?.language ?? 'English';
-      _waterSource = existing?.waterSource ?? 'Borewell';
-      _irrigationMethod = existing?.irrigationMethod ?? 'Drip';
-      _cultivation = _cultivationTypes.contains(existing?.arecanutCultivationType)
-          ? existing?.arecanutCultivationType
-          : null;
-      _soil = _soilTypes.contains(existing?.soilType) ? existing?.soilType : null;
       _notifications = existing?.notificationsEnabled ?? true;
-      _plantingDate = existing?.plantingDate ?? DateTime.now();
+      _farms = farms;
       _loading = false;
     });
   }
@@ -239,15 +205,14 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       villageCode: _villageCode,
       language: _language,
       notificationsEnabled: _notifications,
-      farmName: _farmName.text.trim(),
-      farmSizeAcres: double.tryParse(_farmSize.text) ?? 0,
-      waterSource: _waterSource,
-      irrigationMethod: _irrigationMethod,
-      crop: 'Arecanut',
-      plantingDate: _plantingDate,
-      landSurveyNumber: _survey.text.trim(),
-      arecanutCultivationType: _cultivation!,
-      soilType: _soil!,
+      farmName: original?.farmName ?? '',
+      farmSizeAcres: original?.farmSizeAcres ?? 0,
+      waterSource: original?.waterSource ?? '',
+      irrigationMethod: original?.irrigationMethod ?? '',
+      crop: original?.crop ?? 'Arecanut',
+      plantingDate: original?.plantingDate ?? DateTime.now(),
+      landSurveyNumber: original?.landSurveyNumber ?? '',
+
     );
 
     try {
@@ -314,25 +279,57 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            Text('Farm details', style: Theme.of(context).textTheme.headlineSmall),
+            Text(
+              'Your farms',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
             const SizedBox(height: 12),
-            TextFormField(controller: _survey, decoration: const InputDecoration(labelText: 'Land survey number'), validator: AuthValidators.validateSurveyNumber),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(initialValue: _cultivation, decoration: const InputDecoration(labelText: 'Arecanut cultivation type'), items: _cultivationTypes.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (value) => setState(() => _cultivation = value), validator: (value) => value == null ? 'Required' : null),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(initialValue: _soil, decoration: const InputDecoration(labelText: 'Soil type'), items: _soilTypes.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (value) => setState(() => _soil = value), validator: (value) => value == null ? 'Required' : null),
-            const SizedBox(height: 12),
-            TextFormField(controller: _farmName, decoration: const InputDecoration(labelText: 'Farm name')),
-            const SizedBox(height: 12),
-            TextFormField(controller: _farmSize, decoration: const InputDecoration(labelText: 'Farm size (acres)'), keyboardType: const TextInputType.numberWithOptions(decimal: true), validator: (v) => double.tryParse(v ?? '') == null ? 'Enter valid size' : null),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(initialValue: _waterSource, decoration: const InputDecoration(labelText: 'Water source'), items: const ['Borewell', 'Open well', 'Canal', 'Rainwater', 'Other'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (value) => setState(() => _waterSource = value!)),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(initialValue: _irrigationMethod, decoration: const InputDecoration(labelText: 'Irrigation method'), items: const ['Drip', 'Sprinkler', 'Flood', 'Other'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (value) => setState(() => _irrigationMethod = value!)),
-            ListTile(leading: const Icon(Icons.calendar_month), title: Text('Planting date: ${_plantingDate.day}/${_plantingDate.month}/${_plantingDate.year}'), onTap: () async {
-              final selected = await showDatePicker(context: context, firstDate: DateTime(1980), lastDate: DateTime.now(), initialDate: _plantingDate);
-              if (selected != null) setState(() => _plantingDate = selected);
-            }),
+            if (_farms.isEmpty)
+              const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text('No farms have been added yet.'),
+                ),
+              )
+            else
+              ..._farms.map((farm) {
+                final plots = _farmPlots[farm.id] ?? const <PlotModel>[];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: ExpansionTile(
+                    leading: const CircleAvatar(
+                      child: Icon(Icons.agriculture_outlined),
+                    ),
+                    title: Text(
+                      farm.name.isEmpty ? 'Unnamed farm' : farm.name,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    subtitle: Text(
+                      plots.isEmpty
+                          ? 'No plots added'
+                          : '${plots.length} plot${plots.length == 1 ? '' : 's'}',
+                    ),
+                    children: [
+                      if (plots.isEmpty)
+                        const ListTile(
+                          dense: true,
+                          leading: Icon(Icons.grid_view_outlined),
+                          title: Text('No plot IDs available'),
+                        )
+                      else
+                        ...plots.map(
+                          (plot) => ListTile(
+                            dense: true,
+                            leading: const Icon(Icons.grid_view_outlined),
+                            title: Text(plot.name),
+                            subtitle: Text('Plot ID: ${plot.id}'),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              }),
+            const SizedBox(height: 8),
             SwitchListTile(value: _notifications, onChanged: (value) => setState(() => _notifications = value), title: const Text('Enable notifications')),
             const SizedBox(height: 24),
             FilledButton.icon(onPressed: _saving ? null : _save, icon: const Icon(Icons.check), label: Text(_saving ? 'Saving...' : 'Save profile')),
