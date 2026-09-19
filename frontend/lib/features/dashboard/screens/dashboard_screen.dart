@@ -152,123 +152,211 @@ class DashboardScreen extends ConsumerWidget {
                       child: ListView(
                         padding: const EdgeInsets.all(16),
                         children: [
-                          Text(
-                            'Good day, ${user?.name ?? 'Farmer'}',
-                            style:
-                                Theme.of(context).textTheme.headlineSmall,
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Theme.of(context).colorScheme.primary,
+                                  Theme.of(context).colorScheme.primaryContainer,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Good day, ${user?.name ?? 'Farmer'}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineSmall
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onPrimary,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  farm.name,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onPrimary,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(
+                                      Icons.location_on_outlined,
+                                      size: 18,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary
+                                          .withValues(alpha: 0.85),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        farm.location,
+                                        style: TextStyle(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary
+                                              .withValues(alpha: 0.9),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                FilledButton.tonalIcon(
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const FarmManagementScreen(),
+                                    ),
+                                  ),
+                                  icon: const Icon(Icons.edit_outlined),
+                                  label: const Text('Manage farm'),
+                                ),
+                              ],
+                            ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 14),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .outlineVariant,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 24,
+                                  backgroundColor: Theme.of(context)
+                                      .colorScheme
+                                      .secondaryContainer,
+                                  child: Icon(
+                                    Icons.science_outlined,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSecondaryContainer,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Demo sensor mode',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'Simulated readings only - physical sensors are not connected.',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                FilledButton(
+                                  onPressed: () =>
+                                      _testDemoBackend(context, ref),
+                                  child: const Text('Test ML'),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 14),
                           Row(
                             children: [
                               Expanded(
-                                child: Text(
-                                  '${farm.name} â€¢ ${farm.location}',
-                                  style:
-                                      Theme.of(context).textTheme.bodyLarge,
+                                child: _OverviewTile(
+                                  icon: Icons.square_foot_outlined,
+                                  label: 'Farm size',
+                                  value: '${farm.sizeAcres.toStringAsFixed(1)} acres',
                                 ),
                               ),
-                              TextButton.icon(
-                                onPressed: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        const FarmManagementScreen(),
-                                  ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _OverviewTile(
+                                  icon: Icons.water_drop_outlined,
+                                  label: 'Water',
+                                  value: farm.waterSource,
                                 ),
-                                icon: const Icon(Icons.edit, size: 16),
-                                label: const Text('Manage'),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _OverviewTile(
+                                  icon: Icons.water_outlined,
+                                  label: 'Irrigation',
+                                  value: farm.irrigationMethod,
+                                ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 16),
-                          Card(
-                            child: ListTile(
-                              leading: const Icon(Icons.science_outlined),
-                              title: const Text('Simulated sensor data'),
-                              subtitle: const Text('Demo readings only — no physical sensor is connected yet.'),
-                              trailing: FilledButton(
-                                onPressed: () => _testDemoBackend(context, ref),
-                                child: const Text('Test backend'),
+                          const SizedBox(height: 18),
+                          Row(
+                            children: [
+                              Text(
+                                'Farm conditions',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleLarge
+                                    ?.copyWith(fontWeight: FontWeight.w800),
                               ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(18),
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Farm Overview',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleLarge,
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    '${farm.sizeAcres} acres â€¢ ${farm.irrigationMethod} irrigation',
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Water source: ${farm.waterSource}',
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Divider(
-                                      color: Theme.of(context)
-                                          .dividerColor),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        farmDevices.isEmpty
-                                            ? Icons.sensors_off
-                                            : farmDevices.any((d) =>
-                                                    d.connectionState ==
-                                                    DeviceConnectionState
-                                                        .online)
-                                                ? Icons.check_circle
-                                                : Icons
-                                                    .warning_amber_rounded,
-                                        color: farmDevices.isEmpty
-                                            ? Colors.grey
-                                            : farmDevices.any((d) =>
-                                                    d.connectionState ==
-                                                    DeviceConnectionState
-                                                        .online)
-                                                ? Colors.green
-                                                : Colors.orange,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        '${farmDevices.length} device(s) assigned',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleSmall,
-                                      ),
-                                      const Spacer(),
-                                      _statusChip(context, farmDevices),
-                                    ],
-                                  ),
-                                ],
+                              const Spacer(),
+                              Text(
+                                '${farmDevices.length} device${farmDevices.length == 1 ? '' : 's'}',
+                                style: Theme.of(context).textTheme.bodySmall,
                               ),
-                            ),
+                            ],
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
                           GridView.count(
                             crossAxisCount: 2,
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
-                            mainAxisSpacing: 10,
-                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                            childAspectRatio: 1.12,
                             children: [
                               _MetricCard(
                                 icon: Icons.water_drop,
                                 label: 'Soil moisture',
                                 value: agg.soilMoisture == null
-                                    ? 'â€”'
-                                    : '${agg.soilMoisture!.toStringAsFixed(1)} %',
+                                    ? '-'
+                                    : '${agg.soilMoisture!.toStringAsFixed(1)}%',
+                                unit: 'Moisture level',
                                 warn: agg.soilMoisture != null &&
                                     (agg.soilMoisture! < 20 ||
                                         agg.soilMoisture! > 85),
@@ -277,109 +365,140 @@ class DashboardScreen extends ConsumerWidget {
                                 icon: Icons.thermostat,
                                 label: 'Temperature',
                                 value: agg.temperature == null
-                                    ? 'â€”'
-                                    : '${agg.temperature!.toStringAsFixed(1)} Â°C',
+                                    ? '-'
+                                    : '${agg.temperature!.toStringAsFixed(1)} C',
+                                unit: 'Air temperature',
                                 warn: agg.temperature != null &&
                                     (agg.temperature! < 10 ||
                                         agg.temperature! > 42),
                               ),
                               _MetricCard(
-                                icon: Icons.cloud,
+                                icon: Icons.cloud_outlined,
                                 label: 'Humidity',
                                 value: agg.humidity == null
-                                    ? 'â€”'
-                                    : '${agg.humidity!.toStringAsFixed(1)} %',
+                                    ? '-'
+                                    : '${agg.humidity!.toStringAsFixed(1)}%',
+                                unit: 'Relative humidity',
                               ),
                               _MetricCard(
-                                icon: Icons.water,
+                                icon: Icons.waterfall_chart,
                                 label: 'Rainfall',
                                 value: agg.rainfall == null
-                                    ? 'â€”'
+                                    ? '-'
                                     : '${agg.rainfall!.toStringAsFixed(1)} mm',
+                                unit: 'Recorded rainfall',
                                 warn: agg.rainfall != null &&
                                     agg.rainfall! > 150,
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 14),
                           Card(
                             child: ListTile(
-                              leading: Icon(
-                                farmDevices.isEmpty
-                                    ? Icons.info_outline
-                                    : farmDevices.any((d) =>
-                                            d.connectionState ==
-                                            DeviceConnectionState.online)
-                                        ? Icons.check_circle
-                                        : Icons.warning_amber_rounded,
-                                color: farmDevices.isEmpty
-                                    ? Colors.grey
-                                    : farmDevices.any((d) =>
-                                            d.connectionState ==
-                                            DeviceConnectionState.online)
-                                        ? Colors.green
-                                        : Colors.orange,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 8,
                               ),
-                              title: const Text('Irrigation status'),
-                              subtitle: Text(
-                                farmDevices.isEmpty
-                                    ? 'No sensors assigned to this farm yet.'
-                                    : agg.hasReading
-                                        ? 'Decision engine ready â€” sensor data available.'
-                                        : 'Sensors online, awaiting first reading. ML model is not connected yet.',
+                              leading: CircleAvatar(
+                                backgroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .secondaryContainer,
+                                child: Icon(
+                                  farmDevices.isEmpty
+                                      ? Icons.water_drop_outlined
+                                      : Icons.auto_awesome_outlined,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSecondaryContainer,
+                                ),
+                              ),
+                              title: const Text(
+                                'Irrigation assistant',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                              subtitle: Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(
+                                  farmDevices.isEmpty
+                                      ? 'Add a sensor to receive live irrigation insights.'
+                                      : agg.hasReading
+                                          ? 'Sensor data received. ML prediction is not connected yet.'
+                                          : 'Sensors are online and waiting for the first reading.',
+                                ),
                               ),
                               trailing: const Icon(Icons.chevron_right),
                             ),
                           ),
+                          const SizedBox(height: 10),
                           Card(
                             child: ExpansionTile(
-                              leading: Icon(
-                                alerts.isEmpty
-                                    ? Icons.notifications_none
-                                    : Icons.notification_important,
-                                color: alerts.isEmpty
-                                    ? Colors.grey
-                                    : (alerts.any((a) => a.severity ==
-                                            _AlertSeverity.critical)
-                                        ? Colors.red
-                                        : Colors.orange),
+                              leading: CircleAvatar(
+                                backgroundColor: alerts.isEmpty
+                                    ? Theme.of(context)
+                                        .colorScheme
+                                        .surfaceContainerHighest
+                                    : Theme.of(context)
+                                        .colorScheme
+                                        .errorContainer,
+                                child: Icon(
+                                  alerts.isEmpty
+                                      ? Icons.check_circle_outline
+                                      : Icons.warning_amber_rounded,
+                                  color: alerts.isEmpty
+                                      ? Theme.of(context)
+                                          .colorScheme
+                                          .primary
+                                      : Theme.of(context)
+                                          .colorScheme
+                                          .onErrorContainer,
+                                ),
                               ),
                               title: Text(
                                 alerts.isEmpty
-                                    ? 'No active alerts'
-                                    : '${alerts.length} active alert(s)',
+                                    ? 'All farm conditions look normal'
+                                    : '${alerts.length} active alert${alerts.length == 1 ? '' : 's'}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
-                              subtitle: Text(alerts.isEmpty
-                                  ? 'Farm conditions are within normal ranges.'
-                                  : 'Tap to view details'),
+                              subtitle: Text(
+                                alerts.isEmpty
+                                    ? 'We will show warnings here when sensor data is available.'
+                                    : 'Tap to view details',
+                              ),
                               children: alerts.isEmpty
-                                  ? [
-                                      const Padding(
-                                        padding: EdgeInsets.fromLTRB(
-                                            16, 0, 16, 16),
-                                        child: Text(
-                                          'Alerts will appear here as sensor events or irrigation conditions are detected.',
+                                  ? const []
+                                  : alerts
+                                      .map(
+                                        (a) => ListTile(
+                                          leading: Icon(
+                                            a.severity.icon,
+                                            color: a.severity.color,
+                                          ),
+                                          title: Text(a.title),
+                                          subtitle: Text(a.message),
+                                          dense: true,
                                         ),
                                       )
-                                    ]
-                                  : [
-                                      ...alerts.map((a) => ListTile(
-                                            leading: Icon(
-                                              a.severity.icon,
-                                              color: a.severity.color,
-                                            ),
-                                            title: Text(a.title),
-                                            subtitle: Text(a.message),
-                                            dense: true,
-                                          )),
-                                    ],
+                                      .toList(),
                             ),
                           ),
-                          const Card(
+                          const SizedBox(height: 10),
+                          Card(
                             child: ListTile(
-                              leading: Icon(Icons.history),
-                              title: Text('Recent activity'),
-                              subtitle: Text('No activity events have been recorded yet.'),
+                              leading: CircleAvatar(
+                                backgroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest,
+                                child: const Icon(Icons.history),
+                              ),
+                              title: const Text(
+                                'Recent activity',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                              subtitle: const Text(
+                                'No activity events have been recorded yet.',
+                              ),
                             ),
                           ),
                         ],
@@ -473,7 +592,7 @@ class DashboardScreen extends ConsumerWidget {
             severity: _AlertSeverity.critical,
             title: 'Low soil moisture on ${d.name}',
             message:
-                '${r.soilMoisture!.toStringAsFixed(1)}% â€” irrigation recommended.',
+                '${r.soilMoisture!.toStringAsFixed(1)}% - irrigation recommended.',
           ));
         }
         if (r.soilMoisture != null && r.soilMoisture! > 90) {
@@ -481,13 +600,13 @@ class DashboardScreen extends ConsumerWidget {
             severity: _AlertSeverity.warning,
             title: 'High soil moisture on ${d.name}',
             message:
-                '${r.soilMoisture!.toStringAsFixed(1)}% â€” risk of waterlogging.',
+                '${r.soilMoisture!.toStringAsFixed(1)}% - risk of waterlogging.',
           ));
         }
         if (r.temperature != null && r.temperature! > 40) {
           alerts.add(_FarmAlert(
             severity: _AlertSeverity.warning,
-            title: 'High temperature (${r.temperature!.toStringAsFixed(1)}Â°C)',
+            title: 'High temperature (${r.temperature!.toStringAsFixed(1)} C)',
             message: 'Monitor crop stress on ${d.name}.',
           ));
         }
@@ -674,40 +793,109 @@ class _FarmAlert {
   });
 }
 
+class _OverviewTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _OverviewTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: scheme.primary),
+          const SizedBox(height: 10),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _MetricCard extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
+  final String unit;
   final bool warn;
 
   const _MetricCard({
     required this.icon,
     required this.label,
     required this.value,
+    required this.unit,
     this.warn = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = warn ? Colors.orange : null;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: color),
-            const Spacer(),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-            Text(label),
-          ],
+    final scheme = Theme.of(context).colorScheme;
+    final accent = warn ? scheme.error : scheme.primary;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: warn
+            ? scheme.errorContainer.withValues(alpha: 0.55)
+            : scheme.primaryContainer.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: warn ? scheme.error.withValues(alpha: 0.25) : scheme.outlineVariant,
         ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 21,
+            backgroundColor: scheme.surface,
+            child: Icon(icon, color: accent),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: accent,
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          Text(
+            unit,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
       ),
     );
   }
