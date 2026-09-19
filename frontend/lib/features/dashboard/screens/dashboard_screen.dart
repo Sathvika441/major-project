@@ -23,6 +23,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   String? _selectedFarmId;
   SensorReading? _demoReading;
   String _demoPreset = 'Normal';
+  int? _selectedFarmCropAgeDays;
+  double? _selectedFarmCropAgeYears;
+  String? _selectedFarmGrowthStage;
+  String? _selectedFarmPlantingDate;
 
   SensorReading _presetReading(String preset) {
     final now = DateTime.now();
@@ -71,6 +75,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         'temperature': reading.temperature,
         'humidity': reading.humidity,
         'rainfall': reading.rainfall,
+        'crop': 'Arecanut',
+        'crop_age_days': _selectedFarmCropAgeDays,
+        'crop_age_years': _selectedFarmCropAgeYears,
+        'growth_stage': _selectedFarmGrowthStage,
+        'planting_date': _selectedFarmPlantingDate,
         'source': 'simulated',
       });
       if (context.mounted) {
@@ -172,9 +181,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   (item) => item.id == selectedId,
                   orElse: () => farms.first,
                 );
-                if (_selectedFarmId != farm.id) {
+                final cropAgeDays = farm.cropAgeDays;
+                final cropAgeYears = farm.cropAgeYears;
+                final growthStage = farm.growthStageLabel;
+                final plantingDate = farm.plantingDate?.toIso8601String();
+
+                if (_selectedFarmId != farm.id ||
+                    _selectedFarmCropAgeDays != cropAgeDays ||
+                    _selectedFarmGrowthStage != growthStage) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (mounted) setState(() => _selectedFarmId = farm.id);
+                    if (mounted) {
+                      setState(() {
+                        _selectedFarmId = farm.id;
+                        _selectedFarmCropAgeDays = cropAgeDays;
+                        _selectedFarmCropAgeYears = cropAgeYears;
+                        _selectedFarmGrowthStage = growthStage;
+                        _selectedFarmPlantingDate = plantingDate;
+                      });
+                    }
                   });
                 }
                 return FutureBuilder<List<DeviceModel>>(
@@ -466,7 +490,34 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 12),
+                          Card(
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .secondaryContainer,
+                                child: Icon(
+                                  Icons.eco_outlined,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSecondaryContainer,
+                                ),
+                              ),
+                              title: const Text(
+                                'Crop growth stage',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                              subtitle: Text(
+                                farm.growthStageLabel == null
+                                    ? 'Planting date not available'
+                                    : farm.growthStageLabel! + ' • ' +
+                                      farm.cropAgeDays.toString() + ' days (' +
+                                      farm.cropAgeYears!.toStringAsFixed(1) + ' years)',
+                              ),
+                              trailing: const Icon(Icons.auto_graph_outlined),
+                            ),
+                          ),                          const SizedBox(height: 18),
                           Row(
                             children: [
                               Text(
