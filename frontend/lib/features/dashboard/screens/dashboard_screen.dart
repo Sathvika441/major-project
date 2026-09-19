@@ -221,6 +221,10 @@ class DashboardScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 16),
                                 FilledButton.tonalIcon(
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: Theme.of(context).colorScheme.primary,
+                                  ),
                                   onPressed: () => Navigator.push(
                                     context,
                                     MaterialPageRoute(
