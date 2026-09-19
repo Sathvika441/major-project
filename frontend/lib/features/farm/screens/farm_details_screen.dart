@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/storage/local_storage_service.dart';
+import '../../../core/constants/karnataka_locations.dart';
+import '../../../core/services/location_master_service.dart';
 import '../../../core/validators/auth_validators.dart';
 import '../../../models/farm/farm_model.dart';
 import '../../../models/farm/farm_profile_model.dart';
@@ -62,10 +64,19 @@ class FarmDetailsScreen extends ConsumerStatefulWidget {
 class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
   final _formKey = GlobalKey<FormState>();
 
+  static const String _defaultState = 'Karnataka';
+
   late final TextEditingController _farmName;
   late final TextEditingController _survey;
   late final TextEditingController _size;
-  late final TextEditingController _location;
+
+  String _state = _defaultState;
+  String? _district;
+  String? _taluk;
+  VillageEntry? _village;
+  List<String> _districts = [];
+  List<String> _taluks = [];
+  List<VillageEntry> _villages = [];
 
   String? _cultivation;
   String? _soil;
@@ -85,7 +96,6 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
     _farmName = TextEditingController();
     _survey = TextEditingController();
     _size = TextEditingController();
-    _location = TextEditingController();
     _loadExisting();
   }
 
@@ -94,7 +104,6 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
     _farmName.dispose();
     _survey.dispose();
     _size.dispose();
-    _location.dispose();
     super.dispose();
   }
 
@@ -106,6 +115,11 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
     }
 
     try {
+      final locationMaster = ref.read(locationMasterServiceProvider);
+      await locationMaster.load();
+      _districts = locationMaster.districts.isNotEmpty
+          ? locationMaster.districts
+          : KarnatakaLocations.districts;
       final profile = await ref.read(profileRepositoryProvider).load(user.uid);
       final farms = await ref.read(farmRepositoryProvider).getFarms(user.uid);
 
@@ -120,7 +134,6 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
         final match = farms.where((farm) => farm.id == widget.farmId).toList();
         if (match.isNotEmpty) _loadFarmIntoForm(match.first);
       } else if (!widget.startNew && farms.length == 1) {
-        // Resume an interrupted onboarding flow for the one existing farm.
         _loadFarmIntoForm(farms.first);
       }
     } catch (e) {
@@ -133,6 +146,27 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
   }
 
   void _loadFarmIntoForm(FarmModel farm) {
+    final locationMaster = ref.read(locationMasterServiceProvider);
+    final district = farm.district.isNotEmpty
+        ? farm.district
+        : (_existingProfile?.district ?? '');
+    final taluk = farm.taluk.isNotEmpty
+        ? farm.taluk
+        : (_existingProfile?.taluk ?? '');
+    final villageName = farm.village.isNotEmpty
+        ? farm.village
+        : (_existingProfile?.village ?? '');
+
+    _state = farm.state.isNotEmpty ? farm.state : _defaultState;
+    _district = _districts.contains(district) ? district : null;
+    _taluks = _district == null ? [] : locationMaster.taluksFor(_district!);
+    _taluk = _taluks.contains(taluk) ? taluk : null;
+    _villages = _taluk == null ? [] : locationMaster.villagesFor(_taluk!);
+    _village = _villages.cast<VillageEntry?>().firstWhere(
+      (entry) => entry?.name.trim().toLowerCase() == villageName.trim().toLowerCase(),
+      orElse: () => null,
+    );
+
     setState(() {
       _editingFarm = farm;
       _farmName.text = farm.name;
@@ -142,10 +176,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
       _cultivation = _pickOption(farm.arecanutCultivationType, cultivationTypes);
       _soil = _pickOption(farm.soilType, soilTypes);
       _waterSource = _pickOption(farm.waterSource, waterSources);
-      _irrigationMethod = _pickOption(
-        farm.irrigationMethod,
-        irrigationMethods,
-      );
+      _irrigationMethod = _pickOption(farm.irrigationMethod, irrigationMethods);
       _plantingDate = farm.plantingDate;
     });
   }
@@ -162,6 +193,12 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
       _editingFarm = null;
       _farmName.clear();
       _location.clear();
+      _state = _defaultState;
+      _district = null;
+      _taluk = null;
+      _village = null;
+      _taluks = [];
+      _villages = [];
       _survey.clear();
       _size.clear();
       _cultivation = null;
@@ -190,7 +227,8 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
   Future<void> _saveCurrentFarm({required bool addAnother}) async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_cultivation == null ||
+    if (_district == null || _taluk == null || _village == null ||
+        _cultivation == null ||
         _soil == null ||
         _waterSource == null ||
         _irrigationMethod == null ||
@@ -215,21 +253,40 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
               id: 'farm_${DateTime.now().microsecondsSinceEpoch}',
               userId: user.uid,
               name: _farmName.text.trim(),
-              location: _location.text.trim(),
+              location: KarnatakaLocations.formatLocation(
+                state: _state,
+                district: _district!,
+                taluk: _taluk!,
+                village: _village!.name,
+              ),
               sizeAcres: size,
               waterSource: _waterSource!,
               irrigationMethod: _irrigationMethod!,
               createdAt: DateTime.now(),
               landSurveyNumber: _survey.text.trim(),
+              villageCode: _village!.code,
+              state: _state,
+              district: _district!,
+              taluk: _taluk!,
+              village: _village!.name,
               arecanutCultivationType: _cultivation!,
               soilType: _soil!,
-              villageCode: _existingProfile?.villageCode ?? '',
+              villageCode: _village!.code,
+              state: _state,
+              district: _district!,
+              taluk: _taluk!,
+              village: _village!.name,
               crop: 'Arecanut',
               plantingDate: _plantingDate,
             )
           : _editingFarm!.copyWith(
               name: _farmName.text.trim(),
-              location: _location.text.trim(),
+              location: KarnatakaLocations.formatLocation(
+                state: _state,
+                district: _district!,
+                taluk: _taluk!,
+                village: _village!.name,
+              ),
               sizeAcres: size,
               waterSource: _waterSource!,
               irrigationMethod: _irrigationMethod!,
@@ -252,7 +309,12 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
               userId: user.uid,
               name: user.name,
               phone: user.phone,
-              location: _location.text.trim(),
+              location: KarnatakaLocations.formatLocation(
+                state: _state,
+                district: _district!,
+                taluk: _taluk!,
+                village: _village!.name,
+              ),
               language: 'English',
               notificationsEnabled: true,
               farmName: '',
@@ -264,6 +326,17 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
             );
 
         final profile = profileBase.copyWith(
+          location: KarnatakaLocations.formatLocation(
+            state: _state,
+            district: _district!,
+            taluk: _taluk!,
+            village: _village!.name,
+          ),
+          state: _state,
+          district: _district!,
+          taluk: _taluk!,
+          village: _village!.name,
+          villageCode: _village!.code,
           farmName: _farmName.text.trim(),
           farmSizeAcres: size,
           waterSource: _waterSource!,
@@ -355,14 +428,92 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
                 validator: _requiredText,
               ),
               const SizedBox(height: 14),
-              TextFormField(
-                controller: _location,
+              DropdownButtonFormField<String>(
+                value: _state,
                 decoration: const InputDecoration(
-                  labelText: 'Farm location',
-                  hintText: 'Example: Village, Taluk, District',
-                  prefixIcon: Icon(Icons.location_on_outlined),
+                  labelText: 'State',
+                  prefixIcon: Icon(Icons.map_outlined),
                 ),
-                validator: _requiredText,
+                items: const [
+                  DropdownMenuItem(
+                    value: 'Karnataka',
+                    child: Text('Karnataka'),
+                  ),
+                ],
+                onChanged: null,
+              ),
+              const SizedBox(height: 14),
+              DropdownButtonFormField<String>(
+                value: _district,
+                decoration: const InputDecoration(
+                  labelText: 'District',
+                  prefixIcon: Icon(Icons.location_city_outlined),
+                ),
+                items: _districts
+                    .map((value) => DropdownMenuItem(
+                          value: value,
+                          child: Text(value),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  final service = ref.read(locationMasterServiceProvider);
+                  setState(() {
+                    _district = value;
+                    _taluk = null;
+                    _village = null;
+                    _taluks = value == null ? [] : service.taluksFor(value);
+                    _villages = [];
+                  });
+                },
+                validator: (value) =>
+                    value == null ? 'Please select a district' : null,
+              ),
+              const SizedBox(height: 14),
+              DropdownButtonFormField<String>(
+                value: _taluk,
+                decoration: const InputDecoration(
+                  labelText: 'Taluk',
+                  prefixIcon: Icon(Icons.account_balance_outlined),
+                ),
+                items: _taluks
+                    .map((value) => DropdownMenuItem(
+                          value: value,
+                          child: Text(value),
+                        ))
+                    .toList(),
+                onChanged: _district == null
+                    ? null
+                    : (value) {
+                        final service = ref.read(locationMasterServiceProvider);
+                        setState(() {
+                          _taluk = value;
+                          _village = null;
+                          _villages = value == null
+                              ? []
+                              : service.villagesFor(value);
+                        });
+                      },
+                validator: (value) =>
+                    value == null ? 'Please select a taluk' : null,
+              ),
+              const SizedBox(height: 14),
+              DropdownButtonFormField<VillageEntry>(
+                value: _village,
+                decoration: const InputDecoration(
+                  labelText: 'Village',
+                  prefixIcon: Icon(Icons.home_work_outlined),
+                ),
+                items: _villages
+                    .map((value) => DropdownMenuItem(
+                          value: value,
+                          child: Text(value.name),
+                        ))
+                    .toList(),
+                onChanged: _taluk == null
+                    ? null
+                    : (value) => setState(() => _village = value),
+                validator: (value) =>
+                    value == null ? 'Please select a village' : null,
               ),
               const SizedBox(height: 14),
               TextFormField(
