@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class FarmModel {
   final String id;
   final String userId;
@@ -86,18 +88,21 @@ class FarmModel {
         sizeAcres: (map['sizeAcres'] as num?)?.toDouble() ?? 0.0,
         waterSource: map['waterSource'] as String? ?? 'Borewell',
         irrigationMethod: map['irrigationMethod'] as String? ?? 'Drip',
-        createdAt:
-            DateTime.tryParse(map['createdAt'] as String? ?? '') ??
-                DateTime.now(),
-        updatedAt: map['updatedAt'] != null
-            ? DateTime.tryParse(map['updatedAt'] as String)
-            : null,
+        createdAt: _readDateTime(map['createdAt']) ?? DateTime.now(),
+        updatedAt: _readDateTime(map['updatedAt']),
         isActive: map['isActive'] as bool? ?? true,
         landSurveyNumber: map['landSurveyNumber'] as String? ?? '',
         arecanutCultivationType: map['arecanutCultivationType'] as String? ?? '',
         soilType: map['soilType'] as String? ?? '',
         villageCode: map['villageCode'] as String? ?? '',
       );
+
+  static DateTime? _readDateTime(dynamic value) {
+    if (value is Timestamp) return value.toDate();
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value);
+    return null;
+  }
 }
 
 class PlotModel {
