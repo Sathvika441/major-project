@@ -28,10 +28,17 @@ class FirebaseAuthService implements AuthService {
 
   CollectionReference<Map<String, dynamic>> get _users => _firestore.collection('users');
 
+  DateTime? _readDateTime(dynamic value) {
+    if (value is Timestamp) return value.toDate();
+    if (value is DateTime) return value;
+    if (value is String) return DateTime.tryParse(value);
+    return null;
+  }
+
   Future<UserModel> _userModel(User user, {String? name, String? phone}) async {
     final doc = await _users.doc(user.uid).get();
     final data = doc.data() ?? <String, dynamic>{};
-    final created = (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now();
+    final created = _readDateTime(data['createdAt']) ?? DateTime.now();
     final model = UserModel(
       uid: user.uid,
       name: name ?? (data['name'] as String? ?? user.displayName ?? ''),
