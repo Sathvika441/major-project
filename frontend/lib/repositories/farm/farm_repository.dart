@@ -5,6 +5,7 @@ import '../../core/services/crop_growth_stage_service.dart';
 
 abstract class FarmRepository {
   Future<List<FarmModel>> getFarms(String userId);
+  Stream<List<FarmModel>> watchFarms(String userId);
   Future<FarmModel> saveFarm(FarmModel farm);
   Future<void> deactivateFarm(String userId, String farmId);
   Future<List<PlotModel>> getPlots(String userId, String farmId);
@@ -30,6 +31,16 @@ class FirestoreFarmRepository implements FarmRepository {
     return snapshot.docs
         .map((d) => FarmModel.fromMap({...d.data(), 'id': d.id}))
         .toList();
+  }
+
+  @override
+  Stream<List<FarmModel>> watchFarms(String userId) {
+    return _farms(userId)
+        .where('isActive', isEqualTo: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((d) => FarmModel.fromMap({...d.data(), 'id': d.id}))
+            .toList());
   }
 
   @override
