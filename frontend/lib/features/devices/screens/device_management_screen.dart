@@ -29,17 +29,112 @@ class DeviceManagementScreen extends ConsumerWidget {
   }
 
   Future<void> _register(BuildContext context, WidgetRef ref) async {
-    final id = TextEditingController(); final name = TextEditingController(); final plot = TextEditingController();
+    final id = TextEditingController();
+    final name = TextEditingController();
     final key = GlobalKey<FormState>();
     final farms = await ref.read(farmsProvider.future);
     if (!context.mounted) return;
-    await showDialog(context: context, builder: (ctx) => AlertDialog(title: const Text('Register device'), content: Form(key: key, child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
-      TextFormField(controller: id, decoration: const InputDecoration(labelText: 'Device ID'), validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
-      TextFormField(controller: name, decoration: const InputDecoration(labelText: 'Device name'), validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
-      TextFormField(controller: plot, decoration: const InputDecoration(labelText: 'Plot ID'), validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
-      const SizedBox(height: 8), Text('Available farms: ${farms.length}'),
-    ]))), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')), FilledButton(onPressed: () async { if (!key.currentState!.validate()) return; final uid = ref.read(authControllerProvider).user!.uid; final farmId = farms.isEmpty ? 'unassigned' : farms.first.id; await ref.read(deviceRepositoryProvider).register(DeviceModel(id: 'device_${DateTime.now().microsecondsSinceEpoch}', userId: uid, farmId: farmId, plotId: plot.text.trim(), deviceId: id.text.trim(), name: name.text.trim(), lastSeen: DateTime.now())); ref.invalidate(devicesProvider); if (ctx.mounted) Navigator.pop(ctx); }, child: const Text('Register'))]));
+
+    String? selectedFarmId = farms.isNotEmpty ? farms.first.id : null;
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Register device'),
+          content: Form(
+            key: key,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: id,
+                    decoration: const InputDecoration(
+                      labelText: 'Device ID',
+                      hintText: 'Example: SENSOR-001',
+                    ),
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? 'Required'
+                        : null,
+                  ),
+                  TextFormField(
+                    controller: name,
+                    decoration: const InputDecoration(
+                      labelText: 'Device name',
+                      hintText: 'Example: Soil Sensor 1',
+                    ),
+                    validator: (v) => v == null || v.trim().isEmpty
+                        ? 'Required'
+                        : null,
+                  ),
+                  const SizedBox(height: 12),
+                  if (farms.isEmpty)
+                    const Text('Add a farm before registering a device.')
+                  else
+                    DropdownButtonFormField<String>(
+                      value: selectedFarmId,
+                      decoration: const InputDecoration(
+                        labelText: 'Assign to farm',
+                      ),
+                      items: farms
+                          .map(
+                            (farm) => DropdownMenuItem(
+                              value: farm.id,
+                              child: Text(
+                                farm.name.isEmpty
+                                    ? 'Unnamed farm'
+                                    : farm.name,
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) =>
+                          setDialogState(() => selectedFarmId = value),
+                      validator: (value) =>
+                          value == null ? 'Select a farm' : null,
+                    ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: farms.isEmpty
+                  ? null
+                  : () async {
+                      if (!key.currentState!.validate()) return;
+                      final uid = ref.read(authControllerProvider).user!.uid;
+                      await ref
+                          .read(deviceRepositoryProvider)
+                          .register(
+                            DeviceModel(
+                              id: 'device_${DateTime.now().microsecondsSinceEpoch}',
+                              userId: uid,
+                              farmId: selectedFarmId!,
+                              plotId: '',
+                              deviceId: id.text.trim(),
+                              name: name.text.trim(),
+                              lastSeen: DateTime.now(),
+                            ),
+                          );
+                      ref.invalidate(devicesProvider);
+                      if (ctx.mounted) Navigator.pop(ctx);
+                    },
+              child: const Text('Register'),
+            ),
+          ],
+        ),
+      ),
+    );
+    id.dispose();
+    name.dispose();
   }
+
 }
 
 class _DeviceTile extends StatelessWidget {
@@ -50,7 +145,7 @@ class _DeviceTile extends StatelessWidget {
     final reading = device.latestReading;
     final state = device.connectionState;
     final status = state.name.toUpperCase();
-    return Card(child: ExpansionTile(title: Text(device.name), subtitle: Text('${device.deviceId} • Plot ${device.plotId}\n$status • Last seen ${_ago(device.lastSeen)}'), children: [
+    return Card(child: ExpansionTile(title: Text(device.name), subtitle: Text('${device.deviceId}\n$status • Last seen ${_ago(device.lastSeen)}'), children: [
       if (reading == null) const ListTile(leading: Icon(Icons.sensors_off), title: Text('No sensor reading available'))
       else ...[
         _metric('Soil moisture', reading.soilMoisture, '%'), _metric('Temperature', reading.temperature, '°C'), _metric('Humidity', reading.humidity, '%'), _metric('Rainfall', reading.rainfall, 'mm'),
