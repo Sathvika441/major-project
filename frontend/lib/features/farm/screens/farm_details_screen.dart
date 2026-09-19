@@ -170,7 +170,6 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
     setState(() {
       _editingFarm = farm;
       _farmName.text = farm.name;
-      _location.text = farm.location;
       _survey.text = farm.landSurveyNumber;
       _size.text = farm.sizeAcres > 0 ? farm.sizeAcres.toString() : '';
       _cultivation = _pickOption(farm.arecanutCultivationType, cultivationTypes);
@@ -192,7 +191,6 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
     setState(() {
       _editingFarm = null;
       _farmName.clear();
-      _location.clear();
       _state = _defaultState;
       _district = null;
       _taluk = null;
