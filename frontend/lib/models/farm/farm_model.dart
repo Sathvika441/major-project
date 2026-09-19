@@ -198,16 +198,11 @@ class PlotModel {
     this.isActive = true,
   });
 
-  int get cropAgeDays => DateTime.now().difference(plantingDate).inDays.clamp(0, 100000);
+  int get cropAgeDays =>
+      const CropGrowthStageService().calculate(plantingDate: plantingDate).ageDays;
 
-  String get growthStage {
-    final years = cropAgeDays / 365.25;
-    if (years < 1) return 'Establishment';
-    if (years < 3) return 'Young palm';
-    if (years < 6) return 'Juvenile / pre-bearing';
-    if (years < 12) return 'Bearing';
-    return 'Mature bearing';
-  }
+  String get growthStage =>
+      const CropGrowthStageService().calculate(plantingDate: plantingDate).stageLabel;
 
   PlotModel copyWith({
     String? name,
