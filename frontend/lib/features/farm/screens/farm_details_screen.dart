@@ -370,7 +370,17 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
       await storage.setOnboardingCompleted(true);
       await storage.setPhaseBMigrated(true);
 
-      if (mounted) context.go('/farms');
+      if (mounted) {
+        // Farm details is opened from Farm Management with a local
+        // Navigator push. Pop back to that page when possible; if this
+        // screen was opened directly (for example during onboarding),
+        // navigate to Farm Management instead.
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        } else {
+          context.go('/farms');
+        }
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
