@@ -269,11 +269,14 @@ class AuthController extends StateNotifier<AuthState> {
 
   Future<void> logout() async {
     state = AuthState.loading();
+
+    // Logging out must not erase onboarding progress. Those flags describe
+    // the user's completed setup, not the authentication session. Clearing
+    // them here caused an existing user to be sent back to onboarding after
+    // every subsequent login.
     await _storage.setOtpVerified(false);
-    await _storage.setCompletedPhaseA(false);
-    await _storage.setCompletedPhaseB(false);
-    await _storage.setHasRequestedPermissions(false);
     await _repository.logout();
+
     state = AuthState.unauthenticated();
   }
 
