@@ -9,7 +9,7 @@ import '../../../services/otp/otp_service.dart';
 import 'auth_state.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) =>
-    IsolatedAuthService(ref.watch(localStorageServiceProvider)));
+    FirebaseAuthService(ref.watch(localStorageServiceProvider)));
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) =>
     AuthRepositoryImpl(ref.watch(authServiceProvider)));
