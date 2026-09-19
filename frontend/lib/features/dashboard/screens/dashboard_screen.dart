@@ -32,6 +32,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   String? _selectedFarmGrowthStage;
   String? _selectedFarmPlantingDate;
   String? _decisionAuditKey;
+  DateTime? _lastSyncAt;
+  bool _syncing = false;
 
   SensorReading _presetReading(String preset) {
     final now = DateTime.now();
@@ -69,6 +71,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     setState(() {
       _demoReading = _presetReading(_demoPreset);
     });
+  }
+
+  Future<void> _refreshDashboard(String uid) async {
+    if (_syncing) return;
+    setState(() => _syncing = true);
+    try {
+      await Future.wait([
+        ref.read(farmRepositoryProvider).getFarms(uid),
+        ref.read(deviceRepositoryProvider).getDevices(uid),
+      ]);
+      if (mounted) setState(() => _lastSyncAt = DateTime.now());
+    } finally {
+      if (mounted) setState(() => _syncing = false);
+    }
   }
 
   Future<void> _testDemoBackend(BuildContext context, WidgetRef ref) async {
@@ -158,8 +174,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
       body: uid == null
           ? const Center(child: Text('Please sign in.'))
-          : FutureBuilder<List<FarmModel>>(
-              future: ref.read(farmRepositoryProvider).getFarms(uid),
+          : StreamBuilder<List<FarmModel>>(
+              stream: ref.read(farmRepositoryProvider).watchFarms(uid),
               builder: (context, farmsSnapshot) {
                 if (farmsSnapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -191,7 +207,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 final growthStage = farm.growthStageLabel;
                 final plantingDate = farm.plantingDate?.toIso8601String();
 
-                if (_selectedFarmId != farm.id ||
+                final farmChanged = _selectedFarmId != farm.id;
+                if (farmChanged ||
                     _selectedFarmCropAgeDays != cropAgeDays ||
                     _selectedFarmGrowthStage != growthStage) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -202,14 +219,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         _selectedFarmCropAgeYears = cropAgeYears;
                         _selectedFarmGrowthStage = growthStage;
                         _selectedFarmPlantingDate = plantingDate;
+                        if (farmChanged) _demoReading = null;
                       });
                     }
                   });
                 }
-                return FutureBuilder<List<DeviceModel>>(
-                  future: ref
-                      .read(deviceRepositoryProvider)
-                      .getDevices(uid),
+                return StreamBuilder<List<DeviceModel>>(
+                  stream: ref.read(deviceRepositoryProvider).watchDevices(uid),
                   builder: (context, deviceSnapshot) {
                     if (deviceSnapshot.connectionState ==
                         ConnectionState.waiting) {
@@ -218,10 +234,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       );
                     }
                     if (deviceSnapshot.hasError) {
-                      return _empty(
+                      return _syncError(
                         context,
-                        'Could not load devices',
-                        'Please try again.',
+                        'Could not synchronize sensor data',
+                        'Farm details are available, but device data is offline or unavailable.',
+                        () => setState(() {}),
                       );
                     }
 
@@ -254,9 +271,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     }
 
                     return RefreshIndicator(
-                      onRefresh: () async {
-                        setState(() {});
-                      },
+                      onRefresh: () => _refreshDashboard(uid),
                       child: ListView(
                         padding: const EdgeInsets.all(16),
                         children: [
@@ -485,7 +500,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 10),
+                          _buildSyncBanner(context, farmDevices),
+                          const SizedBox(height: 12),
                           Row(
                             children: [
                               Expanded(
@@ -540,7 +557,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               ),
                               trailing: const Icon(Icons.auto_graph_outlined),
                             ),
-                          ),                          if (irrigationDecision != null) ...[
+                          ),
+                          const SizedBox(height: 10),
+                          _buildCropHealthSummary(context, farmDevices, agg, alerts, irrigationDecision),
+                          const SizedBox(height: 10),
+                          Card(
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                child: const Icon(Icons.sensors_outlined),
+                              ),
+                              title: const Text('Device status', style: TextStyle(fontWeight: FontWeight.w700)),
+                              subtitle: Text(_deviceStatusSummary(farmDevices)),
+                              trailing: _statusChip(context, farmDevices),
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const DeviceManagementScreen()),
+                              ),
+                            ),
+                          ),
+                          if (irrigationDecision != null) ...[
                             Card(
                               child: ExpansionTile(
                                 leading: CircleAvatar(
@@ -786,6 +822,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           ),
                           const SizedBox(height: 10),
                           Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Quick actions', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                                  const SizedBox(height: 10),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      ActionChip(avatar: const Icon(Icons.refresh, size: 18), label: Text(_syncing ? 'Syncing...' : 'Sync now'), onPressed: _syncing ? null : () => _refreshDashboard(uid)),
+                                      ActionChip(avatar: const Icon(Icons.agriculture_outlined, size: 18), label: const Text('Manage farm'), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FarmManagementScreen()))),
+                                      ActionChip(avatar: const Icon(Icons.sensors_outlined, size: 18), label: const Text('Manage devices'), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DeviceManagementScreen()))),
+                                      ActionChip(avatar: const Icon(Icons.notifications_outlined, size: 18), label: const Text('View alerts'), onPressed: () => _showAlertsSheet(context, ref, uid)),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Card(
                             child: ListTile(
                               leading: CircleAvatar(
                                 backgroundColor: Theme.of(context)
@@ -797,9 +856,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 'Recent activity',
                                 style: TextStyle(fontWeight: FontWeight.w700),
                               ),
-                              subtitle: const Text(
-                                'No activity events have been recorded yet.',
-                              ),
+                              subtitle: Text(_recentActivitySummary(farmDevices, irrigationDecision)),
                             ),
                           ),
                         ],
@@ -810,6 +867,109 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               },
             ),
     );
+  }
+
+  Widget _buildSyncBanner(BuildContext context, List<DeviceModel> devices) {
+    final scheme = Theme.of(context).colorScheme;
+    final hasOffline = devices.any((d) =>
+        d.connectionState == DeviceConnectionState.offline ||
+        d.connectionState == DeviceConnectionState.stale);
+    final latest = devices
+        .map((d) => d.latestReading?.timestamp)
+        .whereType<DateTime>()
+        .fold<DateTime?>(null, (current, value) =>
+            current == null || value.isAfter(current) ? value : current);
+    final stale = latest != null &&
+        DateTime.now().difference(latest) > const Duration(minutes: 10);
+    final message = devices.isEmpty
+        ? 'No sensor device is assigned to this farm.'
+        : stale
+            ? 'Sensor readings are stale. Showing the last available values.'
+            : hasOffline
+                ? 'Some device data is offline or stale.'
+                : 'Dashboard is synchronized with the selected farm.';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: (devices.isEmpty || stale || hasOffline)
+            ? scheme.tertiaryContainer
+            : scheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Icon(devices.isEmpty || stale || hasOffline
+              ? Icons.sync_problem_outlined
+              : Icons.sync_outlined, size: 20),
+          const SizedBox(width: 8),
+          Expanded(child: Text(message)),
+          if (_lastSyncAt != null)
+            Text(_timeAgo(_lastSyncAt!), style: Theme.of(context).textTheme.bodySmall),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCropHealthSummary(
+    BuildContext context,
+    List<DeviceModel> devices,
+    _ReadingSummary agg,
+    List<_FarmAlert> alerts,
+    IrrigationDecision? irrigationDecision,
+  ) {
+    final critical = alerts.where((a) => a.severity == _AlertSeverity.critical).length;
+    final warning = alerts.where((a) => a.severity == _AlertSeverity.warning).length;
+    final health = critical > 0
+        ? 'Needs attention'
+        : warning > 0
+            ? 'Watch closely'
+            : agg.hasReading
+                ? 'Stable'
+                : 'Waiting for sensor data';
+    final detail = critical > 0
+        ? '${critical} critical alert${critical == 1 ? '' : 's'} need attention.'
+        : warning > 0
+            ? '${warning} warning${warning == 1 ? '' : 's'} detected. Review the active alerts.'
+            : !agg.hasReading
+                ? 'No current sensor reading is available for this farm.'
+                : irrigationDecision?.irrigationRecommended == true
+                    ? 'Conditions are driving an irrigation recommendation.'
+                    : 'No major condition alert is active.';
+    return Card(
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+          child: Icon(Icons.eco_outlined, color: Theme.of(context).colorScheme.onSecondaryContainer),
+        ),
+        title: const Text('Crop health summary', style: TextStyle(fontWeight: FontWeight.w700)),
+        subtitle: Text(detail),
+        trailing: Text(health, style: const TextStyle(fontWeight: FontWeight.w800)),
+      ),
+    );
+  }
+
+  String _deviceStatusSummary(List<DeviceModel> devices) {
+    if (devices.isEmpty) return 'No device assigned to this farm.';
+    final online = devices.where((d) => d.connectionState == DeviceConnectionState.online).length;
+    final stale = devices.where((d) => d.connectionState == DeviceConnectionState.stale).length;
+    final offline = devices.where((d) => d.connectionState == DeviceConnectionState.offline).length;
+    return '${online} online • ${stale} stale • ${offline} offline';
+  }
+
+  String _recentActivitySummary(
+    List<DeviceModel> devices,
+    IrrigationDecision? irrigationDecision,
+  ) {
+    final latest = devices
+        .map((d) => d.latestReading?.timestamp)
+        .whereType<DateTime>()
+        .fold<DateTime?>(null, (current, value) =>
+            current == null || value.isAfter(current) ? value : current);
+    if (irrigationDecision != null) {
+      return 'Latest irrigation assessment: ${irrigationDecision.irrigationRecommended ? 'irrigation recommended' : 'no irrigation recommended'} • ${_timeAgo(irrigationDecision.createdAt)}.';
+    }
+    if (latest != null) return 'Latest sensor reading received ${_timeAgo(latest)}.';
+    return 'No sensor activity has been recorded for this farm yet.';
   }
 
   Widget _statusChip(BuildContext context, List<DeviceModel> devices) {
@@ -1184,6 +1344,35 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       temperature: reading.temperature,
       humidity: reading.humidity,
       rainfall: reading.rainfall,
+    );
+  }
+
+  Widget _syncError(
+    BuildContext context,
+    String title,
+    String subtitle,
+    VoidCallback onRetry,
+  ) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(30),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.cloud_off_outlined, size: 56),
+            const SizedBox(height: 12),
+            Text(title, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 6),
+            Text(subtitle, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry sync'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
