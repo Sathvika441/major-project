@@ -14,6 +14,7 @@ class LocalStorageKeys {
   static const String hasCompletedPhaseA = 'has_completed_phase_a';
   static const String hasCompletedPhaseB = 'has_completed_phase_b';
   static const String phaseBMigrated = 'phase_b_migrated';
+  static const String onboardingRequired = 'onboarding_required';
 }
 
 /// Service wrapping persistent local storage via SharedPreferences.
@@ -101,6 +102,13 @@ class LocalStorageService {
 
   Future<void> setCompletedPhaseB(bool value) async {
     await _prefs.setBool(LocalStorageKeys.hasCompletedPhaseB, value);
+  }
+
+  bool isOnboardingRequired() =>
+      _prefs.getBool(LocalStorageKeys.onboardingRequired) ?? false;
+
+  Future<void> setOnboardingRequired(bool value) async {
+    await _prefs.setBool(LocalStorageKeys.onboardingRequired, value);
   }
 
   bool hasPhaseBMigrated() =>
