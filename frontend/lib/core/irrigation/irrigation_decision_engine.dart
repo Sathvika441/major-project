@@ -42,6 +42,24 @@ class IrrigationDecisionEngine {
       factors.add('Soil moisture is not strongly indicating irrigation');
     }
 
+    final ageYears = input.cropAgeDays / 365.25;
+    if (ageYears < 1) {
+      score += 0.08;
+      factors.add('Crop age is under 1 year');
+    } else if (ageYears < 3) {
+      score += 0.05;
+      factors.add('Crop age is 1-3 years');
+    } else if (ageYears < 6) {
+      score += 0.03;
+      factors.add('Crop age is 3-6 years');
+    } else if (ageYears < 12) {
+      score += 0.06;
+      factors.add('Crop age is 6-12 years');
+    } else {
+      score += 0.04;
+      factors.add('Crop age is 12+ years');
+    }
+
     switch (input.growthStage) {
       case CropGrowthStage.establishment:
         score += 0.22; factors.add('Establishment stage increases water-stress sensitivity');
