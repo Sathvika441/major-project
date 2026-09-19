@@ -1,10 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/farm/farm_model.dart';
-import 'farm_details_screen.dart';
 import '../../../repositories/farm/farm_repository.dart';
 import '../../auth/controllers/auth_controller.dart';
+import 'farm_details_screen.dart';
 
 final selectedFarmProvider = StateProvider<String?>((ref) => null);
 
@@ -17,6 +17,23 @@ final farmsProvider = FutureProvider.autoDispose<List<FarmModel>>((ref) async {
 class FarmManagementScreen extends ConsumerWidget {
   const FarmManagementScreen({super.key});
 
+  Future<void> _openFarm(
+    BuildContext context,
+    WidgetRef ref, {
+    String? farmId,
+    bool startNew = false,
+  }) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => FarmDetailsScreen(
+          farmId: farmId,
+          startNew: startNew,
+        ),
+      ),
+    );
+    ref.invalidate(farmsProvider);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final farms = ref.watch(farmsProvider);
@@ -24,7 +41,7 @@ class FarmManagementScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Farm Management')),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showFarmDialog(context, ref),
+        onPressed: () => _openFarm(context, ref, startNew: true),
         icon: const Icon(Icons.add_business),
         label: const Text('Add farm'),
       ),
@@ -38,198 +55,42 @@ class FarmManagementScreen extends ConsumerWidget {
         ),
         data: (items) {
           if (items.isEmpty) {
-            return const Center(
-              child: Text('No farms yet. Add your first farm.'),
+            return Center(
+              child: FilledButton.icon(
+                onPressed: () => _openFarm(context, ref, startNew: true),
+                icon: const Icon(Icons.add_business),
+                label: const Text('Add your first farm'),
+              ),
             );
           }
+
           return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: items.length,
-            itemBuilder: (context, index) => _FarmTile(farm: items[index]),
+            itemBuilder: (context, index) {
+              final farm = items[index];
+              return Card(
+                child: ListTile(
+                  leading: const CircleAvatar(
+                    child: Icon(Icons.agriculture),
+                  ),
+                  title: Text(farm.name),
+                  subtitle: Text(
+                    '${farm.location}\n'
+                    '${farm.sizeAcres} acres • ${farm.waterSource} • ${farm.irrigationMethod}',
+                  ),
+                  isThreeLine: true,
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    ref.read(selectedFarmProvider.notifier).state = farm.id;
+                    _openFarm(context, ref, farmId: farm.id);
+                  },
+                ),
+              );
+            },
           );
         },
       ),
     );
   }
-
-  static Future<void> _showFarmDialog(
-    BuildContext context,
-    WidgetRef ref, {
-    FarmModel? existing,
-  }) async {
-    final isEdit = existing != null;
-    final name = TextEditingController(text: existing?.name ?? '');
-    final location = TextEditingController(text: existing?.location ?? '');
-    final size = TextEditingController(
-      text: existing != null ? existing.sizeAcres.toString() : '',
-    );
-    final water = TextEditingController(
-      text: existing?.waterSource ?? 'Borewell',
-    );
-    final method = TextEditingController(
-      text: existing?.irrigationMethod ?? 'Drip',
-    );
-    final formKey = GlobalKey<FormState>();
-
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(isEdit ? 'Edit farm' : 'Create farm'),
-          content: Form(
-            key: formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: name,
-                    decoration: const InputDecoration(labelText: 'Farm name'),
-                    validator: _required,
-                  ),
-                  TextFormField(
-                    controller: location,
-                    decoration: const InputDecoration(labelText: 'Location'),
-                    validator: _required,
-                  ),
-                  TextFormField(
-                    controller: size,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: const InputDecoration(
-                      labelText: 'Size (acres)',
-                    ),
-                    validator: (value) => double.tryParse(value ?? '') == null
-                        ? 'Enter a valid size'
-                        : null,
-                  ),
-                  TextFormField(
-                    controller: water,
-                    decoration: const InputDecoration(
-                      labelText: 'Water source',
-                    ),
-                    validator: _required,
-                  ),
-                  TextFormField(
-                    controller: method,
-                    decoration: const InputDecoration(
-                      labelText: 'Irrigation method',
-                    ),
-                    validator: _required,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            if (isEdit)
-              TextButton(
-                onPressed: () async {
-                  final user = ref.read(authControllerProvider).user;
-                  if (user == null) return;
-                  await ref
-                      .read(farmRepositoryProvider)
-                      .deactivateFarm(user.uid, existing.id);
-                  ref.invalidate(farmsProvider);
-                  if (dialogContext.mounted) {
-                    Navigator.pop(dialogContext);
-                    Navigator.pop(dialogContext);
-                  }
-                },
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: const Text('Delete'),
-              ),
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                if (!formKey.currentState!.validate()) return;
-                final user = ref.read(authControllerProvider).user;
-                if (user == null) return;
-
-                final farm = isEdit
-                    ? existing.copyWith(
-                        name: name.text.trim(),
-                        location: location.text.trim(),
-                        sizeAcres: double.parse(size.text),
-                        waterSource: water.text.trim(),
-                        irrigationMethod: method.text.trim(),
-                        updatedAt: DateTime.now(),
-                      )
-                    : FarmModel(
-                        id: 'farm_${DateTime.now().microsecondsSinceEpoch}',
-                        userId: user.uid,
-                        name: name.text.trim(),
-                        location: location.text.trim(),
-                        sizeAcres: double.parse(size.text),
-                        waterSource: water.text.trim(),
-                        irrigationMethod: method.text.trim(),
-                        createdAt: DateTime.now(),
-                      );
-
-                await ref.read(farmRepositoryProvider).saveFarm(farm);
-
-                ref.invalidate(farmsProvider);
-                if (dialogContext.mounted) Navigator.pop(dialogContext);
-              },
-              child: Text(isEdit ? 'Update' : 'Save'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  static String? _required(String? value) {
-    return value == null || value.trim().isEmpty ? 'Required' : null;
-  }
 }
-
-class _FarmTile extends ConsumerWidget {
-  final FarmModel farm;
-
-  const _FarmTile({required this.farm});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Card(
-      child: ListTile(
-        leading: const CircleAvatar(child: Icon(Icons.agriculture)),
-        title: Text(farm.name),
-        subtitle: Text(
-          '${farm.location} â€¢ ${farm.sizeAcres} acres\n'
-          '${farm.waterSource} â€¢ ${farm.irrigationMethod}',
-        ),
-        isThreeLine: true,
-        trailing: Wrap(
-          spacing: 0,
-          children: [
-            IconButton(
-              onPressed: () => FarmManagementScreen._showFarmDialog(
-                context,
-                ref,
-                existing: farm,
-              ),
-              icon: const Icon(Icons.edit),
-              tooltip: 'Edit farm',
-            ),
-            const Icon(Icons.chevron_right),
-          ],
-        ),
-        onTap: () async {
-          ref.read(selectedFarmProvider.notifier).state = farm.id;
-          await Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => FarmDetailsScreen()),
-          );
-          ref.invalidate(farmsProvider);
-        },
-      ),
-    );
-  }
-}
-
-
-
