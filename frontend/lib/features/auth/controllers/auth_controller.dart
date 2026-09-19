@@ -32,6 +32,11 @@ class AuthController extends StateNotifier<AuthState> {
     checkSession();
   }
 
+  String _otpKeyForUser(UserModel user) {
+    final phone = user.phone.trim();
+    return phone.isNotEmpty ? phone : 'mock:${user.uid}';
+  }
+
   Future<void> _migrateLegacyOnboarding(String uid) async {
     if (!_storage.hasCompletedOnboarding() || _storage.hasPhaseBMigrated()) {
       return;
@@ -62,7 +67,7 @@ class AuthController extends StateNotifier<AuthState> {
         if (!_storage.isOtpVerified()) {
           state = AuthState.otpVerificationPending(
             user: user,
-            phone: user.phone,
+            phone: _otpKeyForUser(user),
             forPurpose: 'login',
           );
           return;
@@ -82,8 +87,9 @@ class AuthController extends StateNotifier<AuthState> {
     try {
       final user = await _repository.signUp(name: name, email: email, phone: phone, password: password);
       await _storage.setOtpVerified(false);
-      await _otpService.generateOtp(user.phone);
-      state = AuthState.otpVerificationPending(user: user, phone: user.phone, forPurpose: 'signup');
+      final otpKey = _otpKeyForUser(user);
+      await _otpService.generateOtp(otpKey);
+      state = AuthState.otpVerificationPending(user: user, phone: otpKey, forPurpose: 'signup');
       return true;
     } on Failure catch (f) {
       state = AuthState.error(f.message);
@@ -99,8 +105,9 @@ class AuthController extends StateNotifier<AuthState> {
     try {
       final user = await _repository.login(email: email, password: password);
       await _storage.setOtpVerified(false);
-      await _otpService.generateOtp(user.phone);
-      state = AuthState.otpVerificationPending(user: user, phone: user.phone, forPurpose: 'login');
+      final otpKey = _otpKeyForUser(user);
+      await _otpService.generateOtp(otpKey);
+      state = AuthState.otpVerificationPending(user: user, phone: otpKey, forPurpose: 'login');
       return true;
     } on Failure catch (f) {
       state = AuthState.error(f.message);
@@ -117,8 +124,9 @@ class AuthController extends StateNotifier<AuthState> {
       final user = await _repository.signInWithGoogle();
       if (user.phone.isNotEmpty) {
         await _storage.setOtpVerified(false);
-        await _otpService.generateOtp(user.phone);
-        state = AuthState.otpVerificationPending(user: user, phone: user.phone, forPurpose: 'login');
+        final otpKey = _otpKeyForUser(user);
+        await _otpService.generateOtp(otpKey);
+        state = AuthState.otpVerificationPending(user: user, phone: otpKey, forPurpose: 'login');
       } else {
         await _storage.setOtpVerified(true);
         await _migrateLegacyOnboarding(user.uid);
@@ -135,9 +143,11 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   Future<String?> sendLoginOtp({String? overridePhone}) async {
-    final phone = overridePhone ?? state.pendingOtpPhone ?? state.user?.phone ?? '';
+    final phone = overridePhone ??
+        state.pendingOtpPhone ??
+        (state.user == null ? '' : _otpKeyForUser(state.user!));
     if (phone.isEmpty) {
-      state = state.copyWith(errorMessage: 'No phone number available for OTP.');
+      state = state.copyWith(errorMessage: 'No account available for OTP.');
       return null;
     }
     try {
@@ -151,7 +161,9 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   Future<bool> verifyOtpAndLogin(String code, {String? overridePhone}) async {
-    final phone = overridePhone ?? state.pendingOtpPhone ?? state.user?.phone ?? '';
+    final phone = overridePhone ??
+        state.pendingOtpPhone ??
+        (state.user == null ? '' : _otpKeyForUser(state.user!));
     final user = state.user;
     if (user == null) {
       state = AuthState.error('No active session. Please log in again.');
@@ -213,17 +225,20 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   Duration? canResendOtp() {
-    final phone = state.pendingOtpPhone ?? state.user?.phone ?? '';
+    final phone = state.pendingOtpPhone ??
+        (state.user == null ? '' : _otpKeyForUser(state.user!));
     return phone.isEmpty ? null : _otpService.canResend(phone);
   }
 
   bool isOtpLocked() {
-    final phone = state.pendingOtpPhone ?? state.user?.phone ?? '';
+    final phone = state.pendingOtpPhone ??
+        (state.user == null ? '' : _otpKeyForUser(state.user!));
     return phone.isNotEmpty && _otpService.isLocked(phone);
   }
 
   Duration? remainingLockout() {
-    final phone = state.pendingOtpPhone ?? state.user?.phone ?? '';
+    final phone = state.pendingOtpPhone ??
+        (state.user == null ? '' : _otpKeyForUser(state.user!));
     return phone.isEmpty ? null : _otpService.remainingLockout(phone);
   }
 
