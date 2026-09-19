@@ -4,6 +4,7 @@ import '../../../core/errors/failures.dart';
 import '../../../core/storage/local_storage_service.dart';
 import '../../../models/farm/farm_profile_model.dart';
 import '../../../models/user/user_model.dart';
+import '../../../repositories/farm/farm_repository.dart';
 import '../../../repositories/auth/auth_repository.dart';
 import '../../../services/auth/auth_service.dart';
 import '../../../services/otp/otp_service.dart';
@@ -20,6 +21,7 @@ final authControllerProvider = StateNotifierProvider<AuthController, AuthState>(
     ref.watch(authRepositoryProvider),
     ref.watch(otpServiceProvider),
     ref.watch(localStorageServiceProvider),
+    ref.watch(farmRepositoryProvider),
   ),
 );
 
@@ -27,8 +29,14 @@ class AuthController extends StateNotifier<AuthState> {
   final AuthRepository _repository;
   final OtpService _otpService;
   final LocalStorageService _storage;
+  final FarmRepository _farmRepository;
 
-  AuthController(this._repository, this._otpService, this._storage)
+  AuthController(
+    this._repository,
+    this._otpService,
+    this._storage,
+    this._farmRepository,
+  )
       : super(AuthState.initial()) {
     checkSession();
   }
@@ -60,6 +68,22 @@ class AuthController extends StateNotifier<AuthState> {
     }
   }
 
+  Future<void> _syncOnboardingStateFromFirestore(String uid) async {
+    // Local onboarding flags can be lost when browser storage is cleared or
+    // can be stale after an older app version. A saved farm is authoritative
+    // evidence that this user completed Phase B.
+    try {
+      final farms = await _farmRepository.getFarms(uid);
+      if (farms.isEmpty) return;
+      await _storage.setCompletedPhaseA(true);
+      await _storage.setCompletedPhaseB(true);
+      await _storage.setOnboardingCompleted(true);
+      await _storage.setPhaseBMigrated(true);
+    } catch (_) {
+      // Do not block authentication when Firestore is temporarily unavailable.
+    }
+  }
+
   Future<void> checkSession() async {
     state = AuthState.loading();
     try {
@@ -74,6 +98,7 @@ class AuthController extends StateNotifier<AuthState> {
           return;
         }
         await _migrateLegacyOnboarding(user.uid);
+        await _syncOnboardingStateFromFirestore(user.uid);
         state = AuthState.authenticated(user);
       } else {
         state = AuthState.unauthenticated();
@@ -131,6 +156,7 @@ class AuthController extends StateNotifier<AuthState> {
       } else {
         await _storage.setOtpVerified(true);
         await _migrateLegacyOnboarding(user.uid);
+        await _syncOnboardingStateFromFirestore(user.uid);
         state = AuthState.authenticated(user);
       }
       return true;
@@ -176,6 +202,7 @@ class AuthController extends StateNotifier<AuthState> {
       final updated = user.copyWith(isPhoneVerified: true);
       await _repository.updateCurrentUser(updated);
       await _migrateLegacyOnboarding(updated.uid);
+      await _syncOnboardingStateFromFirestore(updated.uid);
       state = AuthState.authenticated(updated);
       return true;
     } on OtpFailure catch (f) {
