@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../models/farm/farm_model.dart';
 import '../../../repositories/farm/farm_repository.dart';
@@ -39,7 +40,20 @@ class FarmManagementScreen extends ConsumerWidget {
     final farms = ref.watch(farmsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Farm Management')),
+      appBar: AppBar(
+        title: const Text('Farm Management'),
+        leading: IconButton(
+          tooltip: 'Back',
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/dashboard');
+            }
+          },
+        ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openFarm(context, ref, startNew: true),
         icon: const Icon(Icons.add_business),
