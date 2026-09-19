@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/storage/local_storage_service.dart';
 import '../../../core/constants/karnataka_locations.dart';
 import '../../../core/services/location_master_service.dart';
+import '../../../core/services/crop_growth_stage_service.dart';
 import '../../../core/validators/auth_validators.dart';
 import '../../../models/farm/farm_model.dart';
 import '../../../models/farm/farm_profile_model.dart';
@@ -239,6 +240,15 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
 
     final user = ref.read(authControllerProvider).user;
     if (user == null) return;
+
+    try {
+      const CropGrowthStageService().validatePlantingDate(_plantingDate!);
+    } on ArgumentError catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message?.toString() ?? 'Invalid planting date.')),
+      );
+      return;
+    }
 
     final size = double.tryParse(_size.text.trim());
     if (size == null || size <= 0) return;
