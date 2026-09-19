@@ -9,6 +9,7 @@ import '../../../models/farm/farm_model.dart';
 import '../../../repositories/farm/farm_repository.dart';
 import '../../../repositories/profile/profile_repository.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../farm/screens/farm_details_screen.dart';
 
 class ProfileEditScreen extends ConsumerStatefulWidget {
   const ProfileEditScreen({super.key});
@@ -292,43 +293,39 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                 ),
               )
             else
-              ..._farms.map((farm) {
-                final plots = _farmPlots[farm.id] ?? const <PlotModel>[];
-                return Card(
+              ..._farms.map(
+                (farm) => Card(
                   margin: const EdgeInsets.only(bottom: 12),
-                  child: ExpansionTile(
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 8,
+                    ),
                     leading: const CircleAvatar(
-                      child: Icon(Icons.agriculture_outlined),
+                      child: Icon(Icons.agriculture),
                     ),
                     title: Text(
                       farm.name.isEmpty ? 'Unnamed farm' : farm.name,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                     subtitle: Text(
-                      plots.isEmpty
-                          ? 'No plots added'
-                          : '${plots.length} plot${plots.length == 1 ? '' : 's'}',
+                      '${farm.location}\n'
+                      '${farm.sizeAcres} acres • ${farm.waterSource} • ${farm.irrigationMethod}',
                     ),
-                    children: [
-                      if (plots.isEmpty)
-                        const ListTile(
-                          dense: true,
-                          leading: Icon(Icons.grid_view_outlined),
-                          title: Text('No plot IDs available'),
-                        )
-                      else
-                        ...plots.map(
-                          (plot) => ListTile(
-                            dense: true,
-                            leading: const Icon(Icons.grid_view_outlined),
-                            title: Text(plot.name),
-                            subtitle: Text('Plot ID: ${plot.id}'),
-                          ),
+                    isThreeLine: true,
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => FarmDetailsScreen(farmId: farm.id),
                         ),
-                    ],
+                      );
+                      if (mounted) {
+                        _loadExisting();
+                      }
+                    },
                   ),
-                );
-              }),
+                ),
+              ),
             const SizedBox(height: 8),
             SwitchListTile(value: _notifications, onChanged: (value) => setState(() => _notifications = value), title: const Text('Enable notifications')),
             const SizedBox(height: 24),
