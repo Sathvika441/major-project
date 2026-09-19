@@ -32,7 +32,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   String? _selectedFarmGrowthStage;
   String? _selectedFarmPlantingDate;
   String? _decisionAuditKey;
-  IrrigationDecision? _dashboardDecision;
 
   SensorReading _presetReading(String preset) {
     final now = DateTime.now();
@@ -1027,18 +1026,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     return const IrrigationDecisionEngine().decide(
       input: IrrigationInput(
-        soilMoisture: null,
-        cropAgeDays: 0,
-        growthStage: CropGrowthStage.establishment,
-        temperature: null,
-        humidity: null,
-        rainfall: null,
-        weatherContext: '',
+        soilMoisture: agg.soilMoisture,
+        cropAgeDays: ageDays,
+        growthStage: stage,
+        temperature: agg.temperature,
+        humidity: agg.humidity,
+        rainfall: agg.rainfall,
+        weatherContext: weather,
         recentIrrigation: RecentIrrigation(),
-        observedAt: DateTime(2000),
+        observedAt: DateTime.now(),
       ),
       mode: IrrigationMode.recommendationOnly,
-      now: DateTime(2000),
     );
   }
 
@@ -1053,7 +1051,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       agg.temperature,
       agg.humidity,
       agg.rainfall,
-      decision.decisionId,
+      decision.irrigationRecommended,
+      decision.suggestedDuration.inSeconds,
     ].join('|');
   }
 
@@ -1064,7 +1063,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   ) async {
     _decisionAuditKey = auditKey;
     if (!mounted) return;
-    setState(() => _dashboardDecision = decision);
     try {
       await FirestoreIrrigationAuditLog(
         db: FirebaseFirestore.instance,
