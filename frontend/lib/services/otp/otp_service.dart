@@ -11,7 +11,7 @@ import '../../core/utils/app_logger.dart';
 
 class OtpService {
   static const Duration _otpValidity = Duration(minutes: 15);
-  static const Duration _resendCooldown = Duration(seconds: 60);
+  static const Duration _resendCooldown = Duration(seconds: 2);
   static const int _maxAttempts = 5;
   static const Duration _lockoutDuration = Duration(minutes: 5);
 
