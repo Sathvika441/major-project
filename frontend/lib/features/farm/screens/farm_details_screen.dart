@@ -46,7 +46,14 @@ const irrigationMethods = <String>[
 ];
 
 class FarmDetailsScreen extends ConsumerStatefulWidget {
-  const FarmDetailsScreen({super.key});
+  final String? farmId;
+  final bool startNew;
+
+  const FarmDetailsScreen({
+    super.key,
+    this.farmId,
+    this.startNew = false,
+  });
 
   @override
   ConsumerState<FarmDetailsScreen> createState() => _FarmDetailsScreenState();
@@ -58,6 +65,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
   late final TextEditingController _farmName;
   late final TextEditingController _survey;
   late final TextEditingController _size;
+  late final TextEditingController _location;
 
   String? _cultivation;
   String? _soil;
@@ -77,6 +85,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
     _farmName = TextEditingController();
     _survey = TextEditingController();
     _size = TextEditingController();
+    _location = TextEditingController();
     _loadExisting();
   }
 
@@ -85,6 +94,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
     _farmName.dispose();
     _survey.dispose();
     _size.dispose();
+    _location.dispose();
     super.dispose();
   }
 
@@ -106,9 +116,11 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
         _loading = false;
       });
 
-      // If Phase B was interrupted after exactly one farm was saved,
-      // let the farmer continue editing that saved farm. New farms start blank.
-      if (farms.length == 1) {
+      if (widget.farmId != null) {
+        final match = farms.where((farm) => farm.id == widget.farmId).toList();
+        if (match.isNotEmpty) _loadFarmIntoForm(match.first);
+      } else if (!widget.startNew && farms.length == 1) {
+        // Resume an interrupted onboarding flow for the one existing farm.
         _loadFarmIntoForm(farms.first);
       }
     } catch (e) {
@@ -124,6 +136,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
     setState(() {
       _editingFarm = farm;
       _farmName.text = farm.name;
+      _location.text = farm.location;
       _survey.text = farm.landSurveyNumber;
       _size.text = farm.sizeAcres > 0 ? farm.sizeAcres.toString() : '';
       _cultivation = _pickOption(farm.arecanutCultivationType, cultivationTypes);
@@ -148,6 +161,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
     setState(() {
       _editingFarm = null;
       _farmName.clear();
+      _location.clear();
       _survey.clear();
       _size.clear();
       _cultivation = null;
@@ -201,7 +215,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
               id: 'farm_${DateTime.now().microsecondsSinceEpoch}',
               userId: user.uid,
               name: _farmName.text.trim(),
-              location: _existingProfile?.location ?? '',
+              location: _location.text.trim(),
               sizeAcres: size,
               waterSource: _waterSource!,
               irrigationMethod: _irrigationMethod!,
@@ -215,6 +229,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
             )
           : _editingFarm!.copyWith(
               name: _farmName.text.trim(),
+              location: _location.text.trim(),
               sizeAcres: size,
               waterSource: _waterSource!,
               irrigationMethod: _irrigationMethod!,
@@ -228,36 +243,39 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
 
       await ref.read(farmRepositoryProvider).saveFarm(farm);
 
-      // Keep the profile's farm-specific fields synchronized for existing
-      // profile screens and legacy onboarding migration checks.
-      final profileBase = _existingProfile ??
-          FarmProfileModel(
-            userId: user.uid,
-            name: user.name,
-            phone: user.phone,
-            location: '',
-            language: 'English',
-            notificationsEnabled: true,
-            farmName: '',
-            farmSizeAcres: 0,
-            waterSource: '',
-            irrigationMethod: '',
-            crop: 'Arecanut',
-            plantingDate: _plantingDate!,
-          );
+      // The user profile is farmer-level data. Only the first farm is
+      // mirrored there for legacy compatibility; additional farms stay
+      // independent under users/{uid}/farms/{farmId}.
+      if (_savedFarmCount == 0) {
+        final profileBase = _existingProfile ??
+            FarmProfileModel(
+              userId: user.uid,
+              name: user.name,
+              phone: user.phone,
+              location: _location.text.trim(),
+              language: 'English',
+              notificationsEnabled: true,
+              farmName: '',
+              farmSizeAcres: 0,
+              waterSource: '',
+              irrigationMethod: '',
+              crop: 'Arecanut',
+              plantingDate: _plantingDate!,
+            );
 
-      final profile = profileBase.copyWith(
-        farmName: _farmName.text.trim(),
-        farmSizeAcres: size,
-        waterSource: _waterSource!,
-        irrigationMethod: _irrigationMethod!,
-        crop: 'Arecanut',
-        plantingDate: _plantingDate!,
-        landSurveyNumber: _survey.text.trim(),
-        arecanutCultivationType: _cultivation!,
-        soilType: _soil!,
-      );
-      await ref.read(profileRepositoryProvider).save(profile);
+        final profile = profileBase.copyWith(
+          farmName: _farmName.text.trim(),
+          farmSizeAcres: size,
+          waterSource: _waterSource!,
+          irrigationMethod: _irrigationMethod!,
+          crop: 'Arecanut',
+          plantingDate: _plantingDate!,
+          landSurveyNumber: _survey.text.trim(),
+          arecanutCultivationType: _cultivation!,
+          soilType: _soil!,
+        );
+        await ref.read(profileRepositoryProvider).save(profile);
+      }
 
       if (!mounted) return;
 
@@ -333,6 +351,16 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
                   labelText: 'Farm name',
                   hintText: 'Example: Ramesh Arecanut Farm',
                   prefixIcon: Icon(Icons.agriculture_outlined),
+                ),
+                validator: _requiredText,
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _location,
+                decoration: const InputDecoration(
+                  labelText: 'Farm location',
+                  hintText: 'Example: Village, Taluk, District',
+                  prefixIcon: Icon(Icons.location_on_outlined),
                 ),
                 validator: _requiredText,
               ),
