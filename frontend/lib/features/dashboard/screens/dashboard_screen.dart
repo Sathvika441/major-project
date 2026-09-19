@@ -906,36 +906,36 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return 'No immediate irrigation recommended in this demo scenario.';
   }
 
-  List<AlertItem> _generateAlertsFromReading(SensorReading reading) {
-    final alerts = <AlertItem>[];
+  List<_FarmAlert> _generateAlertsFromReading(SensorReading reading) {
+    final alerts = <_FarmAlert>[];
     final moisture = reading.soilMoisture;
     final temperature = reading.temperature;
     final rainfall = reading.rainfall;
     if (moisture != null && moisture < 20) {
-      alerts.add(AlertItem(
+      alerts.add(_FarmAlert(
         title: 'Low soil moisture',
         message: 'Demo reading is below 20%.',
-        severity: AlertSeverity.warning,
+        severity: _AlertSeverity.warning,
       ));
     }
     if (temperature != null && temperature > 40) {
-      alerts.add(AlertItem(
+      alerts.add(_FarmAlert(
         title: 'High temperature',
         message: 'Demo temperature is above 40 C.',
-        severity: AlertSeverity.warning,
+        severity: _AlertSeverity.warning,
       ));
     }
     if (rainfall != null && rainfall > 25) {
-      alerts.add(AlertItem(
+      alerts.add(_FarmAlert(
         title: 'Heavy rainfall',
         message: 'Demo rainfall is above 25 mm.',
-        severity: AlertSeverity.info,
+        severity: _AlertSeverity.info,
       ));
     }
     return alerts;
   }
 
-  AggregateReading _aggregateReading(SensorReading reading) {
+  _ReadingSummary _aggregateReading(SensorReading reading) {
     return AggregateReading(
       soilMoisture: reading.soilMoisture,
       temperature: reading.temperature,
