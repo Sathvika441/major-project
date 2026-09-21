@@ -1,8 +1,12 @@
+import logging
+
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from ml.inference import ModelNotLoadedError, predict_image
 
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Major Project Backend", version="2.0.0")
 
@@ -57,4 +61,13 @@ async def run_image_prediction(file: UploadFile = File(...)):
     except ModelNotLoadedError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        ) from exc
+    except RuntimeError as exc:
+        logger.exception("ML prediction failed for %s", filename)
+        raise HTTPException(
+            status_code=500,
+            detail=str(exc),
+        ) from exc
