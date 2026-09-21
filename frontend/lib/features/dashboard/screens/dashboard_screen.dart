@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../../models/device/device_model.dart';
 import '../../../models/farm/farm_model.dart';
 import '../../../repositories/device/device_repository.dart';
@@ -34,6 +35,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   String? _decisionAuditKey;
   DateTime? _lastSyncAt;
   bool _syncing = false;
+  PlatformFile? _mlImage;
+  bool _mlUploading = false;
+  Map<String, dynamic>? _mlResult;
 
   SensorReading _presetReading(String preset) {
     final now = DateTime.now();
@@ -85,6 +89,116 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     } finally {
       if (mounted) setState(() => _syncing = false);
     }
+  }
+
+  Future<void> _pickAndPredictImage(BuildContext context) async {
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+    if (picked == null || picked.files.single.bytes == null) return;
+
+    final file = picked.files.single;
+    setState(() {
+      _mlImage = file;
+      _mlResult = null;
+      _mlUploading = true;
+    });
+
+    try {
+      final result = await ref.read(backendApiProvider).predictImage(
+        file.bytes!,
+        filename: file.name,
+      );
+      if (!mounted) return;
+      setState(() {
+        _mlResult = result;
+        _mlUploading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _mlUploading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('ML prediction failed: $e')),
+      );
+    }
+  }
+
+  Widget _buildMlPredictionCard(BuildContext context) {
+    final result = _mlResult;
+    final confidence = result?['confidence'];
+    final ranked = result?['predictions'];
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                  child: Icon(Icons.biotech_outlined, color: Theme.of(context).colorScheme.primary),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Arecanut disease detection', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 3),
+                      const Text('Upload an image to run the trained ML model.'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _mlUploading ? null : () => _pickAndPredictImage(context),
+                icon: _mlUploading
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.upload_file),
+                label: Text(_mlUploading ? 'Analyzing image...' : 'Upload image'),
+              ),
+            ),
+            if (_mlImage != null) ...[
+              const SizedBox(height: 8),
+              Text('Image: ' + _mlImage!.name, overflow: TextOverflow.ellipsis),
+            ],
+            if (result != null) ...[
+              const Divider(height: 24),
+              const Text('Prediction', style: TextStyle(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 4),
+              Text(
+                result['prediction']?.toString() ?? 'Unknown',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              if (confidence is num)
+                Text('Confidence: ' + (confidence.toDouble() * 100).toStringAsFixed(2) + '%'),
+              if (ranked is List && ranked.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                const Text('Top results', style: TextStyle(fontWeight: FontWeight.w700)),
+                ...ranked.take(3).map((item) {
+                  final itemMap = Map<String, dynamic>.from(item as Map);
+                  final itemConfidence = itemMap['confidence'];
+                  return ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(itemMap['class_name']?.toString() ?? 'Unknown'),
+                    trailing: itemConfidence is num
+                        ? Text((itemConfidence.toDouble() * 100).toStringAsFixed(2) + '%')
+                        : null,
+                  );
+                }),
+              ],
+            ],
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _testDemoBackend(BuildContext context, WidgetRef ref) async {
@@ -561,6 +675,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           ),
                           const SizedBox(height: 10),
                           _buildCropHealthSummary(context, farmDevices, agg, alerts, irrigationDecision),
+                          const SizedBox(height: 10),
+                          _buildMlPredictionCard(context),
                           const SizedBox(height: 10),
                           Card(
                             child: ListTile(
