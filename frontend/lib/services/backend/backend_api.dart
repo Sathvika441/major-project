@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -27,6 +28,26 @@ class BackendApi {
       headers: const {'Content-Type': 'application/json'},
       body: jsonEncode({'features': features}),
     );
+    return _decode(response);
+  }
+
+  Future<Map<String, dynamic>> predictImage(
+    Uint8List bytes, {
+    String filename = 'image.jpg',
+  }) async {
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/api/v1/predict/image'),
+    )
+      ..files.add(
+        http.MultipartFile.fromBytes(
+          'file',
+          bytes,
+          filename: filename,
+        ),
+      );
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
     return _decode(response);
   }
 
