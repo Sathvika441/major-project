@@ -28,6 +28,14 @@ def health():
     return {"status": "ok", "ml": ml_status}
 
 
+@app.post("/api/v1/predict")
+async def run_feature_prediction(payload: dict):
+    return {
+        "detail": "Feature prediction endpoint is available for simulated sensor data. Use /api/v1/predict/image for trained image disease prediction.",
+        "received_features": payload.get("features", {}),
+    }
+
+
 @app.post("/api/v1/predict/image")
 async def run_image_prediction(file: UploadFile = File(...)):
     allowed_extensions = {".jpg", ".jpeg", ".png", ".webp"}
