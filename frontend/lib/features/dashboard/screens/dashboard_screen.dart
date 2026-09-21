@@ -93,7 +93,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Future<void> _pickAndPredictImage(BuildContext context) async {
     final picked = await FilePicker.platform.pickFiles(
-      type: FileType.image,
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
       withData: true,
     );
     if (picked == null || picked.files.single.bytes == null) return;
