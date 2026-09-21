@@ -38,6 +38,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   PlatformFile? _mlImage;
   bool _mlUploading = false;
   Map<String, dynamic>? _mlResult;
+  String? _mlError;
 
   SensorReading _presetReading(String preset) {
     final now = DateTime.now();
@@ -103,6 +104,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     setState(() {
       _mlImage = file;
       _mlResult = null;
+      _mlError = null;
       _mlUploading = true;
     });
 
@@ -116,12 +118,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         _mlResult = result;
         _mlUploading = false;
       });
+    } on BackendApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _mlUploading = false;
+        _mlError = e.message;
+      });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _mlUploading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('ML prediction failed: $e')),
-      );
+      setState(() {
+        _mlUploading = false;
+        _mlError = 'Unexpected error while contacting the ML service. Please try again.';
+      });
     }
   }
 
@@ -168,6 +176,35 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             if (_mlImage != null) ...[
               const SizedBox(height: 8),
               Text('Image: ' + _mlImage!.name, overflow: TextOverflow.ellipsis),
+            ],
+            if (_mlError != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      color: Theme.of(context).colorScheme.onErrorContainer,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        _mlError!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onErrorContainer,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
             if (result != null) ...[
               const Divider(height: 24),
