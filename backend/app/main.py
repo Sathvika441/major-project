@@ -30,15 +30,22 @@ def health():
 
 @app.post("/api/v1/predict/image")
 async def run_image_prediction(file: UploadFile = File(...)):
-    if not file.content_type or not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Please upload an image file.")
+    allowed_extensions = {".jpg", ".jpeg", ".png", ".webp"}
+    filename = file.filename or ""
+    extension = "." + filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+
+    if extension not in allowed_extensions:
+        raise HTTPException(
+            status_code=400,
+            detail="Please upload a JPG, JPEG, PNG, or WEBP image.",
+        )
 
     image_bytes = await file.read()
     if not image_bytes:
         raise HTTPException(status_code=400, detail="The uploaded image is empty.")
 
     try:
-        return predict_image(image_bytes, file.filename)
+        return predict_image(image_bytes, filename)
     except ModelNotLoadedError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except ValueError as exc:
