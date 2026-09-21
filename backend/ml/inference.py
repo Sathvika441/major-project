@@ -58,6 +58,9 @@ def predict_image(image_bytes: bytes, filename: str | None = None) -> dict:
     try:
         img_array = image.img_to_array(img)
         img_array = np.expand_dims(img_array, axis=0)
+        img_array = tf.keras.applications.mobilenet_v2.preprocess_input(
+            img_array
+        )
         predictions = model.predict(img_array, verbose=0)[0]
     except Exception as exc:
         raise RuntimeError(
