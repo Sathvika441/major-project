@@ -1,8 +1,11 @@
 """TensorFlow inference service for the trained arecanut disease model."""
 
 from functools import lru_cache
+import io
 import json
 from pathlib import Path
+
+from PIL import UnidentifiedImageError
 
 import numpy as np
 import tensorflow as tf
@@ -43,14 +46,23 @@ def predict_image(image_bytes: bytes, filename: str | None = None) -> dict:
 
     try:
         img = image.load_img(
-            __import__("io").BytesIO(image_bytes),
+            io.BytesIO(image_bytes),
             target_size=IMG_SIZE,
+            color_mode="rgb",
         )
+    except (UnidentifiedImageError, OSError, ValueError) as exc:
+        raise ValueError(
+            "The uploaded file could not be decoded as a valid JPG, JPEG, PNG, or WEBP image."
+        ) from exc
+
+    try:
         img_array = image.img_to_array(img)
         img_array = np.expand_dims(img_array, axis=0)
         predictions = model.predict(img_array, verbose=0)[0]
     except Exception as exc:
-        raise ValueError("The uploaded file is not a valid image.") from exc
+        raise RuntimeError(
+            "The image was read successfully, but the trained ML model failed during prediction."
+        ) from exc
 
     if len(predictions) != len(class_names):
         raise ModelNotLoadedError(
