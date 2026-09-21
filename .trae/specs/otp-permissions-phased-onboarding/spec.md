@@ -41,7 +41,7 @@ ArecaSmart currently lacks:
   - a new user signs up (after signup succeeds, before granting access)
 - **FR1.2** — OTP is a 6-digit numeric value.
 - **FR1.3** — OTP expires 15 minutes after generation; expiry is checked before validation.
-- **FR1.4** — Resend rate limit: minimum 60-second cooldown between resends to the same phone.
+- **FR1.4** — Resend rate limit: minimum 2-second cooldown between resends to the same phone.
 - **FR1.5** — Verification attempt limit: max 5 wrong OTP entries per session; after that the session is locked for 5 minutes.
 - **FR1.6** — Explicit error states for: invalid OTP, expired OTP, mismatched phone, rate-limited, too many attempts.
 - **FR1.7** — OTP verification screen shows a countdown timer for resend availability.
@@ -132,7 +132,7 @@ None at this time; all scope decisions resolved above.
 Navigate login flow → after correct password, user is pushed to OTP screen. Signup flow → after account creation, OTP screen appears. Profile Edit → changing phone field → OTP verification required before save completes.
 
 ### rule: AC2 — OTP 15-min expiry & rate limiting
-Generate an OTP; wait 15 simulated minutes (advance stored timestamp); attempt verify → "OTP expired" error. Hit resend 3 times in <60s → cooldown enforced.
+Generate an OTP; wait 15 simulated minutes (advance stored timestamp); attempt verify → "OTP expired" error. Hit resend 3 times in <2s → cooldown enforced.
 
 ### rule: AC3 — OTP retry lockout after 5 wrong entries
 Submit 5 wrong OTP codes in one session → 5-minute lockout message appears; resend and verify are disabled until lockout passes.

@@ -90,7 +90,7 @@ Keep UserModel unchanged (no agricultural role field per requirement drop).
 **Status:** pending
 
 ### Description
-Create `OtpService` class with methods `generateOtp(phone)`, `verifyOtp(phone, code)`, `canResend(phone)`, `isLocked(phone)`. OTP: 6-digit random, 15-min expiry, SHA-256 hash stored (never plain), 60s resend cooldown, 5 attempts → 5-min lockout. Add OTP-specific Failure factories to failures.dart.
+Create `OtpService` class with methods `generateOtp(phone)`, `verifyOtp(phone, code)`, `canResend(phone)`, `isLocked(phone)`. OTP: 6-digit random, 15-min expiry, SHA-256 hash stored (never plain), 2s resend cooldown, 5 attempts → 5-min lockout. Add OTP-specific Failure factories to failures.dart.
 
 ### Files to create/modify
 - `lib/services/otp/otp_service.dart` (new)
@@ -100,7 +100,7 @@ Create `OtpService` class with methods `generateOtp(phone)`, `verifyOtp(phone, c
 - **rule TR3.1:** `generateOtp` returns a 6-digit numeric string.
 - **rule TR3.2:** `verifyOtp` with correct code within 15 min returns true; after 15 min (faked clock/stored time) returns OtpExpired failure.
 - **rule TR3.3:** 5 consecutive wrong `verifyOtp` calls triggers lockout; subsequent calls return OtpLocked failure.
-- **rule TR3.4:** Second `generateOtp` within 60s of first returns RateLimited failure.
+- **rule TR3.4:** Second `generateOtp` within 2s of first returns RateLimited failure.
 - **rule TR3.5:** Stored OTP hash in SharedPreferences does not match the plain OTP string.
 
 ---
@@ -132,7 +132,7 @@ Add OTP flow to the auth pipeline: after successful password auth (login/signup)
 **Status:** pending
 
 ### Description
-Create `/otp-verification` route and screen. Use `pinput` package for 6-digit input. Show phone number being verified, resend button with 60s countdown timer, error/success banners, 5-attempt lockout message. Integrate with GoRouter routes.
+Create `/otp-verification` route and screen. Use `pinput` package for 6-digit input. Show phone number being verified, resend button with 2s countdown timer, error/success banners, 5-attempt lockout message. Integrate with GoRouter routes.
 
 ### Files to create/modify
 - `lib/features/auth/screens/otp_verification_screen.dart` (new)
