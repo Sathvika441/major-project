@@ -38,3 +38,5 @@ android/build/
 #python virtual environment
 .venv
 venv
+ML model/dataset/
+ML model/venv/
