@@ -92,7 +92,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     }
   }
 
-  Future<void> _pickAndPredictImage(BuildContext context) async {
+  Future<void> _pickMlImage(BuildContext context) async {
     final picked = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
@@ -105,12 +105,27 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       _mlImage = file;
       _mlResult = null;
       _mlError = null;
+      _mlUploading = false;
+    });
+  }
+
+  Future<void> _predictMlImage(BuildContext context) async {
+    final file = _mlImage;
+    final bytes = file?.bytes;
+    if (file == null || bytes == null || bytes.isEmpty) {
+      setState(() => _mlError = 'Please upload an image before predicting.');
+      return;
+    }
+
+    setState(() {
+      _mlResult = null;
+      _mlError = null;
       _mlUploading = true;
     });
 
     try {
       final result = await ref.read(backendApiProvider).predictImage(
-        file.bytes!,
+        bytes,
         filename: file.name,
       );
       if (!mounted) return;
@@ -124,66 +139,146 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         _mlUploading = false;
         _mlError = e.message;
       });
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
       setState(() {
         _mlUploading = false;
-        _mlError = 'Unexpected error while contacting the ML service. Please try again.';
+        _mlError =
+            'Unexpected error while contacting the ML service. Please try again.';
       });
+    }
+  }
+
+  void _clearMlPrediction() {
+    setState(() {
+      _mlImage = null;
+      _mlResult = null;
+      _mlError = null;
+      _mlUploading = false;
+    });
+  }
+
+  String? _medicineForPrediction(String? prediction) {
+    switch (prediction) {
+      case 'Stem_bleeding':
+        return 'Apply Tridemorph (0.1%) or Copper Oxychloride (5 g/L).';
+      default:
+        return null;
     }
   }
 
   Widget _buildMlPredictionCard(BuildContext context) {
     final result = _mlResult;
+    final prediction = result?['prediction']?.toString();
     final confidence = result?['confidence'];
-    final ranked = result?['predictions'];
+    final medicine = _medicineForPrediction(prediction);
+    final hasImage = _mlImage?.bytes != null && _mlImage!.bytes!.isNotEmpty;
+    final scheme = Theme.of(context).colorScheme;
+
     return Card(
+      clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                  child: Icon(Icons.biotech_outlined, color: Theme.of(context).colorScheme.primary),
+                  backgroundColor: scheme.primaryContainer,
+                  child: Icon(Icons.biotech_outlined, color: scheme.primary),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Arecanut disease detection', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                      Text(
+                        'Arecanut disease detection',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                      ),
                       const SizedBox(height: 3),
-                      const Text('Upload an image to run the trained ML model.'),
+                      const Text(
+                        'Upload an image, review the thumbnail, then tap Predict.',
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 14),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: _mlUploading ? null : () => _pickAndPredictImage(context),
-                icon: _mlUploading
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.upload_file),
-                label: Text(_mlUploading ? 'Analyzing image...' : 'Upload image'),
+            const SizedBox(height: 16),
+            if (hasImage) ...[
+              Container(
+                height: 280,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: scheme.surfaceContainerHighest,
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Image.memory(
+                  _mlImage!.bytes!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const Center(
+                    child: Text('Unable to preview this image.'),
+                  ),
+                ),
               ),
-            ),
-            if (_mlImage != null) ...[
               const SizedBox(height: 8),
-              Text('Image: ' + _mlImage!.name, overflow: TextOverflow.ellipsis),
+              Text(
+                _mlImage!.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 12),
             ],
+            if (!hasImage)
+              FilledButton.icon(
+                onPressed: _mlUploading
+                    ? null
+                    : () => _pickMlImage(context),
+                icon: const Icon(Icons.upload_file),
+                label: const Text('Upload image'),
+              )
+            else
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: _mlUploading
+                          ? null
+                          : () => _predictMlImage(context),
+                      icon: _mlUploading
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.auto_awesome),
+                      label: Text(
+                        _mlUploading ? 'Predicting...' : 'Predict',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  OutlinedButton.icon(
+                    onPressed: _mlUploading ? null : _clearMlPrediction,
+                    icon: const Icon(Icons.close),
+                    label: const Text('Clear'),
+                  ),
+                ],
+              ),
             if (_mlError != null) ...[
               const SizedBox(height: 12),
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.errorContainer,
+                  color: scheme.errorContainer,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -191,15 +286,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   children: [
                     Icon(
                       Icons.error_outline,
-                      color: Theme.of(context).colorScheme.onErrorContainer,
+                      color: scheme.onErrorContainer,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         _mlError!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onErrorContainer,
-                        ),
+                        style: TextStyle(color: scheme.onErrorContainer),
                       ),
                     ),
                   ],
@@ -207,30 +300,91 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
             ],
             if (result != null) ...[
-              const Divider(height: 24),
-              const Text('Prediction', style: TextStyle(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 4),
-              Text(
-                result['prediction']?.toString() ?? 'Unknown',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: scheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: scheme.outlineVariant),
+                  boxShadow: const [
+                    BoxShadow(
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                      color: Color(0x14000000),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Label:',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            prediction ?? 'Unknown',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Confidence:',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          confidence is num
+                              ? '${(confidence.toDouble() * 100).toStringAsFixed(2)}%'
+                              : '—',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              if (confidence is num)
-                Text('Confidence: ' + (confidence.toDouble() * 100).toStringAsFixed(2) + '%'),
-              if (ranked is List && ranked.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                const Text('Top results', style: TextStyle(fontWeight: FontWeight.w700)),
-                ...ranked.take(3).map((item) {
-                  final itemMap = Map<String, dynamic>.from(item as Map);
-                  final itemConfidence = itemMap['confidence'];
-                  return ListTile(
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(itemMap['class_name']?.toString() ?? 'Unknown'),
-                    trailing: itemConfidence is num
-                        ? Text((itemConfidence.toDouble() * 100).toStringAsFixed(2) + '%')
-                        : null,
-                  );
-                }),
+              if (medicine != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: RichText(
+                    text: TextSpan(
+                      style: DefaultTextStyle.of(context).style,
+                      children: [
+                        TextSpan(
+                          text: 'Medicine\n',
+                          style: TextStyle(
+                            color: scheme.primary,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        TextSpan(text: medicine),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ],
           ],
