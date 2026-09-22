@@ -101,6 +101,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     if (picked == null || picked.files.single.bytes == null) return;
 
     final file = picked.files.single;
+    const maxImageBytes = 10 * 1024 * 1024;
+
+    if (file.size > maxImageBytes) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select an image smaller than 10 MB.'),
+          ),
+        );
+      }
+      return;
+    }
+
     setState(() {
       _mlImage = file;
       _mlResult = null;
@@ -222,6 +235,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 child: Image.memory(
                   _mlImage!.bytes!,
                   fit: BoxFit.cover,
+                  cacheWidth: 800,
                   errorBuilder: (_, __, ___) => const Center(
                     child: Text('Unable to preview this image.'),
                   ),
