@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
@@ -11,7 +12,9 @@ class BackendApi {
       : _client = client ?? http.Client(),
         baseUrl = baseUrl ?? const String.fromEnvironment(
           'BACKEND_BASE_URL',
-          defaultValue: 'http://10.0.2.2:8000',
+          defaultValue: kIsWeb
+              ? 'http://127.0.0.1:8000'
+              : 'http://10.0.2.2:8000',
         );
 
   final http.Client _client;
@@ -35,6 +38,22 @@ class BackendApi {
     Uint8List bytes, {
     String filename = 'image.jpg',
   }) async {
+    const maxImageBytes = 10 * 1024 * 1024;
+
+    if (bytes.isEmpty) {
+      throw const BackendApiException(
+        400,
+        'The selected image is empty.',
+      );
+    }
+
+    if (bytes.length > maxImageBytes) {
+      throw const BackendApiException(
+        413,
+        'Image is too large. Please select an image smaller than 10 MB.',
+      );
+    }
+
     final request = http.MultipartRequest(
       'POST',
       Uri.parse('$baseUrl/api/v1/predict/image'),
