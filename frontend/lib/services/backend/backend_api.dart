@@ -11,7 +11,7 @@ class BackendApi {
       : _client = client ?? http.Client(),
         baseUrl = baseUrl ?? const String.fromEnvironment(
           'BACKEND_BASE_URL',
-          defaultValue: 'http://127.0.0.1:8000',
+          defaultValue: 'http://10.0.2.2:8000',
         );
 
   final http.Client _client;
@@ -46,6 +46,7 @@ class BackendApi {
           filename: filename,
         ),
       );
+
     final streamed = await request.send();
     final response = await http.Response.fromStream(streamed);
     return _decode(response);
@@ -54,16 +55,20 @@ class BackendApi {
   Map<String, dynamic> _decode(http.Response response) {
     Map<String, dynamic> body;
     try {
-      body = Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+      body = Map<String, dynamic>.from(
+        jsonDecode(response.body) as Map,
+      );
     } catch (_) {
       body = {'detail': response.body};
     }
+
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw BackendApiException(
         response.statusCode,
         body['detail']?.toString() ?? 'Backend request failed.',
       );
     }
+
     return body;
   }
 }
