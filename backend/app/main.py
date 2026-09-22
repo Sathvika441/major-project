@@ -3,7 +3,7 @@ import logging
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.ml_service import (
+from .ml_service import (
     ModelNotLoadedError,
     load_artifacts,
     predict_image,
@@ -81,12 +81,19 @@ async def run_image_prediction(
             detail="Please upload a JPG, JPEG, PNG, or WEBP image.",
         )
 
-    image_bytes = await file.read()
+    max_image_bytes = 10 * 1024 * 1024
+    image_bytes = await file.read(max_image_bytes + 1)
 
     if not image_bytes:
         raise HTTPException(
             status_code=400,
             detail="The uploaded image is empty.",
+        )
+
+    if len(image_bytes) > max_image_bytes:
+        raise HTTPException(
+            status_code=413,
+            detail="Image is too large. Please upload an image smaller than 10 MB.",
         )
 
     try:
