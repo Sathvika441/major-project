@@ -750,143 +750,125 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             ),
                           const SizedBox(height: 14),
                           Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .outlineVariant,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 24,
-                                  backgroundColor: Theme.of(context)
-                                      .colorScheme
-                                      .secondaryContainer,
-                                  child: Icon(
-                                    Icons.science_outlined,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSecondaryContainer,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Demo sensor mode',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleSmall
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      DropdownButtonHideUnderline(
-                                        child: DropdownButton<String>(
-                                          value: _demoPreset,
-                                          isDense: true,
-                                          items: const [
-                                            DropdownMenuItem(
-                                              value: 'Normal',
-                                              child: Text('Normal'),
-                                            ),
-                                            DropdownMenuItem(
-                                              value: 'Dry soil',
-                                              child: Text('Dry soil'),
-                                            ),
-                                            DropdownMenuItem(
-                                              value: 'Hot day',
-                                              child: Text('Hot day'),
-                                            ),
-                                            DropdownMenuItem(
-                                              value: 'Heavy rain',
-                                              child: Text('Heavy rain'),
-                                            ),
-                                          ],
-                                          onChanged: (value) {
-                                            if (value != null) {
-                                              setState(() => _demoPreset = value);
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        'Simulated readings only - physical sensors are not connected.',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Column(
-                                  children: [
-                                    SizedBox(
-                                      width: 92,
-                                      child: FilledButton(
-                                        onPressed: _generateDemoReading,
-                                        child: const Text('Generate'),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    SizedBox(
-                                      width: 92,
-                                      child: OutlinedButton(
-                                        onPressed: () =>
-                                            _testDemoBackend(context, ref),
-                                        child: const Text('Test ML'),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          _buildSyncBanner(context, farmDevices),
+                             padding: const EdgeInsets.all(16),
+                             decoration: BoxDecoration(
+                               color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                               borderRadius: BorderRadius.circular(20),
+                               border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                             ),
+                             child: Column(
+                               crossAxisAlignment: CrossAxisAlignment.start,
+                               children: [
+                                 Row(
+                                   crossAxisAlignment: CrossAxisAlignment.start,
+                                   children: [
+                                     CircleAvatar(
+                                       radius: 24,
+                                       backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+                                       child: Icon(Icons.water_drop_outlined, color: Theme.of(context).colorScheme.onSecondaryContainer),
+                                     ),
+                                     const SizedBox(width: 12),
+                                     Expanded(
+                                       child: Column(
+                                         crossAxisAlignment: CrossAxisAlignment.start,
+                                         children: [
+                                           Text(
+                                             'Demo soil moisture sensor',
+                                             style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                                           ),
+                                           const SizedBox(height: 4),
+                                           Text(
+                                             'Only soil moisture is simulated. Temperature, humidity and rainfall come from the weather API.',
+                                             style: Theme.of(context).textTheme.bodySmall,
+                                           ),
+                                         ],
+                                       ),
+                                     ),
+                                   ],
+                                 ),
+                                 const SizedBox(height: 10),
+                                 Wrap(
+                                   spacing: 12,
+                                   runSpacing: 8,
+                                   crossAxisAlignment: WrapCrossAlignment.center,
+                                   children: [
+                                     const Text('Soil condition', style: TextStyle(fontWeight: FontWeight.w600)),
+                                     DropdownButtonHideUnderline(
+                                       child: DropdownButton<String>(
+                                         value: _demoPreset,
+                                         isDense: true,
+                                         items: const [
+                                           DropdownMenuItem(value: 'Normal', child: Text('Normal')),
+                                           DropdownMenuItem(value: 'Dry soil', child: Text('Dry soil')),
+                                           DropdownMenuItem(value: 'Wet soil', child: Text('Wet soil')),
+                                         ],
+                                         onChanged: (value) {
+                                           if (value != null) setState(() => _demoPreset = value);
+                                         },
+                                       ),
+                                     ),
+                                   ],
+                                 ),
+                                 const SizedBox(height: 10),
+                                 Wrap(
+                                   spacing: 8,
+                                   runSpacing: 8,
+                                   children: [
+                                     FilledButton(
+                                       onPressed: _generateDemoReading,
+                                       child: const Text('Generate soil data'),
+                                     ),
+                                     OutlinedButton(
+                                       onPressed: () => _testDemoBackend(context, ref),
+                                       child: const Text('Test API'),
+                                     ),
+                                   ],
+                                 ),
+                               ],
+                             ),
+                           ),
+                           const SizedBox(height: 10),
+                           _buildSyncBanner(context, farmDevices),
                           const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _OverviewTile(
-                                  icon: Icons.square_foot_outlined,
-                                  label: 'Farm size',
-                                  value: '${farm.sizeAcres.toStringAsFixed(1)} acres',
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: _OverviewTile(
-                                  icon: Icons.water_drop_outlined,
-                                  label: 'Water',
-                                  value: farm.waterSource,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: _OverviewTile(
-                                  icon: Icons.water_outlined,
-                                  label: 'Irrigation',
-                                  value: farm.irrigationMethod,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Card(
+                          LayoutBuilder(
+                             builder: (context, constraints) {
+                               final tileWidth = constraints.maxWidth < 520
+                                   ? (constraints.maxWidth - 10) / 2
+                                   : (constraints.maxWidth - 20) / 3;
+                               return Wrap(
+                                 spacing: 10,
+                                 runSpacing: 10,
+                                 children: [
+                                   SizedBox(
+                                     width: tileWidth,
+                                     child: _OverviewTile(
+                                       icon: Icons.square_foot_outlined,
+                                       label: 'Farm size',
+                                       value: '${farm.sizeAcres.toStringAsFixed(1)} acres',
+                                     ),
+                                   ),
+                                   SizedBox(
+                                     width: tileWidth,
+                                     child: _OverviewTile(
+                                       icon: Icons.water_drop_outlined,
+                                       label: 'Water',
+                                       value: farm.waterSource,
+                                     ),
+                                   ),
+                                   SizedBox(
+                                     width: tileWidth,
+                                     child: _OverviewTile(
+                                       icon: Icons.water_outlined,
+                                       label: 'Irrigation',
+                                       value: farm.irrigationMethod,
+                                     ),
+                                   ),
+                                 ],
+                               );
+                             },
+                           ),
+                           const SizedBox(height: 12),
+                           Card(
                             child: ListTile(
                               leading: CircleAvatar(
                                 backgroundColor: Theme.of(context)
