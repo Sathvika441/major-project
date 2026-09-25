@@ -99,6 +99,39 @@ class IrrigationDecisionEngine {
       score += 0.12; factors.add('Dry/hot weather context increases water demand');
     }
 
+    final forecastRain = input.forecastPrecipitation24h;
+    if (forecastRain != null) {
+      if (forecastRain >= 8) {
+        score -= 0.28;
+        factors.add('Meaningful rainfall is forecast in the next 24 hours');
+      } else if (forecastRain >= 3) {
+        score -= 0.12;
+        factors.add('Rainfall is forecast in the next 24 hours');
+      }
+    }
+
+    final forecastProbability = input.forecastPrecipitationProbability24h;
+    if (forecastProbability != null) {
+      if (forecastProbability >= 70 && (forecastRain ?? 0) >= 3) {
+        score -= 0.18;
+        factors.add('High probability of rain supports delaying irrigation');
+      } else if (forecastProbability >= 50 && (forecastRain ?? 0) >= 1) {
+        score -= 0.08;
+        factors.add('Rain probability is elevated in the next 24 hours');
+      }
+    }
+
+    final forecastEt0 = input.forecastEt024h;
+    if (forecastEt0 != null) {
+      if (forecastEt0 >= 5) {
+        score += 0.10;
+        factors.add('High reference evapotranspiration increases water demand');
+      } else if (forecastEt0 >= 3) {
+        score += 0.05;
+        factors.add('Reference evapotranspiration adds moderate water demand');
+      }
+    }
+
     final recent = input.recentIrrigation;
     if (recent.hasOccurred) {
       final elapsed = createdAt.difference(recent.startedAt!);
