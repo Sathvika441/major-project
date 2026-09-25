@@ -569,7 +569,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         _selectedFarmGrowthStage = growthStage;
                         _selectedFarmPlantingDate = plantingDate;
                         if (farmChanged) {
-                          _demoReading = null;
+                          _demoReading = _presetReading(_demoPreset);
                           _weather = null;
                           _weatherError = null;
                           _weatherFarmKey = null;
