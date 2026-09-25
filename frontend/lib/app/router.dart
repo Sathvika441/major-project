@@ -50,7 +50,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/permission-setup', builder: (context, state) => const PermissionSetupScreen()),
       GoRoute(path: '/onboarding', builder: (context, state) => const OnboardingScreen()),
       GoRoute(path: '/farm-details', builder: (context, state) => const FarmDetailsScreen()),
-      GoRoute(path: '/dashboard', builder: (context, state) => const DashboardScreen()),
+      GoRoute(
+        path: '/dashboard',
+        builder: (context, state) => const DashboardScreen(),
+      ),
+      GoRoute(
+        path: '/farm/:farmId',
+        builder: (context, state) => DashboardScreen(
+          initialFarmId: state.pathParameters['farmId'],
+        ),
+      ),
       GoRoute(path: '/farms', builder: (context, state) => const FarmManagementScreen()),
       GoRoute(path: '/devices', builder: (context, state) => const DeviceManagementScreen()),
       GoRoute(path: '/profile', builder: (context, state) => const ProfileEditScreen()),
