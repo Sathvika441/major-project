@@ -29,8 +29,9 @@ class OpenMeteoWeatherService:
         district: str,
         taluk: str,
         village: str,
+        location: str = "",
     ) -> dict:
-        location_key = self._location_key(state, district, taluk, village)
+        location_key = self._location_key(state, district, taluk, village, location)
         cached = self._cache.get(location_key)
         now = datetime.now(timezone.utc)
         if cached and now - cached[0] < CACHE_TTL:
@@ -41,6 +42,7 @@ class OpenMeteoWeatherService:
             district=district,
             taluk=taluk,
             village=village,
+            location=location,
         )
         forecast = self._fetch_forecast(location["latitude"], location["longitude"])
         result = self._normalize(
@@ -60,10 +62,11 @@ class OpenMeteoWeatherService:
         district: str,
         taluk: str,
         village: str,
+        location: str = "",
     ) -> str:
         return "|".join(
             value.strip().lower()
-            for value in (state, district, taluk, village)
+            for value in (state, district, taluk, village, location)
         )
 
     def _resolve_location(
@@ -73,15 +76,23 @@ class OpenMeteoWeatherService:
         district: str,
         taluk: str,
         village: str,
+        location: str = "",
     ) -> dict:
-        candidates = []
-        for name, level in (
-            (village, "village"),
-            (taluk, "taluk"),
-            (district, "district"),
-        ):
+        # Open-Meteo geocoding accepts a place plus one country/admin1
+        # qualifier. We therefore search the most specific farmer-entered
+        # place first and validate the returned administrative hierarchy.
+        attempts = [
+            ("village", village),
+            ("taluk", taluk),
+            ("district", district),
+        ]
+        if location.strip():
+            attempts.insert(0, ("location", location))
+
+        for level, name in attempts:
             if not name.strip():
                 continue
+
             results = self._geocode(name=name, state=state)
             ranked = sorted(
                 results,
@@ -93,32 +104,84 @@ class OpenMeteoWeatherService:
                 ),
                 reverse=True,
             )
-            if ranked:
-                candidates.append((level, ranked[0]))
+            if not ranked:
+                continue
 
-        if not candidates:
-            raise WeatherServiceError(
-                "Could not resolve the farm location to coordinates. "
-                "Please check the selected village, taluk and district."
+            best = ranked[0]
+            score = self._location_score(
+                best,
+                requested_name=name,
+                district=district,
+                taluk=taluk,
             )
 
-        level, match = candidates[0]
-        return {
-            "name": match.get("name", village or taluk or district),
-            "latitude": float(match["latitude"]),
-            "longitude": float(match["longitude"]),
-            "timezone": match.get("timezone"),
-            "resolved_level": level,
-            "admin1": match.get("admin1"),
-            "admin2": match.get("admin2"),
-            "admin3": match.get("admin3"),
-        }
+            # Do not silently use an unrelated village returned by a
+            # normalized/prefix search. A district-level result is a safe
+            # fallback when the exact village/taluk is not indexed.
+            minimum_score = 150 if level in {"village", "taluk", "location"} else 130
+            if score < minimum_score:
+                continue
+
+            return {
+                "name": best.get("name", name),
+                "latitude": float(best["latitude"]),
+                "longitude": float(best["longitude"]),
+                "timezone": best.get("timezone"),
+                "resolved_level": level,
+                "match_score": score,
+                "admin1": best.get("admin1"),
+                "admin2": best.get("admin2"),
+                "admin3": best.get("admin3"),
+                "feature_code": best.get("feature_code"),
+            }
+
+        # Last-resort district lookup. This still gives a real coordinate
+        # instead of returning empty weather values when a small village is
+        # not present in the geocoder index.
+        district_results = self._geocode(name=district, state=state)
+        ranked = sorted(
+            district_results,
+            key=lambda item: self._location_score(
+                item,
+                requested_name=district,
+                district=district,
+                taluk=taluk,
+            ),
+            reverse=True,
+        )
+        if ranked:
+            best = ranked[0]
+            score = self._location_score(
+                best,
+                requested_name=district,
+                district=district,
+                taluk=taluk,
+            )
+            if score >= 130:
+                return {
+                    "name": best.get("name", district),
+                    "latitude": float(best["latitude"]),
+                    "longitude": float(best["longitude"]),
+                    "timezone": best.get("timezone"),
+                    "resolved_level": "district",
+                    "match_score": score,
+                    "admin1": best.get("admin1"),
+                    "admin2": best.get("admin2"),
+                    "admin3": best.get("admin3"),
+                    "feature_code": best.get("feature_code"),
+                }
+
+        raise WeatherServiceError(
+            "Could not resolve the selected farm location to coordinates. "
+            f"Village='{village}', Taluk='{taluk}', District='{district}'. "
+            "Try refreshing the farm location and weather data."
+        )
 
     def _geocode(self, *, name: str, state: str) -> list[dict]:
         query = urlencode(
             {
-                "name": f"{name}, {state}",
-                "count": 10,
+                "name": f"{name.strip()}, {state.strip()}",
+                "count": 20,
                 "language": "en",
                 "format": "json",
                 "countryCode": "IN",
@@ -141,19 +204,28 @@ class OpenMeteoWeatherService:
         admin1 = str(item.get("admin1", "")).strip().lower()
         admin2 = str(item.get("admin2", "")).strip().lower()
         admin3 = str(item.get("admin3", "")).strip().lower()
+        admin4 = str(item.get("admin4", "")).strip().lower()
 
         if name == requested:
-            score += 100
+            score += 120
         elif name.startswith(requested):
-            score += 40
+            score += 50
+
         if admin1 in {"karnataka", "ka"}:
+            score += 50
+
+        district_name = district.strip().lower()
+        taluk_name = taluk.strip().lower()
+
+        if district_name and district_name in {admin2, admin3, admin4}:
+            score += 50
+        if taluk_name and taluk_name in {admin2, admin3, admin4}:
             score += 30
-        if district.strip().lower() == admin2:
-            score += 20
-        if taluk.strip().lower() in {admin2, admin3}:
-            score += 15
-        if item.get("latitude") is not None and item.get("longitude") is not None:
-            score += 5
+
+        feature_code = str(item.get("feature_code", "")).upper()
+        if feature_code.startswith("PPL") or feature_code.startswith("ADM"):
+            score += 10
+
         return score
 
     def _fetch_forecast(self, latitude: float, longitude: float) -> dict:
@@ -278,6 +350,7 @@ class OpenMeteoWeatherService:
                 "longitude": location["longitude"],
                 "timezone": forecast.get("timezone"),
                 "resolved_level": location["resolved_level"],
+                "match_score": location.get("match_score"),
             },
             "current": {
                 "temperature": self._number(current.get("temperature_2m")),
@@ -336,7 +409,12 @@ class OpenMeteoWeatherService:
         )
         try:
             with urlopen(request, timeout=12) as response:
-                return json.loads(response.read().decode("utf-8"))
+                payload = json.loads(response.read().decode("utf-8"))
+                if isinstance(payload, dict) and payload.get("error"):
+                    raise WeatherServiceError(
+                        str(payload.get("reason", "Weather provider returned an error."))
+                    )
+                return payload
         except HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
             raise WeatherServiceError(
