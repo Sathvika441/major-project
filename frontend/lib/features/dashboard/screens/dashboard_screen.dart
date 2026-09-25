@@ -1370,18 +1370,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final readings =
         devices.map((d) => d.latestReading).whereType<SensorReading>().toList();
     if (readings.isEmpty) return const _ReadingSummary();
-    double? avg(
-        double? Function(SensorReading) acc, List<SensorReading> list) {
-      final vals = list.map(acc).whereType<double>().toList();
-      if (vals.isEmpty) return null;
-      return vals.reduce((a, b) => a + b) / vals.length;
-    }
+    final soilValues =
+        readings.map((reading) => reading.soilMoisture).whereType<double>().toList();
 
     return _ReadingSummary(
-      soilMoisture: avg((r) => r.soilMoisture, readings),
-      temperature: avg((r) => r.temperature, readings),
-      humidity: avg((r) => r.humidity, readings),
-      rainfall: avg((r) => r.rainfall, readings),
+      soilMoisture: soilValues.isEmpty
+          ? null
+          : soilValues.reduce((a, b) => a + b) / soilValues.length,
       count: readings.length,
     );
   }
@@ -1421,21 +1416,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 '${r.soilMoisture!.toStringAsFixed(1)}% - risk of waterlogging.',
           ));
         }
-        if (r.temperature != null && r.temperature! > 40) {
-          alerts.add(_FarmAlert(
-            severity: _AlertSeverity.warning,
-            title: 'High temperature (${r.temperature!.toStringAsFixed(1)} C)',
-            message: 'Monitor crop stress on ${d.name}.',
-          ));
-        }
-        if (r.rainfall != null && r.rainfall! > 100) {
-          alerts.add(_FarmAlert(
-            severity: _AlertSeverity.info,
-            title: 'Heavy rainfall recorded',
-            message:
-                '${r.rainfall!.toStringAsFixed(0)} mm on ${d.name}. Check drainage.',
-          ));
-        }
+
       }
     }
     return alerts;
@@ -1535,26 +1516,32 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   IrrigationDecision? _buildIrrigationDecision(
     FarmModel farm,
     _ReadingSummary agg,
+    WeatherData? weather,
   ) {
     final stage = farm.growthStage;
     final ageDays = farm.cropAgeDays;
-    if (stage == null || ageDays == null) return null;
+    if (stage == null || ageDays == null || weather == null) return null;
 
-    final weather = (agg.rainfall ?? 0) >= 20
-        ? 'heavy rain'
-        : (agg.temperature ?? 0) >= 36
-            ? 'hot'
-            : 'normal';
+    final weatherContext = weather.next24hPrecipitationMm >= 8
+        ? 'heavy rain forecast'
+        : weather.next24hPrecipitationProbability >= 70
+            ? 'rain likely'
+            : weather.temperature != null && weather.temperature! >= 36
+                ? 'hot'
+                : 'normal';
 
-    return const IrrigationDecisionEngine().decide(
+    return IrrigationDecisionEngine().decide(
       input: IrrigationInput(
         soilMoisture: agg.soilMoisture,
         cropAgeDays: ageDays,
         growthStage: stage,
-        temperature: agg.temperature,
-        humidity: agg.humidity,
-        rainfall: agg.rainfall,
-        weatherContext: weather,
+        temperature: weather.temperature,
+        humidity: weather.humidity,
+        rainfall: weather.precipitationMm,
+        weatherContext: weatherContext,
+        forecastPrecipitation24h: weather.next24hPrecipitationMm,
+        forecastPrecipitationProbability24h: weather.next24hPrecipitationProbability,
+        forecastEt024h: weather.next24hEt0Mm,
         recentIrrigation: RecentIrrigation(),
         observedAt: DateTime.now(),
       ),
