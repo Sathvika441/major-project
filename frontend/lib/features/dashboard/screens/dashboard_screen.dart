@@ -76,7 +76,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         setState(() => _lastSyncAt = DateTime.now());
         if (farms.isNotEmpty) {
           final selected = farms.firstWhere(
-            (item) => item.id == _selectedFarmId,
+            (item) => item.id == (widget.initialFarmId ?? _selectedFarmId),
             orElse: () => farms.first,
           );
           await _loadWeatherForFarm(selected, forceRefresh: true);
@@ -91,7 +91,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     FarmModel farm, {
     bool forceRefresh = false,
   }) async {
-    final key = '${farm.id}|${farm.state}|${farm.district}|${farm.taluk}|${farm.village}';
+    final key = '${farm.id}|${farm.state}|${farm.district}|${farm.taluk}|${farm.village}|${farm.location}';
     if (!forceRefresh &&
         _weatherFarmKey == key &&
         (_weatherLoading || _weather != null || _weatherError != null)) {
