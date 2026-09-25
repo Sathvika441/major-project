@@ -51,6 +51,7 @@ def get_weather(
     district: str = Query(..., min_length=2),
     taluk: str = Query(..., min_length=2),
     village: str = Query(..., min_length=2),
+    location: str = Query("", max_length=300),
 ):
     """Return current and forecast weather for a farmer-entered location."""
 
@@ -60,6 +61,7 @@ def get_weather(
             district=district,
             taluk=taluk,
             village=village,
+            location=location,
         )
     except WeatherServiceError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
