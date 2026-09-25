@@ -74,6 +74,7 @@ class DeviceManagementScreen extends ConsumerWidget {
                   else
                     DropdownButtonFormField<String>(
                       value: selectedFarmId,
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'Assign to farm',
                       ),
