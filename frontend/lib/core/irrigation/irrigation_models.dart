@@ -41,6 +41,9 @@ class IrrigationInput {
   final double? humidity;
   final double? rainfall;
   final String weatherContext;
+  final double? forecastPrecipitation24h;
+  final double? forecastPrecipitationProbability24h;
+  final double? forecastEt024h;
   final RecentIrrigation recentIrrigation;
   final DateTime observedAt;
 
@@ -52,6 +55,9 @@ class IrrigationInput {
     required this.humidity,
     required this.rainfall,
     required this.weatherContext,
+    this.forecastPrecipitation24h,
+    this.forecastPrecipitationProbability24h,
+    this.forecastEt024h,
     required this.recentIrrigation,
     required this.observedAt,
   });
