@@ -34,6 +34,7 @@ class BackendApi {
       'district': farm.district,
       'taluk': farm.taluk,
       'village': farm.village,
+      'location': farm.location,
     }).query;
 
     final response = await _client.get(
