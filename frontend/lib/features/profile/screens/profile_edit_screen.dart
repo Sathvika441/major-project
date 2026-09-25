@@ -249,15 +249,15 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             const SizedBox(height: 18),
             Text('Location', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
-            DropdownButtonFormField<String>(initialValue: KarnatakaLocations.state, decoration: const InputDecoration(labelText: 'State', prefixIcon: Icon(Icons.map)), items: const [DropdownMenuItem(value: 'Karnataka', child: Text('Karnataka'))], onChanged: null),
+            DropdownButtonFormField<String>(isExpanded: true, initialValue: KarnatakaLocations.state, decoration: const InputDecoration(labelText: 'State', prefixIcon: Icon(Icons.map)), items: const [DropdownMenuItem(value: 'Karnataka', child: Text('Karnataka'))], onChanged: null),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(initialValue: _district.isEmpty ? null : _district, decoration: const InputDecoration(labelText: 'District', prefixIcon: Icon(Icons.location_city)), items: _districts.map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(), onChanged: (value) {
+            DropdownButtonFormField<String>(isExpanded: true, initialValue: _district.isEmpty ? null : _district, decoration: const InputDecoration(labelText: 'District', prefixIcon: Icon(Icons.location_city)), items: _districts.map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(), onChanged: (value) {
               if (value == null) return;
               final taluks = ref.read(locationMasterServiceProvider).taluksFor(value);
               setState(() { _district = value; _taluk = taluks.isNotEmpty ? taluks.first : ''; _village.clear(); _villageCode = ''; });
             }),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(initialValue: _taluk.isEmpty ? null : _taluk, decoration: const InputDecoration(labelText: 'Taluk', prefixIcon: Icon(Icons.place)), items: _taluks.map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(), onChanged: (value) {
+            DropdownButtonFormField<String>(isExpanded: true, initialValue: _taluk.isEmpty ? null : _taluk, decoration: const InputDecoration(labelText: 'Taluk', prefixIcon: Icon(Icons.place)), items: _taluks.map((value) => DropdownMenuItem(value: value, child: Text(value))).toList(), onChanged: (value) {
               if (value == null) return;
               setState(() { _taluk = value; _village.clear(); _villageCode = ''; });
             }),
