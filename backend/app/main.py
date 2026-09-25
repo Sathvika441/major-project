@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from .ml_service import (
@@ -8,9 +8,11 @@ from .ml_service import (
     load_artifacts,
     predict_image,
 )
+from .weather_service import OpenMeteoWeatherService, WeatherServiceError
 
 
 logger = logging.getLogger(__name__)
+weather_service = OpenMeteoWeatherService()
 
 app = FastAPI(
     title="Major Project Backend",
@@ -41,6 +43,26 @@ def health():
         "status": "ok",
         "ml": ml_status,
     }
+
+
+@app.get("/api/v1/weather")
+def get_weather(
+    state: str = Query(..., min_length=2),
+    district: str = Query(..., min_length=2),
+    taluk: str = Query(..., min_length=2),
+    village: str = Query(..., min_length=2),
+):
+    """Return current and forecast weather for a farmer-entered location."""
+
+    try:
+        return weather_service.get_weather(
+            state=state,
+            district=district,
+            taluk=taluk,
+            village=village,
+        )
+    except WeatherServiceError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
 @app.post("/api/v1/predict")
