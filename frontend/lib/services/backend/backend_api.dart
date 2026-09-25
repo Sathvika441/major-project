@@ -3,6 +3,9 @@ import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../models/farm/farm_model.dart';
+import '../../models/weather/weather_model.dart';
 import 'package:http/http.dart' as http;
 
 final backendApiProvider = Provider<BackendApi>((ref) => BackendApi());
@@ -23,6 +26,20 @@ class BackendApi {
   Future<Map<String, dynamic>> health() async {
     final response = await _client.get(Uri.parse('$baseUrl/health'));
     return _decode(response);
+  }
+
+  Future<WeatherData> getWeather(FarmModel farm) async {
+    final query = Uri(queryParameters: {
+      'state': farm.state,
+      'district': farm.district,
+      'taluk': farm.taluk,
+      'village': farm.village,
+    }).query;
+
+    final response = await _client.get(
+      Uri.parse('$baseUrl/api/v1/weather?$query'),
+    );
+    return WeatherData.fromMap(_decode(response));
   }
 
   Future<Map<String, dynamic>> predict(Map<String, dynamic> features) async {
