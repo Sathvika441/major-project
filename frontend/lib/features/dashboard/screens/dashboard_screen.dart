@@ -19,7 +19,12 @@ import '../../farm/screens/farm_management_screen.dart';
 import '../../profile/screens/profile_edit_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
-  const DashboardScreen({super.key});
+  final String? initialFarmId;
+
+  const DashboardScreen({
+    super.key,
+    this.initialFarmId,
+  });
 
   @override
   ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
@@ -121,6 +126,247 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         _weatherError = 'Unable to load weather for this farm location.';
       });
     }
+  }
+
+  Widget _buildFarmPortfolio(BuildContext context, List<FarmModel> farms, String farmerName) {
+    final scheme = Theme.of(context).colorScheme;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [scheme.primary, scheme.primaryContainer],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 620;
+              final title = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Welcome back, $farmerName',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: scheme.onPrimary,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Select a farm to open its smart agriculture workspace.',
+                    style: TextStyle(color: scheme.onPrimary.withValues(alpha: 0.9)),
+                  ),
+                ],
+              );
+              final action = FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: scheme.onPrimary,
+                  foregroundColor: scheme.primary,
+                ),
+                onPressed: () => context.push('/farms'),
+                icon: const Icon(Icons.add_business_outlined),
+                label: const Text('Add farm'),
+              );
+              return compact
+                  ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [title, const SizedBox(height: 18), action])
+                  : Row(children: [Expanded(child: title), const SizedBox(width: 20), action]);
+            },
+          ),
+        ),
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Your farms',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              ),
+            ),
+            Text(
+              '${farms.length} ${farms.length == 1 ? 'farm' : 'farms'}',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: scheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final columns = width >= 1100 ? 3 : width >= 700 ? 2 : 1;
+            const gap = 16.0;
+            final cardWidth = columns == 1 ? width : (width - gap * (columns - 1)) / columns;
+            return Wrap(
+              spacing: gap,
+              runSpacing: gap,
+              children: farms.map((farm) => SizedBox(
+                width: cardWidth,
+                child: _buildFarmCard(context, farm),
+              )).toList(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFarmCard(BuildContext context, FarmModel farm) {
+    final scheme = Theme.of(context).colorScheme;
+    final location = [farm.village, farm.taluk, farm.district]
+        .where((e) => e.trim().isNotEmpty)
+        .join(', ');
+    return Card(
+      elevation: 0,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => context.go('/farm/${farm.id}'),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: scheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Icon(Icons.agriculture_rounded, color: scheme.primary),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      farm.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                  Icon(Icons.arrow_forward_ios_rounded, size: 16, color: scheme.onSurfaceVariant),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.location_on_outlined, size: 18, color: scheme.onSurfaceVariant),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      location.isEmpty ? farm.location : location,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  Chip(avatar: const Icon(Icons.square_foot_outlined, size: 16), label: Text('${farm.sizeAcres.toStringAsFixed(1)} acres')),
+                  Chip(avatar: const Icon(Icons.eco_outlined, size: 16), label: Text(farm.crop)),
+                  Chip(avatar: const Icon(Icons.water_outlined, size: 16), label: Text(farm.irrigationMethod)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.dashboard_customize_outlined, size: 18),
+                    SizedBox(width: 8),
+                    Expanded(child: Text('Open farm workspace', style: TextStyle(fontWeight: FontWeight.w700))),
+                    Icon(Icons.chevron_right_rounded),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAppDrawer(BuildContext context, String farmerName, String? farmId) {
+    final scheme = Theme.of(context).colorScheme;
+    final onFarm = farmId != null;
+    return Drawer(
+      child: SafeArea(
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
+              color: scheme.primary,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 26,
+                    backgroundColor: scheme.onPrimary,
+                    child: Icon(Icons.agriculture_rounded, color: scheme.primary, size: 28),
+                  ),
+                  const SizedBox(height: 14),
+                  Text('ArecaSmart', style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: scheme.onPrimary, fontWeight: FontWeight.w800,
+                  )),
+                  const SizedBox(height: 3),
+                  Text(farmerName, style: TextStyle(color: scheme.onPrimary.withValues(alpha: 0.85))),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                children: [
+                  _drawerItem(context, Icons.dashboard_outlined, 'My farms', () => context.go('/dashboard'), selected: !onFarm),
+                  if (onFarm)
+                    _drawerItem(context, Icons.agriculture_outlined, 'Farm overview', () => context.go('/farm/$farmId'), selected: true),
+                  _drawerItem(context, Icons.sensors_outlined, 'Devices', () => context.go('/devices')),
+                  _drawerItem(context, Icons.notifications_none_rounded, 'Alerts', () => _showAlertsSheet(
+                    context, ref, ref.read(authControllerProvider).user?.uid, farmId,
+                  )),
+                  _drawerItem(context, Icons.person_outline_rounded, 'Profile', () => context.go('/profile')),
+                  _drawerItem(context, Icons.settings_outlined, 'Farm management', () => context.go('/farms')),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            _drawerItem(context, Icons.logout_rounded, 'Sign out', () => ref.read(authControllerProvider.notifier).logout()),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _drawerItem(BuildContext context, IconData icon, String label, VoidCallback onTap, {bool selected = false}) {
+    final scheme = Theme.of(context).colorScheme;
+    return ListTile(
+      leading: Icon(icon, color: selected ? scheme.primary : scheme.onSurfaceVariant),
+      title: Text(label, style: TextStyle(fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
+      selected: selected,
+      onTap: () {
+        Navigator.of(context).pop();
+        onTap();
+      },
+    );
   }
 
   Future<void> _pickMlImage(BuildContext context) async {
@@ -473,50 +719,30 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final user = ref.watch(authControllerProvider).user;
     final uid = user?.uid;
 
+    final isFarmWorkspace = widget.initialFarmId != null;
+
     return Scaffold(
+      drawer: _buildAppDrawer(context, user?.name ?? 'Farmer', widget.initialFarmId),
       appBar: AppBar(
-        title: const Text('ArecaSmart'),
+        leading: Builder(
+          builder: (context) => IconButton(
+            tooltip: 'Open navigation',
+            icon: const Icon(Icons.menu_rounded),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+        title: Text(isFarmWorkspace ? 'Farm workspace' : 'My farms'),
         actions: [
-          IconButton(
-            onPressed: () => _showAlertsSheet(context, ref, uid, _selectedFarmId),
-            icon: const Icon(Icons.notifications_active_outlined),
-            tooltip: 'Alerts',
-          ),
-          IconButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const FarmManagementScreen(),
-              ),
+          if (isFarmWorkspace)
+            IconButton(
+              tooltip: 'All farms',
+              onPressed: () => context.go('/dashboard'),
+              icon: const Icon(Icons.grid_view_rounded),
             ),
-            icon: const Icon(Icons.agriculture),
-            tooltip: 'Farms',
-          ),
           IconButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const DeviceManagementScreen(),
-              ),
-            ),
-            icon: const Icon(Icons.sensors),
-            tooltip: 'Devices',
-          ),
-          IconButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const ProfileEditScreen(),
-              ),
-            ),
-            icon: const Icon(Icons.person),
-            tooltip: 'Profile',
-          ),
-          IconButton(
-            onPressed: () =>
-                ref.read(authControllerProvider.notifier).logout(),
-            icon: const Icon(Icons.logout_rounded),
-            tooltip: 'Logout',
+            tooltip: 'Refresh',
+            onPressed: uid == null ? null : () => _refreshDashboard(uid),
+            icon: _syncing ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.refresh_rounded),
           ),
         ],
       ),
@@ -546,7 +772,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   );
                 }
 
-                final selectedId = _selectedFarmId;
+                if (!isFarmWorkspace) {
+                  return _buildFarmPortfolio(context, farms, user?.name ?? 'Farmer');
+                }
+
+                final selectedId = widget.initialFarmId ?? _selectedFarmId;
                 final farm = farms.firstWhere(
                   (item) => item.id == selectedId,
                   orElse: () => farms.first,
