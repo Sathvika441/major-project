@@ -448,6 +448,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
                 value: _state,
+                isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'State',
                   prefixIcon: Icon(Icons.map_outlined),
@@ -463,6 +464,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
                 value: _district,
+                isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'District',
                   prefixIcon: Icon(Icons.location_city_outlined),
@@ -489,6 +491,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
                 value: _taluk,
+                isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'Taluk',
                   prefixIcon: Icon(Icons.account_balance_outlined),
@@ -517,6 +520,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
               const SizedBox(height: 14),
               DropdownButtonFormField<VillageEntry>(
                 value: _village,
+                isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'Village',
                   prefixIcon: Icon(Icons.home_work_outlined),
@@ -563,6 +567,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
                 value: _cultivation,
+                isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'Arecanut cultivation type',
                   prefixIcon: Icon(Icons.spa_outlined),
@@ -576,6 +581,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
                 value: _soil,
+                isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'Soil type',
                   prefixIcon: Icon(Icons.grass_outlined),
@@ -589,6 +595,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
                 value: _waterSource,
+                isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'Water source',
                   prefixIcon: Icon(Icons.water_drop_outlined),
@@ -602,6 +609,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
                 value: _irrigationMethod,
+                isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'Irrigation method',
                   prefixIcon: Icon(Icons.water_outlined),
