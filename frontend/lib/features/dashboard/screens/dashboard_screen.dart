@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../models/device/device_model.dart';
 import '../../../models/farm/farm_model.dart';
+import '../../../models/weather/weather_model.dart';
 import '../../../repositories/device/device_repository.dart';
 import '../../../repositories/farm/farm_repository.dart';
 import '../../../services/backend/backend_api.dart';
@@ -39,37 +40,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   bool _mlUploading = false;
   Map<String, dynamic>? _mlResult;
   String? _mlError;
+  WeatherData? _weather;
+  String? _weatherError;
+  bool _weatherLoading = false;
+  String? _weatherFarmKey;
 
   SensorReading _presetReading(String preset) {
     final now = DateTime.now();
-    switch (preset) {
-      case 'Dry soil':
-        return SensorReading(
-          soilMoisture: 12,
-          temperature: 33,
-          humidity: 48,
-          rainfall: 0,
-          timestamp: now,
-        );
-      case 'Hot day':
-        return SensorReading(
-          soilMoisture: 24,
-          temperature: 41,
-          humidity: 42,
-          rainfall: 0,
-          timestamp: now,
-        );
-      case 'Heavy rain':
-        return SensorReading(
-          soilMoisture: 82,
-          temperature: 27,
-          humidity: 86,
-          rainfall: 38,
-          timestamp: now,
-        );
-      default:
-        return ref.read(simulatedSensorProvider).generateReading();
-    }
+    final soilMoisture = switch (preset) {
+      'Dry soil' => 18.0,
+      'Wet soil' => 72.0,
+      _ => 38.0,
+    };
+    return SensorReading(soilMoisture: soilMoisture, timestamp: now);
   }
 
   void _generateDemoReading() {
@@ -82,13 +65,61 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     if (_syncing) return;
     setState(() => _syncing = true);
     try {
-      await Future.wait([
-        ref.read(farmRepositoryProvider).getFarms(uid),
-        ref.read(deviceRepositoryProvider).getDevices(uid),
-      ]);
-      if (mounted) setState(() => _lastSyncAt = DateTime.now());
+      final farms = await ref.read(farmRepositoryProvider).getFarms(uid);
+      await ref.read(deviceRepositoryProvider).getDevices(uid);
+      if (mounted) {
+        setState(() => _lastSyncAt = DateTime.now());
+        if (farms.isNotEmpty) {
+          final selected = farms.firstWhere(
+            (item) => item.id == _selectedFarmId,
+            orElse: () => farms.first,
+          );
+          await _loadWeatherForFarm(selected, forceRefresh: true);
+        }
+      }
     } finally {
       if (mounted) setState(() => _syncing = false);
+    }
+  }
+
+  Future<void> _loadWeatherForFarm(
+    FarmModel farm, {
+    bool forceRefresh = false,
+  }) async {
+    final key = '${farm.id}|${farm.state}|${farm.district}|${farm.taluk}|${farm.village}';
+    if (!forceRefresh &&
+        _weatherFarmKey == key &&
+        (_weatherLoading || _weather != null || _weatherError != null)) {
+      return;
+    }
+    setState(() {
+      _weatherFarmKey = key;
+      _weatherLoading = true;
+      _weatherError = null;
+      if (forceRefresh) _weather = null;
+    });
+    try {
+      final weather = await ref.read(backendApiProvider).getWeather(farm);
+      if (!mounted || _weatherFarmKey != key) return;
+      setState(() {
+        _weather = weather;
+        _weatherLoading = false;
+        _weatherError = null;
+      });
+    } on BackendApiException catch (e) {
+      if (!mounted || _weatherFarmKey != key) return;
+      setState(() {
+        _weatherLoading = false;
+        _weather = null;
+        _weatherError = e.message;
+      });
+    } catch (_) {
+      if (!mounted || _weatherFarmKey != key) return;
+      setState(() {
+        _weatherLoading = false;
+        _weather = null;
+        _weatherError = 'Unable to load weather for this farm location.';
+      });
     }
   }
 
@@ -537,8 +568,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         _selectedFarmCropAgeYears = cropAgeYears;
                         _selectedFarmGrowthStage = growthStage;
                         _selectedFarmPlantingDate = plantingDate;
-                        if (farmChanged) _demoReading = null;
+                        if (farmChanged) {
+                          _demoReading = null;
+                          _weather = null;
+                          _weatherError = null;
+                          _weatherFarmKey = null;
+                        }
                       });
+                      _loadWeatherForFarm(farm);
                     }
                   });
                 }
@@ -570,7 +607,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ? _aggregate(farmDevices)
                         : _aggregateReading(_demoReading!);
                     final irrigationDecision =
-                        _buildIrrigationDecision(farm, agg);
+                        _buildIrrigationDecision(farm, agg, _weather);
                     if (irrigationDecision != null) {
                       final auditKey = _decisionKey(
                         farm,
