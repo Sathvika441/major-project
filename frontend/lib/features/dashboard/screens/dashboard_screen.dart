@@ -1226,6 +1226,197 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
+  Widget _buildWeatherCard(BuildContext context, FarmModel farm) {
+    final scheme = Theme.of(context).colorScheme;
+    if (_weatherLoading) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Row(
+            children: [
+              SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+              SizedBox(width: 12),
+              Expanded(child: Text('Loading weather for the selected farm...')),
+            ],
+          ),
+        ),
+      );
+    }
+    if (_weatherError != null) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.cloud_off_outlined, color: scheme.error),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Weather unavailable', style: TextStyle(fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 4),
+                    Text(_weatherError!),
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      onPressed: () => _loadWeatherForFarm(farm, forceRefresh: true),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    final weather = _weather;
+    if (weather == null) return const SizedBox.shrink();
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: scheme.primaryContainer,
+                  child: Icon(Icons.cloud_outlined, color: scheme.primary),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Weather & irrigation inputs', style: TextStyle(fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${weather.locationName} • ${weather.weatherDescription}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Refresh weather',
+                  onPressed: () => _loadWeatherForFarm(farm, forceRefresh: true),
+                  icon: const Icon(Icons.refresh),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth < 520
+                    ? (constraints.maxWidth - 10) / 2
+                    : (constraints.maxWidth - 20) / 3;
+                return Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    _weatherMetric(context, width, Icons.thermostat, 'Temperature',
+                        weather.temperature == null ? '—' : '${weather.temperature!.toStringAsFixed(1)} °C'),
+                    _weatherMetric(context, width, Icons.water_drop_outlined, 'Humidity',
+                        weather.humidity == null ? '—' : '${weather.humidity!.toStringAsFixed(0)}%'),
+                    _weatherMetric(context, width, Icons.umbrella_outlined, 'Next 24h rain',
+                        '${weather.next24hPrecipitationMm.toStringAsFixed(1)} mm'),
+                    _weatherMetric(context, width, Icons.cloud_outlined, 'Rain probability',
+                        '${weather.next24hPrecipitationProbability.toStringAsFixed(0)}%'),
+                    _weatherMetric(context, width, Icons.wb_sunny_outlined, 'Next 24h ET₀',
+                        '${weather.next24hEt0Mm.toStringAsFixed(1)} mm'),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 14),
+            const Text('3-day forecast', style: TextStyle(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 118,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: weather.forecast.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final day = weather.forecast[index];
+                  return Container(
+                    width: 150,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: scheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          day.date.length >= 10 ? day.date.substring(5) : day.date,
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 4),
+                        Text('${day.temperatureMin?.toStringAsFixed(0) ?? '—'}–${day.temperatureMax?.toStringAsFixed(0) ?? '—'} °C'),
+                        Text('${day.precipitationMm?.toStringAsFixed(1) ?? '—'} mm rain'),
+                        Text('${day.precipitationProbability?.toStringAsFixed(0) ?? '—'}% chance'),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Weather data: Open-Meteo • Location resolved from farmer-entered ${farm.village}, ${farm.taluk}, ${farm.district}.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _weatherMetric(
+    BuildContext context,
+    double width,
+    IconData icon,
+    String label,
+    String value,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      width: width,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 19, color: scheme.primary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, maxLines: 2, overflow: TextOverflow.ellipsis),
+                  Text(value, maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w800)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSyncBanner(BuildContext context, List<DeviceModel> devices) {
     final scheme = Theme.of(context).colorScheme;
     final hasOffline = devices.any((d) =>
