@@ -304,55 +304,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildAppDrawer(BuildContext context, String farmerName, String? farmId) {
-    final scheme = Theme.of(context).colorScheme;
-    final onFarm = farmId != null;
-    return Drawer(
-      child: SafeArea(
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
-              color: scheme.primary,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CircleAvatar(
-                    radius: 26,
-                    backgroundColor: scheme.onPrimary,
-                    child: Icon(Icons.agriculture_rounded, color: scheme.primary, size: 28),
-                  ),
-                  const SizedBox(height: 14),
-                  Text('ArecaSmart', style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: scheme.onPrimary, fontWeight: FontWeight.w800,
-                  )),
-                  const SizedBox(height: 3),
-                  Text(farmerName, style: TextStyle(color: scheme.onPrimary.withValues(alpha: 0.85))),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                children: [
-                  _drawerItem(context, Icons.dashboard_outlined, 'My farms', () => context.go('/dashboard'), selected: !onFarm),
-                  if (onFarm)
-                    _drawerItem(context, Icons.agriculture_outlined, 'Farm overview', () => context.go('/farm/$farmId'), selected: true),
-                  _drawerItem(context, Icons.sensors_outlined, 'Devices', () => context.go('/devices')),
-                  _drawerItem(context, Icons.notifications_none_rounded, 'Alerts', () => _showAlertsSheet(
-                    context, ref, ref.read(authControllerProvider).user?.uid, farmId,
-                  )),
-                  _drawerItem(context, Icons.person_outline_rounded, 'Profile', () => context.go('/profile')),
-                  _drawerItem(context, Icons.settings_outlined, 'Farm management', () => context.go('/farms')),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            _drawerItem(context, Icons.logout_rounded, 'Sign out', () => ref.read(authControllerProvider.notifier).logout()),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
+    return _buildAppDrawerForRoute(
+      context,
+      farmerName,
+      farmId: farmId,
+      selectedRoute: farmId == null ? '/dashboard' : 'farm',
     );
   }
 
