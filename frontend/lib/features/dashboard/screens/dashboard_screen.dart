@@ -830,9 +830,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     final devices = deviceSnapshot.data ?? [];
                     final farmDevices =
                         devices.where((d) => d.farmId == farm.id).toList();
-                    final alerts = _demoReading == null
-                        ? _generateAlerts(farmDevices)
-                        : _generateAlertsFromReading(_demoReading!);
+                    final alerts = _generateAlertsForFarm(
+                      farmDevices,
+                      _demoReading,
+                      _weather,
+                    );
                     final sensorAgg = _demoReading == null
                         ? _aggregate(farmDevices)
                         : _aggregateReading(_demoReading!);
@@ -2068,33 +2070,39 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return 'No immediate irrigation recommended in this demo scenario.';
   }
 
-  List<_FarmAlert> _generateAlertsFromReading(SensorReading reading) {
-    final alerts = <_FarmAlert>[];
-    final moisture = reading.soilMoisture;
-    final temperature = reading.temperature;
-    final rainfall = reading.rainfall;
-    if (moisture != null && moisture < 20) {
-      alerts.add(_FarmAlert(
-        title: 'Low soil moisture',
-        message: 'Demo reading is below 20%.',
-        severity: _AlertSeverity.warning,
-      ));
+  List<_FarmAlert> _generateAlertsForFarm(
+    List<DeviceModel> farmDevices,
+    SensorReading? demoReading,
+    WeatherData? weather,
+  ) {
+    if (demoReading != null) {
+      final alerts = <_FarmAlert>[];
+      final moisture = demoReading.soilMoisture;
+      if (moisture != null && moisture < 20) {
+        alerts.add(_FarmAlert(
+          title: 'Low soil moisture',
+          message: 'Simulated soil moisture is below 20%.',
+          severity: _AlertSeverity.warning,
+        ));
+      }
+      if (weather?.temperature != null && weather!.temperature! > 40) {
+        alerts.add(_FarmAlert(
+          title: 'High temperature',
+          message: 'Current weather temperature is above 40 °C.',
+          severity: _AlertSeverity.warning,
+        ));
+      }
+      if (weather != null && weather.next24hPrecipitationMm > 25) {
+        alerts.add(_FarmAlert(
+          title: 'Heavy rain forecast',
+          message: 'More than 25 mm of precipitation is forecast in the next 24 hours.',
+          severity: _AlertSeverity.info,
+        ));
+      }
+      return alerts;
     }
-    if (temperature != null && temperature > 40) {
-      alerts.add(_FarmAlert(
-        title: 'High temperature',
-        message: 'Demo temperature is above 40 C.',
-        severity: _AlertSeverity.warning,
-      ));
-    }
-    if (rainfall != null && rainfall > 25) {
-      alerts.add(_FarmAlert(
-        title: 'Heavy rainfall',
-        message: 'Demo rainfall is above 25 mm.',
-        severity: _AlertSeverity.info,
-      ));
-    }
-    return alerts;
+
+    return _generateAlerts(farmDevices);
   }
 
   _ReadingSummary _aggregateReading(SensorReading reading) {
