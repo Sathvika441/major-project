@@ -833,9 +833,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     final alerts = _demoReading == null
                         ? _generateAlerts(farmDevices)
                         : _generateAlertsFromReading(_demoReading!);
-                    final agg = _demoReading == null
+                    final sensorAgg = _demoReading == null
                         ? _aggregate(farmDevices)
                         : _aggregateReading(_demoReading!);
+                    final agg = _ReadingSummary(
+                      soilMoisture: sensorAgg.soilMoisture,
+                      temperature: _weather?.temperature ?? sensorAgg.temperature,
+                      humidity: _weather?.humidity ?? sensorAgg.humidity,
+                      rainfall: _weather?.rainMm ??
+                          _weather?.precipitationMm ??
+                          sensorAgg.rainfall,
+                      count: sensorAgg.count,
+                    );
                     final irrigationDecision =
                         _buildIrrigationDecision(farm, agg, _weather);
                     if (irrigationDecision != null) {
@@ -1273,7 +1282,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 value: agg.rainfall == null
                                     ? '-'
                                     : '${agg.rainfall!.toStringAsFixed(1)} mm',
-                                unit: 'Recorded rainfall',
+                                unit: 'Current rainfall',
                                 warn: agg.rainfall != null &&
                                     agg.rainfall! > 150,
                               ),
@@ -1325,11 +1334,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               subtitle: Padding(
                                 padding: const EdgeInsets.only(top: 4),
                                 child: Text(
-                                  farmDevices.isEmpty
-                                      ? 'Add a sensor to receive live irrigation insights.'
-                                      : agg.hasReading
-                                          ? 'Sensor data received. ML prediction is not connected yet.'
-                                          : 'Sensors are online and waiting for the first reading.',
+                                  agg.hasReading
+                                      ? 'Soil moisture uses the simulated sensor; temperature, humidity and rainfall use weather data.'
+                                      : 'Soil moisture is simulated for now. Add a sensor for live soil readings.',
                                 ),
                               ),
                               trailing: const Icon(Icons.chevron_right),
