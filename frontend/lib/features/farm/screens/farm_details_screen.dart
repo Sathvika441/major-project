@@ -12,7 +12,6 @@ import '../../../models/farm/farm_profile_model.dart';
 import '../../../repositories/farm/farm_repository.dart';
 import '../../../repositories/profile/profile_repository.dart';
 import '../../auth/controllers/auth_controller.dart';
-import '../../../widgets/app_navigation_scaffold.dart';
 
 const cultivationTypes = <String>[
   'Mangala',
