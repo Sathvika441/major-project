@@ -1094,6 +1094,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           const SizedBox(height: 10),
                           _buildCropHealthSummary(context, farmDevices, agg, alerts, irrigationDecision),
                           const SizedBox(height: 10),
+                          _buildWeatherCard(context, farm),
+                          const SizedBox(height: 10),
                           _buildMlPredictionCard(context),
                           const SizedBox(height: 10),
                           Card(
