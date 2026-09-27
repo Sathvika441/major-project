@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../models/device/device_model.dart';
 import '../../../repositories/device/device_repository.dart';
+import '../../../widgets/app_navigation_scaffold.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../farm/screens/farm_management_screen.dart';
 
@@ -19,27 +19,18 @@ class DeviceManagementScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final devices = ref.watch(devicesProvider);
-    final user = ref.watch(authControllerProvider).user;
 
-    return Scaffold(
-      drawer: _buildNavigationDrawer(context, ref, user?.name ?? 'Farmer'),
-      appBar: AppBar(
-        leading: Builder(
-          builder: (context) => IconButton(
-            tooltip: 'Open navigation',
-            icon: const Icon(Icons.menu_rounded),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
+    return AppNavigationScaffold(
+      title: 'Devices & sensors',
+      subtitle: 'Monitor connectivity and available field readings',
+      selectedIndex: 2,
+      actions: [
+        IconButton(
+          tooltip: 'Refresh devices',
+          onPressed: () => ref.invalidate(devicesProvider),
+          icon: const Icon(Icons.refresh_rounded),
         ),
-        title: const Text('Devices & sensors'),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh devices',
-            onPressed: () => ref.invalidate(devicesProvider),
-            icon: const Icon(Icons.refresh_rounded),
-          ),
-        ],
-      ),
+      ],
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _register(context, ref),
         icon: const Icon(Icons.add),
@@ -47,143 +38,59 @@ class DeviceManagementScreen extends ConsumerWidget {
       ),
       body: devices.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => _ErrorState(
-          message: 'Unable to load devices.\n$e',
+        error: (error, _) => _ErrorState(
+          message: 'Unable to load devices.\n$error',
           onRetry: () => ref.invalidate(devicesProvider),
         ),
-        data: (items) => items.isEmpty
-            ? const _EmptyDeviceState()
-            : ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-                itemCount: items.length,
-                itemBuilder: (_, i) => _DeviceTile(device: items[i]),
-              ),
-      ),
-    );
-  }
+        data: (items) {
+          final online = items
+              .where((device) =>
+                  device.connectionState == DeviceConnectionState.online)
+              .length;
+          final offline = items.length - online;
 
-  Widget _buildNavigationDrawer(
-    BuildContext context,
-    WidgetRef ref,
-    String farmerName,
-  ) {
-    final scheme = Theme.of(context).colorScheme;
-    return Drawer(
-      child: SafeArea(
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
-              color: scheme.primary,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CircleAvatar(
-                    radius: 26,
-                    backgroundColor: scheme.onPrimary,
-                    child: Icon(
-                      Icons.agriculture_rounded,
-                      color: scheme.primary,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    'ArecaSmart',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: scheme.onPrimary,
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    farmerName,
-                    style: TextStyle(
-                      color: scheme.onPrimary.withValues(alpha: 0.85),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                children: [
-                  _drawerItem(
-                    context,
-                    Icons.dashboard_outlined,
-                    'My farms',
-                    () => context.go('/dashboard'),
-                  ),
-                  _drawerItem(
-                    context,
-                    Icons.sensors_outlined,
-                    'Devices',
-                    () => context.go('/devices'),
-                    selected: true,
-                  ),
-                  _drawerItem(
-                    context,
-                    Icons.notifications_none_rounded,
-                    'Alerts',
-                    () => context.go('/dashboard'),
-                  ),
-                  _drawerItem(
-                    context,
-                    Icons.person_outline_rounded,
-                    'Profile',
-                    () => context.go('/profile'),
-                  ),
-                  _drawerItem(
-                    context,
-                    Icons.settings_outlined,
-                    'Farm management',
-                    () => context.go('/farms'),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            _drawerItem(
-              context,
-              Icons.logout_rounded,
-              'Sign out',
-              () => ref.read(authControllerProvider.notifier).logout(),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final columns = constraints.maxWidth >= 1200
+                  ? 3
+                  : constraints.maxWidth >= 720
+                      ? 2
+                      : 1;
+              const gap = 18.0;
+              final width = columns == 1
+                  ? constraints.maxWidth
+                  : (constraints.maxWidth - gap * (columns - 1)) / columns;
 
-  Widget _drawerItem(
-    BuildContext context,
-    IconData icon,
-    String label,
-    VoidCallback onTap, {
-    bool selected = false,
-  }) {
-    final scheme = Theme.of(context).colorScheme;
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: selected ? scheme.primary : scheme.onSurfaceVariant,
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(20, 22, 20, 110),
+                children: [
+                  _DeviceSummary(
+                    total: items.length,
+                    online: online,
+                    offline: offline,
+                  ),
+                  const SizedBox(height: 20),
+                  if (items.isEmpty)
+                    const _EmptyDeviceState()
+                  else
+                    Wrap(
+                      spacing: gap,
+                      runSpacing: gap,
+                      children: items
+                          .map(
+                            (device) => SizedBox(
+                              width: width,
+                              child: _DeviceCard(device: device),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                ],
+              );
+            },
+          );
+        },
       ),
-      title: Text(
-        label,
-        style: TextStyle(
-          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-        ),
-      ),
-      selected: selected,
-      selectedTileColor: scheme.primaryContainer.withValues(alpha: 0.45),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      onTap: () {
-        Navigator.of(context).pop();
-        onTap();
-      },
     );
   }
 
@@ -213,17 +120,18 @@ class DeviceManagementScreen extends ConsumerWidget {
                       labelText: 'Device ID',
                       hintText: 'Example: SENSOR-001',
                     ),
-                    validator: (v) => v == null || v.trim().isEmpty
+                    validator: (value) => value == null || value.trim().isEmpty
                         ? 'Required'
                         : null,
                   ),
+                  const SizedBox(height: 12),
                   TextFormField(
                     controller: name,
                     decoration: const InputDecoration(
                       labelText: 'Device name',
                       hintText: 'Example: Soil Sensor 1',
                     ),
-                    validator: (v) => v == null || v.trim().isEmpty
+                    validator: (value) => value == null || value.trim().isEmpty
                         ? 'Required'
                         : null,
                   ),
@@ -232,7 +140,7 @@ class DeviceManagementScreen extends ConsumerWidget {
                     const Text('Add a farm before registering a device.')
                   else
                     DropdownButtonFormField<String>(
-                      value: selectedFarmId,
+                      initialValue: selectedFarmId,
                       isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'Assign to farm',
@@ -271,7 +179,7 @@ class DeviceManagementScreen extends ConsumerWidget {
                       final uid = ref.read(authControllerProvider).user!.uid;
                       await ref.read(deviceRepositoryProvider).register(
                         DeviceModel(
-                          id: 'device_${DateTime.now().microsecondsSinceEpoch}',
+                          id: 'device_' + DateTime.now().microsecondsSinceEpoch.toString(),
                           userId: uid,
                           farmId: selectedFarmId!,
                           plotId: '',
@@ -289,8 +197,299 @@ class DeviceManagementScreen extends ConsumerWidget {
         ),
       ),
     );
+
     id.dispose();
     name.dispose();
+  }
+}
+
+class _DeviceSummary extends StatelessWidget {
+  final int total;
+  final int online;
+  final int offline;
+
+  const _DeviceSummary({
+    required this.total,
+    required this.online,
+    required this.offline,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            Expanded(
+              child: _SummaryMetric(
+                icon: Icons.sensors_rounded,
+                value: total.toString(),
+                label: 'Total devices',
+                color: scheme.primary,
+              ),
+            ),
+            Container(
+              width: 1,
+              height: 44,
+              color: scheme.outlineVariant,
+            ),
+            Expanded(
+              child: _SummaryMetric(
+                icon: Icons.check_circle_outline_rounded,
+                value: online.toString(),
+                label: 'Online',
+                color: scheme.primary,
+              ),
+            ),
+            Container(
+              width: 1,
+              height: 44,
+              color: scheme.outlineVariant,
+            ),
+            Expanded(
+              child: _SummaryMetric(
+                icon: Icons.sync_problem_outlined,
+                value: offline.toString(),
+                label: 'Offline',
+                color: offline == 0 ? scheme.primary : scheme.error,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SummaryMetric extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+
+  const _SummaryMetric({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 22),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+        ),
+        Text(label, textAlign: TextAlign.center),
+      ],
+    );
+  }
+}
+
+class _DeviceCard extends StatelessWidget {
+  final DeviceModel device;
+
+  const _DeviceCard({required this.device});
+
+  @override
+  Widget build(BuildContext context) {
+    final reading = device.latestReading;
+    final online = device.connectionState == DeviceConnectionState.online;
+    final scheme = Theme.of(context).colorScheme;
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: online
+                        ? scheme.primaryContainer
+                        : scheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Icon(
+                    online
+                        ? Icons.sensors_rounded
+                        : Icons.sensors_off_outlined,
+                    color: online ? scheme.primary : scheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    device.name.isEmpty ? 'Unnamed device' : device.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                ),
+                _StatusPill(online: online),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              device.deviceId,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Last seen ' + _ago(device.lastSeen),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 18),
+            if (reading == null)
+              _NoReading()
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _ReadingPill(
+                    icon: Icons.water_drop_outlined,
+                    label: 'Soil',
+                    value: reading.soilMoisture,
+                    unit: '%',
+                  ),
+                  _ReadingPill(
+                    icon: Icons.thermostat_outlined,
+                    label: 'Temp',
+                    value: reading.temperature,
+                    unit: '°C',
+                  ),
+                  _ReadingPill(
+                    icon: Icons.opacity_outlined,
+                    label: 'Humidity',
+                    value: reading.humidity,
+                    unit: '%',
+                  ),
+                  _ReadingPill(
+                    icon: Icons.waterfall_chart_outlined,
+                    label: 'Rain',
+                    value: reading.rainfall,
+                    unit: 'mm',
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _ago(DateTime value) {
+    final difference = DateTime.now().difference(value);
+    if (difference.inMinutes < 1) return 'just now';
+    if (difference.inHours < 1) return difference.inMinutes.toString() + ' min ago';
+    if (difference.inDays < 1) return difference.inHours.toString() + ' hr ago';
+    return difference.inDays.toString() + ' d ago';
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  final bool online;
+
+  const _StatusPill({required this.online});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final color = online ? scheme.primary : scheme.error;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        online ? 'ONLINE' : 'OFFLINE',
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+}
+
+class _ReadingPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final double? value;
+  final String unit;
+
+  const _ReadingPill({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.unit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: scheme.primary),
+          const SizedBox(width: 6),
+          Text(label + ' '),
+          Text(
+            value == null ? '—' : value!.toStringAsFixed(1) + unit,
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NoReading extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.sensors_off_outlined, size: 18),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text('No sensor reading available yet.'),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -300,48 +499,43 @@ class _EmptyDeviceState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Center(
+    return Card(
       child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 520),
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(28),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircleAvatar(
-                    radius: 34,
-                    backgroundColor: scheme.primaryContainer,
-                    child: Icon(
-                      Icons.sensors_off_rounded,
-                      size: 34,
-                      color: scheme.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Text(
-                    'No devices registered',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Register an IoT sensor and assign it to a farm to start receiving live readings.',
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 18),
-                  FilledButton.icon(
-                    onPressed: null,
-                    icon: const Icon(Icons.info_outline),
-                    label: const Text('Soil moisture is simulated for now'),
-                  ),
-                ],
+        padding: const EdgeInsets.all(30),
+        child: Column(
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: scheme.primaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.sensors_off_rounded,
+                size: 36,
+                color: scheme.primary,
               ),
             ),
-          ),
+            const SizedBox(height: 18),
+            Text(
+              'No devices registered',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Register an IoT sensor and assign it to a farm to start receiving field readings.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Soil moisture is simulated for now.',
+              style: Theme.of(context).textTheme.bodySmall,
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );
@@ -352,130 +546,33 @@ class _ErrorState extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
 
-  const _ErrorState({required this.message, required this.onRetry});
+  const _ErrorState({
+    required this.message,
+    required this.onRetry,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.cloud_off_outlined, size: 52),
-            const SizedBox(height: 12),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DeviceTile extends StatelessWidget {
-  final DeviceModel device;
-
-  const _DeviceTile({required this.device});
-
-  @override
-  Widget build(BuildContext context) {
-    final reading = device.latestReading;
-    final state = device.connectionState;
-    final status = state.name.toUpperCase();
-    final scheme = Theme.of(context).colorScheme;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
-        childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
-        leading: CircleAvatar(
-          backgroundColor: state == DeviceConnectionState.online
-              ? scheme.primaryContainer
-              : scheme.surfaceContainerHighest,
-          child: Icon(
-            state == DeviceConnectionState.online
-                ? Icons.sensors_rounded
-                : Icons.sensors_off_outlined,
-            color: state == DeviceConnectionState.online
-                ? scheme.primary
-                : scheme.onSurfaceVariant,
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.cloud_off_outlined, size: 42),
+              const SizedBox(height: 12),
+              Text(message, textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Try again'),
+              ),
+            ],
           ),
         ),
-        title: Text(
-          device.name.isEmpty ? 'Unnamed device' : device.name,
-          style: const TextStyle(fontWeight: FontWeight.w700),
-        ),
-        subtitle: Text(
-          '${device.deviceId}\n$status • Last seen ${_ago(device.lastSeen)}',
-        ),
-        children: [
-          if (reading == null)
-            const ListTile(
-              leading: Icon(Icons.sensors_off),
-              title: Text('No sensor reading available'),
-            )
-          else ...[
-            _metric(
-              'Soil moisture',
-              reading.soilMoisture,
-              '%',
-              Icons.water_drop_outlined,
-            ),
-            _metric(
-              'Temperature',
-              reading.temperature,
-              '°C',
-              Icons.thermostat_outlined,
-            ),
-            _metric(
-              'Humidity',
-              reading.humidity,
-              '%',
-              Icons.opacity_outlined,
-            ),
-            _metric(
-              'Rainfall',
-              reading.rainfall,
-              'mm',
-              Icons.waterfall_chart_outlined,
-            ),
-          ],
-        ],
       ),
     );
-  }
-
-  Widget _metric(
-    String label,
-    double? value,
-    String unit,
-    IconData icon,
-  ) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(label),
-      trailing: Text(
-        value == null ? '—' : '${value.toStringAsFixed(1)} $unit',
-        style: const TextStyle(fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
-  String _ago(DateTime value) {
-    final d = DateTime.now().difference(value);
-    if (d.inMinutes < 1) return 'just now';
-    if (d.inHours < 1) return '${d.inMinutes} min ago';
-    if (d.inDays < 1) return '${d.inHours} hr ago';
-    return '${d.inDays} d ago';
   }
 }
