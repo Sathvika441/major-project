@@ -17,6 +17,7 @@ import '../../auth/controllers/auth_controller.dart';
 import '../../devices/screens/device_management_screen.dart';
 import '../../farm/screens/farm_management_screen.dart';
 import '../../profile/screens/profile_edit_screen.dart';
+import '../../../widgets/app_navigation_scaffold.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   final String? initialFarmId;
@@ -677,31 +678,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     final isFarmWorkspace = widget.initialFarmId != null;
 
-    return Scaffold(
-      drawer: _buildAppDrawer(context, user?.name ?? 'Farmer', widget.initialFarmId),
-      appBar: AppBar(
-        leading: Builder(
-          builder: (context) => IconButton(
-            tooltip: 'Open navigation',
-            icon: const Icon(Icons.menu_rounded),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-        title: Text(isFarmWorkspace ? 'Farm workspace' : 'My farms'),
-        actions: [
-          if (isFarmWorkspace)
-            IconButton(
-              tooltip: 'All farms',
-              onPressed: () => context.go('/dashboard'),
-              icon: const Icon(Icons.grid_view_rounded),
-            ),
+    return AppNavigationScaffold(
+      title: isFarmWorkspace ? 'Farm workspace' : 'My farms',
+      subtitle: isFarmWorkspace ? 'Monitor crop, weather and irrigation signals' : 'Your smart agriculture workspace',
+      selectedIndex: 0,
+      actions: [
+        if (isFarmWorkspace)
           IconButton(
-            tooltip: 'Refresh',
-            onPressed: uid == null ? null : () => _refreshDashboard(uid),
-            icon: _syncing ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.refresh_rounded),
+            tooltip: 'All farms',
+            onPressed: () => context.go('/dashboard'),
+            icon: const Icon(Icons.grid_view_rounded),
           ),
-        ],
-      ),
+        IconButton(
+          tooltip: 'Refresh',
+          onPressed: uid == null ? null : () => _refreshDashboard(uid),
+          icon: _syncing
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.refresh_rounded),
+        ),
+      ],
       body: uid == null
           ? const Center(child: Text('Please sign in.'))
           : StreamBuilder<List<FarmModel>>(
