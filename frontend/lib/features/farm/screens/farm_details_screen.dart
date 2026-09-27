@@ -12,6 +12,7 @@ import '../../../models/farm/farm_profile_model.dart';
 import '../../../repositories/farm/farm_repository.dart';
 import '../../../repositories/profile/profile_repository.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../../widgets/app_navigation_scaffold.dart';
 
 const cultivationTypes = <String>[
   'Mangala',
@@ -406,291 +407,545 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
   }
 
   String? _requiredSelection(String? value) {
-    return value == null || value.isEmpty ? 'Please select an option' : null;
-  }
-
-  @override
+    return value == null ||  @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
 
+    final editing = _editingFarm != null;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Farm Details — Phase B')),
+      appBar: AppBar(
+        title: Text(editing ? 'Edit farm' : 'Add farm'),
+        actions: [
+          if (editing)
+            IconButton(
+              tooltip: 'Start a new farm',
+              onPressed: _saving ? null : _clearFormForNewFarm,
+              icon: const Icon(Icons.add_business_outlined),
+            ),
+        ],
+      ),
       body: SafeArea(
         child: Form(
           key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              Text(
-                _editingFarm == null
-                    ? 'Farm details'
-                    : 'Farm details — edit saved farm',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                _savedFarmCount == 0
-                    ? 'Step 2 of 2 • Enter all details for your farm'
-                    : '${_savedFarmCount} farm(s) saved • Add another farm or complete setup',
-              ),
-              const SizedBox(height: 20),
-              TextFormField(
-                controller: _farmName,
-                decoration: const InputDecoration(
-                  labelText: 'Farm name',
-                  hintText: 'Example: Ramesh Arecanut Farm',
-                  prefixIcon: Icon(Icons.agriculture_outlined),
-                ),
-                validator: _requiredText,
-              ),
-              const SizedBox(height: 14),
-              DropdownButtonFormField<String>(
-                value: _state,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'State',
-                  prefixIcon: Icon(Icons.map_outlined),
-                ),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'Karnataka',
-                    child: Text('Karnataka'),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final maxWidth = constraints.maxWidth >= 1000 ? 900.0 : 720.0;
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
+                children: [
+                  Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxWidth),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _FarmDetailsHero(
+                            editing: editing,
+                            savedFarmCount: _savedFarmCount,
+                          ),
+                          const SizedBox(height: 16),
+                          _FormSection(
+                            icon: Icons.agriculture_outlined,
+                            title: 'Farm identity',
+                            subtitle: 'Give this farm a clear name and size.',
+                            children: [
+                              TextFormField(
+                                controller: _farmName,
+                                decoration: const InputDecoration(
+                                  labelText: 'Farm name',
+                                  hintText: 'Example: Ramesh Arecanut Farm',
+                                  prefixIcon: Icon(Icons.agriculture_outlined),
+                                ),
+                                validator: _requiredText,
+                              ),
+                              const SizedBox(height: 14),
+                              TextFormField(
+                                controller: _size,
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                  decimal: true,
+                                ),
+                                decoration: const InputDecoration(
+                                  labelText: 'Farm size (acres)',
+                                  hintText: 'Enter size in acres',
+                                  prefixIcon:
+                                      Icon(Icons.square_foot_outlined),
+                                ),
+                                validator: (value) {
+                                  final parsed =
+                                      double.tryParse(value?.trim() ?? '');
+                                  if (parsed == null) {
+                                    return 'Enter a valid farm size';
+                                  }
+                                  if (parsed <= 0) {
+                                    return 'Farm size must be greater than 0';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 14),
+                              TextFormField(
+                                controller: _survey,
+                                textCapitalization:
+                                    TextCapitalization.characters,
+                                decoration: const InputDecoration(
+                                  labelText: 'Land survey number',
+                                  hintText: 'Example: 12/3A',
+                                  prefixIcon: Icon(Icons.pin_drop_outlined),
+                                ),
+                                validator: AuthValidators.validateSurveyNumber,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          _FormSection(
+                            icon: Icons.location_on_outlined,
+                            title: 'Farm location',
+                            subtitle:
+                                'This location is used to resolve weather data.',
+                            children: [
+                              DropdownButtonFormField<String>(
+                                initialValue: _state,
+                                isExpanded: true,
+                                decoration: const InputDecoration(
+                                  labelText: 'State',
+                                  prefixIcon: Icon(Icons.map_outlined),
+                                ),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 'Karnataka',
+                                    child: Text('Karnataka'),
+                                  ),
+                                ],
+                                onChanged: null,
+                              ),
+                              const SizedBox(height: 14),
+                              DropdownButtonFormField<String>(
+                                initialValue: _district,
+                                isExpanded: true,
+                                decoration: const InputDecoration(
+                                  labelText: 'District',
+                                  prefixIcon:
+                                      Icon(Icons.location_city_outlined),
+                                ),
+                                items: _districts
+                                    .map(
+                                      (value) => DropdownMenuItem(
+                                        value: value,
+                                        child: Text(value),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (value) {
+                                  final service =
+                                      ref.read(locationMasterServiceProvider);
+                                  setState(() {
+                                    _district = value;
+                                    _taluk = null;
+                                    _village = null;
+                                    _taluks = value == null
+                                        ? []
+                                        : service.taluksFor(value);
+                                    _villages = [];
+                                  });
+                                },
+                                validator: (value) => value == null
+                                    ? 'Please select a district'
+                                    : null,
+                              ),
+                              const SizedBox(height: 14),
+                              DropdownButtonFormField<String>(
+                                initialValue: _taluk,
+                                isExpanded: true,
+                                decoration: const InputDecoration(
+                                  labelText: 'Taluk',
+                                  prefixIcon:
+                                      Icon(Icons.account_balance_outlined),
+                                ),
+                                items: _taluks
+                                    .map(
+                                      (value) => DropdownMenuItem(
+                                        value: value,
+                                        child: Text(value),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: _district == null
+                                    ? null
+                                    : (value) {
+                                        final service = ref.read(
+                                          locationMasterServiceProvider,
+                                        );
+                                        setState(() {
+                                          _taluk = value;
+                                          _village = null;
+                                          _villages = value == null
+                                              ? []
+                                              : service.villagesFor(value);
+                                        });
+                                      },
+                                validator: (value) => value == null
+                                    ? 'Please select a taluk'
+                                    : null,
+                              ),
+                              const SizedBox(height: 14),
+                              DropdownButtonFormField<VillageEntry>(
+                                initialValue: _village,
+                                isExpanded: true,
+                                decoration: const InputDecoration(
+                                  labelText: 'Village',
+                                  prefixIcon:
+                                      Icon(Icons.home_work_outlined),
+                                ),
+                                items: _villages
+                                    .map(
+                                      (value) => DropdownMenuItem(
+                                        value: value,
+                                        child: Text(value.name),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: _taluk == null
+                                    ? null
+                                    : (value) =>
+                                        setState(() => _village = value),
+                                validator: (value) => value == null
+                                    ? 'Please select a village'
+                                    : null,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          _FormSection(
+                            icon: Icons.eco_outlined,
+                            title: 'Crop & cultivation',
+                            subtitle:
+                                'Tell ArecaSmart how this arecanut farm is managed.',
+                            children: [
+                              DropdownButtonFormField<String>(
+                                initialValue: _cultivation,
+                                isExpanded: true,
+                                decoration: const InputDecoration(
+                                  labelText: 'Arecanut cultivation type',
+                                  prefixIcon: Icon(Icons.spa_outlined),
+                                ),
+                                items: cultivationTypes
+                                    .map(
+                                      (value) => DropdownMenuItem(
+                                        value: value,
+                                        child: Text(value),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (value) =>
+                                    setState(() => _cultivation = value),
+                                validator: _requiredSelection,
+                              ),
+                              const SizedBox(height: 14),
+                              DropdownButtonFormField<String>(
+                                initialValue: _soil,
+                                isExpanded: true,
+                                decoration: const InputDecoration(
+                                  labelText: 'Soil type',
+                                  prefixIcon: Icon(Icons.grass_outlined),
+                                ),
+                                items: soilTypes
+                                    .map(
+                                      (value) => DropdownMenuItem(
+                                        value: value,
+                                        child: Text(value),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (value) =>
+                                    setState(() => _soil = value),
+                                validator: _requiredSelection,
+                              ),
+                              const SizedBox(height: 14),
+                              InkWell(
+                                onTap: _pickPlantingDate,
+                                borderRadius: BorderRadius.circular(14),
+                                child: InputDecorator(
+                                  decoration: const InputDecoration(
+                                    labelText: 'Planting date',
+                                    prefixIcon:
+                                        Icon(Icons.calendar_month_outlined),
+                                  ),
+                                  child: Text(
+                                    _plantingDate == null
+                                        ? 'Select planting date'
+                                        : _plantingDate!.day.toString() +
+                                            '/' +
+                                            _plantingDate!.month.toString() +
+                                            '/' +
+                                            _plantingDate!.year.toString(),
+                                    style: TextStyle(
+                                      color: _plantingDate == null
+                                          ? Theme.of(context).hintColor
+                                          : null,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              if (_plantingDate == null)
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: 12,
+                                    top: 6,
+                                  ),
+                                  child: Text(
+                                    'Planting date is required',
+                                    style: TextStyle(
+                                      color:
+                                          Theme.of(context).colorScheme.error,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          _FormSection(
+                            icon: Icons.water_drop_outlined,
+                            title: 'Water & irrigation',
+                            subtitle:
+                                'These settings feed the irrigation recommendation engine.',
+                            children: [
+                              DropdownButtonFormField<String>(
+                                initialValue: _waterSource,
+                                isExpanded: true,
+                                decoration: const InputDecoration(
+                                  labelText: 'Water source',
+                                  prefixIcon:
+                                      Icon(Icons.water_drop_outlined),
+                                ),
+                                items: waterSources
+                                    .map(
+                                      (value) => DropdownMenuItem(
+                                        value: value,
+                                        child: Text(value),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (value) =>
+                                    setState(() => _waterSource = value),
+                                validator: _requiredSelection,
+                              ),
+                              const SizedBox(height: 14),
+                              DropdownButtonFormField<String>(
+                                initialValue: _irrigationMethod,
+                                isExpanded: true,
+                                decoration: const InputDecoration(
+                                  labelText: 'Irrigation method',
+                                  prefixIcon:
+                                      Icon(Icons.water_outlined),
+                                ),
+                                items: irrigationMethods
+                                    .map(
+                                      (value) => DropdownMenuItem(
+                                        value: value,
+                                        child: Text(value),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (value) => setState(
+                                  () => _irrigationMethod = value,
+                                ),
+                                validator: _requiredSelection,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 18),
+                          if (editing) ...[
+                            OutlinedButton.icon(
+                              onPressed:
+                                  _saving ? null : _clearFormForNewFarm,
+                              icon: const Icon(Icons.add_business_outlined),
+                              label: const Text('Add another farm instead'),
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+                          OutlinedButton.icon(
+                            onPressed: _saving
+                                ? null
+                                : () => _saveCurrentFarm(addAnother: true),
+                            icon: const Icon(Icons.add_business_outlined),
+                            label: const Text('Save & add another farm'),
+                          ),
+                          const SizedBox(height: 10),
+                          FilledButton.icon(
+                            onPressed: _saving
+                                ? null
+                                : () => _saveCurrentFarm(addAnother: false),
+                            icon: _saving
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.check_circle_outline),
+                            label: Text(
+                              _saving
+                                  ? 'Saving...'
+                                  : 'Save & complete setup',
+                            ),
+                          ),
+                          if (_savedFarmCount > 0) ...[
+                            const SizedBox(height: 10),
+                            Text(
+                              'Each farm is saved separately. You can add as many farms as you manage.',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
                 ],
-                onChanged: null,
-              ),
-              const SizedBox(height: 14),
-              DropdownButtonFormField<String>(
-                value: _district,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'District',
-                  prefixIcon: Icon(Icons.location_city_outlined),
-                ),
-                items: _districts
-                    .map((value) => DropdownMenuItem(
-                          value: value,
-                          child: Text(value),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  final service = ref.read(locationMasterServiceProvider);
-                  setState(() {
-                    _district = value;
-                    _taluk = null;
-                    _village = null;
-                    _taluks = value == null ? [] : service.taluksFor(value);
-                    _villages = [];
-                  });
-                },
-                validator: (value) =>
-                    value == null ? 'Please select a district' : null,
-              ),
-              const SizedBox(height: 14),
-              DropdownButtonFormField<String>(
-                value: _taluk,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Taluk',
-                  prefixIcon: Icon(Icons.account_balance_outlined),
-                ),
-                items: _taluks
-                    .map((value) => DropdownMenuItem(
-                          value: value,
-                          child: Text(value),
-                        ))
-                    .toList(),
-                onChanged: _district == null
-                    ? null
-                    : (value) {
-                        final service = ref.read(locationMasterServiceProvider);
-                        setState(() {
-                          _taluk = value;
-                          _village = null;
-                          _villages = value == null
-                              ? []
-                              : service.villagesFor(value);
-                        });
-                      },
-                validator: (value) =>
-                    value == null ? 'Please select a taluk' : null,
-              ),
-              const SizedBox(height: 14),
-              DropdownButtonFormField<VillageEntry>(
-                value: _village,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Village',
-                  prefixIcon: Icon(Icons.home_work_outlined),
-                ),
-                items: _villages
-                    .map((value) => DropdownMenuItem(
-                          value: value,
-                          child: Text(value.name),
-                        ))
-                    .toList(),
-                onChanged: _taluk == null
-                    ? null
-                    : (value) => setState(() => _village = value),
-                validator: (value) =>
-                    value == null ? 'Please select a village' : null,
-              ),
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: _survey,
-                textCapitalization: TextCapitalization.characters,
-                decoration: const InputDecoration(
-                  labelText: 'Land survey number',
-                  hintText: 'Example: 12/3A',
-                  prefixIcon: Icon(Icons.pin_drop_outlined),
-                ),
-                validator: AuthValidators.validateSurveyNumber,
-              ),
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: _size,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: 'Farm size (acres)',
-                  hintText: 'Enter size in acres',
-                  prefixIcon: Icon(Icons.square_foot_outlined),
-                ),
-                validator: (value) {
-                  final parsed = double.tryParse(value?.trim() ?? '');
-                  if (parsed == null) return 'Enter a valid farm size';
-                  if (parsed <= 0) return 'Farm size must be greater than 0';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 14),
-              DropdownButtonFormField<String>(
-                value: _cultivation,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Arecanut cultivation type',
-                  prefixIcon: Icon(Icons.spa_outlined),
-                ),
-                items: cultivationTypes
-                    .map((value) => DropdownMenuItem(value: value, child: Text(value)))
-                    .toList(),
-                onChanged: (value) => setState(() => _cultivation = value),
-                validator: _requiredSelection,
-              ),
-              const SizedBox(height: 14),
-              DropdownButtonFormField<String>(
-                value: _soil,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Soil type',
-                  prefixIcon: Icon(Icons.grass_outlined),
-                ),
-                items: soilTypes
-                    .map((value) => DropdownMenuItem(value: value, child: Text(value)))
-                    .toList(),
-                onChanged: (value) => setState(() => _soil = value),
-                validator: _requiredSelection,
-              ),
-              const SizedBox(height: 14),
-              DropdownButtonFormField<String>(
-                value: _waterSource,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Water source',
-                  prefixIcon: Icon(Icons.water_drop_outlined),
-                ),
-                items: waterSources
-                    .map((value) => DropdownMenuItem(value: value, child: Text(value)))
-                    .toList(),
-                onChanged: (value) => setState(() => _waterSource = value),
-                validator: _requiredSelection,
-              ),
-              const SizedBox(height: 14),
-              DropdownButtonFormField<String>(
-                value: _irrigationMethod,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Irrigation method',
-                  prefixIcon: Icon(Icons.water_outlined),
-                ),
-                items: irrigationMethods
-                    .map((value) => DropdownMenuItem(value: value, child: Text(value)))
-                    .toList(),
-                onChanged: (value) => setState(() => _irrigationMethod = value),
-                validator: _requiredSelection,
-              ),
-              const SizedBox(height: 14),
-              InkWell(
-                onTap: _pickPlantingDate,
-                borderRadius: BorderRadius.circular(12),
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Planting date',
-                    prefixIcon: Icon(Icons.calendar_month_outlined),
-                  ),
-                  child: Text(
-                    _plantingDate == null
-                        ? 'Select planting date'
-                        : '${_plantingDate!.day}/${_plantingDate!.month}/${_plantingDate!.year}',
-                    style: TextStyle(
-                      color: _plantingDate == null
-                          ? Theme.of(context).hintColor
-                          : null,
-                    ),
-                  ),
-                ),
-              ),
-              if (_plantingDate == null)
-                Padding(
-                  padding: const EdgeInsets.only(left: 12, top: 6),
-                  child: Text(
-                    'Planting date is required',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 24),
-              if (_editingFarm != null)
-                OutlinedButton.icon(
-                  onPressed: _saving ? null : _clearFormForNewFarm,
-                  icon: const Icon(Icons.add_business_outlined),
-                  label: const Text('Add another farm instead'),
-                ),
-              const SizedBox(height: 10),
-              OutlinedButton.icon(
-                onPressed: _saving
-                    ? null
-                    : () => _saveCurrentFarm(addAnother: true),
-                icon: const Icon(Icons.add_business),
-                label: const Text('Save & Add Another Farm'),
-              ),
-              const SizedBox(height: 10),
-              FilledButton.icon(
-                onPressed: _saving
-                    ? null
-                    : () => _saveCurrentFarm(addAnother: false),
-                icon: _saving
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.check_circle_outline),
-                label: Text(_saving ? 'Saving...' : 'Save & Complete Setup'),
-              ),
-              if (_savedFarmCount > 0) ...[
-                const SizedBox(height: 10),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FarmDetailsHero extends StatelessWidget {
+  final bool editing;
+  final int savedFarmCount;
+
+  const _FarmDetailsHero({
+    required this.editing,
+    required this.savedFarmCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            scheme.primary,
+            Color.lerp(scheme.primary, scheme.secondary, 0.45)!,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: scheme.onPrimary,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              editing ? Icons.edit_location_alt_outlined : Icons.add_business,
+              color: scheme.primary,
+              size: 27,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  'You can add as many farms as you manage. Each farm is saved separately.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall,
+                  editing ? 'Edit your farm' : 'Set up your farm',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: scheme.onPrimary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  savedFarmCount == 0
+                      ? 'Complete the details to unlock your smart workspace.'
+                      : savedFarmCount.toString() +
+                          ' farm(s) saved • Add another or update this one.',
+                  style: TextStyle(
+                    color: scheme.onPrimary.withValues(alpha: 0.82),
+                  ),
                 ),
               ],
-            ],
+            ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FormSection extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final List<Widget> children;
+
+  const _FormSection({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: scheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: scheme.primary),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(subtitle),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            ...children,
+          ],
         ),
       ),
     );
