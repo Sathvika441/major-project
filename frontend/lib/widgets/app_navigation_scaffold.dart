@@ -189,16 +189,16 @@ class AppNavigationScaffold extends ConsumerWidget {
               ),
             )
             .toList(),
-        trailing: Expanded(
+        trailingAtBottom: true,
+        trailing: SizedBox(
+          width: 220,
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
             children: [
               if (user != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 14),
-                  child: SizedBox(
-                    width: 220,
-                    child: ListTile(
+                  child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                       leading: CircleAvatar(
                         backgroundColor:
@@ -220,7 +220,6 @@ class AppNavigationScaffold extends ConsumerWidget {
                       subtitle: const Text('Signed in'),
                     ),
                   ),
-                ),
               Divider(
                 indent: 12,
                 endIndent: 12,
