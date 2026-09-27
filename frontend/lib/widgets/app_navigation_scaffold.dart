@@ -263,7 +263,7 @@ class AppNavigationScaffold extends ConsumerWidget {
   }
 
   String _initials(String value) {
-    final parts = value.trim().split(RegExp(r'\\s+')).where((e) => e.isNotEmpty).toList();
+    final parts = value.trim().split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
     if (parts.isEmpty) return 'F';
     if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
     return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'.toUpperCase();
