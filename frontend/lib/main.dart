@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/router.dart';
 import 'app/theme/app_theme.dart';
+import 'app/theme/theme_mode_controller.dart';
 import 'core/services/location_master_service.dart';
 import 'core/storage/local_storage_service.dart';
 import 'core/utils/app_logger.dart';
@@ -48,11 +49,14 @@ class ArecaSmartApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp.router(
       title: 'ArecaSmart',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
       routerConfig: router,
     );
   }
