@@ -46,6 +46,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   bool _mlUploading = false;
   Map<String, dynamic>? _mlResult;
   String? _mlError;
+  final GlobalKey _mlCardKey = GlobalKey();
   WeatherData? _weather;
   String? _weatherError;
   bool _weatherLoading = false;
@@ -376,9 +377,31 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         filename: file.name,
       );
       if (!mounted) return;
+
       setState(() {
-        _mlResult = result;
+        _mlResult = Map<String, dynamic>.from(result);
         _mlUploading = false;
+        _mlError = null;
+      });
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final cardContext = _mlCardKey.currentContext;
+        if (cardContext != null) {
+          Scrollable.ensureVisible(
+            cardContext,
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeOutCubic,
+            alignment: 0.12,
+          );
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Prediction ready: ${result['prediction']?.toString() ?? 'Result received'}',
+            ),
+          ),
+        );
       });
     } on BackendApiException catch (e) {
       if (!mounted) return;
@@ -423,6 +446,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final scheme = Theme.of(context).colorScheme;
 
     return Card(
+      key: _mlCardKey,
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(16),
