@@ -63,6 +63,7 @@ class AppNavigationScaffold extends ConsumerWidget {
                         title: title,
                         subtitle: subtitle,
                         actions: actions,
+                        showBackButton: showBackButton,
                         onThemeToggle: () => ref.read(themeModeProvider.notifier).toggle(),
                         isDark: themeMode == ThemeMode.dark,
                       ),
@@ -292,6 +293,7 @@ class _DesktopHeader extends StatelessWidget {
   final List<Widget>? actions;
   final VoidCallback onThemeToggle;
   final bool isDark;
+  final bool showBackButton;
 
   const _DesktopHeader({
     required this.title,
@@ -299,6 +301,7 @@ class _DesktopHeader extends StatelessWidget {
     required this.actions,
     required this.onThemeToggle,
     required this.isDark,
+    required this.showBackButton,
   });
 
   @override
