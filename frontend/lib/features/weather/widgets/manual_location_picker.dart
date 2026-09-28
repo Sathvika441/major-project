@@ -19,6 +19,6 @@ Future<void> showManualLocationPicker(BuildContext context, WidgetRef ref, {requ
       const SizedBox(height:10),
       DropdownButtonFormField<VillageEntry>(initialValue:village,decoration:const InputDecoration(labelText:'Village'),items:villages.map((v)=>DropdownMenuItem(value:v,child:Text(v.name))).toList(),onChanged:taluk==null?null:(v)=>setState(()=>village=v)),
       const SizedBox(height:18),
-      SizedBox(width:double.infinity,child:FilledButton(onPressed:district!=null&&taluk!=null&&village!=null?()async{final d=district!,t=taluk!,v=village!;final service=ref.read(deviceLocationServiceProvider);await service.saveLastLocation(DeviceLocation(latitude:0,longitude:0,label:'$v, $t, $d',savedAt:DateTime.now()));if(context.mounted)Navigator.pop(context);await onSelected(d,t,v.name);}:null,child:const Text('Use this location')))
+      SizedBox(width:double.infinity,child:FilledButton(onPressed:district!=null&&taluk!=null&&village!=null?()async{final d=district!,t=taluk!,v=village!;await ref.read(deviceLocationServiceProvider).saveLastWeatherPlace(district:d,taluk:t,village:v.name);if(context.mounted)Navigator.pop(context);await onSelected(d,t,v.name);}:null,child:const Text('Use this location')))
     ]);}));
 }
