@@ -12,6 +12,8 @@ import '../features/auth/screens/permission_setup_screen.dart';
 import '../features/auth/screens/signup_screen.dart';
 import '../features/auth/screens/splash_screen.dart';
 import '../features/dashboard/screens/dashboard_screen.dart';
+import '../features/home/screens/home_screen.dart';
+import '../features/weather/screens/weather_screen.dart';
 import '../features/devices/screens/device_management_screen.dart';
 import '../features/farm/screens/farm_details_screen.dart';
 import '../features/farm/screens/farm_management_screen.dart';
@@ -41,6 +43,8 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/splash',
     routes: [
+      GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
+      GoRoute(path: '/weather', builder: (context, state) => const WeatherScreen()),
       GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(path: '/signup', builder: (context, state) => const SignupScreen()),
@@ -70,7 +74,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isAuthRoute = location == '/login' ||
           location == '/signup' ||
           location == '/forgot-password';
-      final isPublicRoute = isSplash || isAuthRoute || location == '/verify-email';
+      final isPublicRoute = isSplash || isAuthRoute || location == '/verify-email' || location == '/' || location == '/weather';
 
       if (authState.status == AuthStatus.initial || authState.status == AuthStatus.loading) {
         return isSplash ? null : '/splash';
@@ -97,7 +101,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             location == '/permission-setup' ||
             location == '/onboarding' ||
             location == '/farm-details') {
-          return '/dashboard';
+          return '/';
         }
         return null;
       }
