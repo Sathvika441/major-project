@@ -29,16 +29,16 @@ class DeviceLocationService {
 
   Future<DeviceLocation?> _resolve() async {
     try {
-      if (!await Geolocator.isLocationServiceEnabled()) return loadLastLocation();
+      if (!await Geolocator.isLocationServiceEnabled()) return await loadLastLocation();
       var permission=await Geolocator.checkPermission();
       if (permission==LocationPermission.denied) permission=await Geolocator.requestPermission();
-      if (permission==LocationPermission.denied || permission==LocationPermission.deniedForever) return loadLastLocation();
+      if (permission==LocationPermission.denied || permission==LocationPermission.deniedForever) return await loadLastLocation();
       final position=await Geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium,timeLimit: Duration(seconds: 12)));
       final value=DeviceLocation(latitude:position.latitude,longitude:position.longitude,savedAt:DateTime.now());
       await saveLastLocation(value);
       return value;
     } catch (_) {
-      return loadLastLocation();
+      return await loadLastLocation();
     }
   }
 
