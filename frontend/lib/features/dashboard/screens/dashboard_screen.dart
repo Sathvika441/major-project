@@ -458,9 +458,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
             const SizedBox(height: 16),
             if (hasImage) ...[
-              Container(
-                height: 280,
+              SizedBox(
                 width: double.infinity,
+                height: 240,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
                   color: scheme.surfaceContainerHighest,
@@ -493,34 +493,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 label: const Text('Upload image'),
               )
             else
-              Row(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: _mlUploading
-                          ? null
-                          : () => _predictMlImage(context),
-                      icon: _mlUploading
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.auto_awesome),
-                      label: Text(
-                        _mlUploading ? 'Predicting...' : 'Predict',
-                      ),
+                  FilledButton.icon(
+                    onPressed: _mlUploading
+                        ? null
+                        : () => _predictMlImage(context),
+                    icon: _mlUploading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.auto_awesome),
+                    label: Text(
+                      _mlUploading ? 'Predicting...' : 'Predict',
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(height: 8),
                   OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: Size.zero,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                    ),
                     onPressed: _mlUploading ? null : _clearMlPrediction,
                     icon: const Icon(Icons.close),
                     label: const Text('Clear'),
@@ -1085,8 +1077,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 farm.growthStageLabel == null
                                     ? 'Planting date not available'
                                     : farm.growthStageLabel! + ' • ' +
-                                      farm.cropAgeDays.toString() + ' days (' +
-                                      farm.cropAgeYears!.toStringAsFixed(1) + ' years)',
+                                      (farm.cropAgeDays?.toString() ?? '—') + ' days (' +
+                                      (farm.cropAgeYears?.toStringAsFixed(1) ?? '—') + ' years)',
                               ),
                               trailing: const Icon(Icons.auto_graph_outlined),
                             ),
