@@ -1,5 +1,8 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+final weatherCacheServiceProvider=Provider<WeatherCacheService>((ref)=>WeatherCacheService());
 
 class WeatherCacheService {
   static const _key='arecasmart_weather_cache_v2';
