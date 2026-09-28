@@ -406,7 +406,10 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
   }
 
   String? _requiredSelection(String? value) {
-    return value == null ||  @override
+    return value == null || value.trim().isEmpty ? 'Required' : null;
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (_loading) {
       return const Scaffold(
