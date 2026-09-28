@@ -201,6 +201,9 @@ major-project/
 
 ## Dashboard Layout Stability
 
+The ML image preview is implemented with a decorated `Container` rather than `SizedBox`, matching Flutter's widget API and preventing the compile error caused by passing `decoration` to `SizedBox`.
+
+
 The disease-detection card uses fixed, bounded image and vertical action layouts to avoid unconstrained web rendering. Farm-age display values are also null-safe so incomplete farm records do not trigger runtime layout exceptions.
 
 If Flutter reports repeated `RenderBox`, `sliver_multi_box_adaptor`, or `mouse_tracker` assertions after a hot reload, stop the web app and restart it after pulling the latest branch changes.
