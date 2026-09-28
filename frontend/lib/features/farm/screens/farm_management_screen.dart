@@ -42,7 +42,7 @@ class FarmManagementScreen extends ConsumerWidget {
     return AppNavigationScaffold(
       title: 'Farm management',
       subtitle: 'Organize fields, crops and irrigation details',
-      selectedIndex: 1,
+      selectedIndex: 2,
       actions: [
         IconButton(
           tooltip: 'Refresh farms',
