@@ -283,7 +283,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     return AppNavigationScaffold(
       title: 'Profile',
       subtitle: 'Manage your farmer profile and preferences',
-      selectedIndex: 3,
+      selectedIndex: 4,
       body: Form(
         key: _formKey,
         child: LayoutBuilder(
