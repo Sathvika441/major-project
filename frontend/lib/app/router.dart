@@ -83,7 +83,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (authState.status == AuthStatus.unauthenticated ||
           authState.status == AuthStatus.error ||
           authState.status == AuthStatus.emailVerificationPending) {
-        return isPublicRoute ? null : '/login';
+        return isPublicRoute ? null : '/login?prompt=Sign%20in%20to%20save%20your%20farm';
       }
 
       if (authState.status == AuthStatus.otpVerificationPending) {
