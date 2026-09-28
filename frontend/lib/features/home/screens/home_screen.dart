@@ -6,6 +6,7 @@ import '../../../services/backend/backend_api.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../../core/services/device_location_service.dart';
 import '../../../models/weather/weather_model.dart';
+import '../../weather/widgets/manual_location_picker.dart';
 import '../../../widgets/app_navigation_scaffold.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -19,8 +20,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>{
     setState((){_loading=true;_error=null;});
     try{
       final loc=await ref.read(deviceLocationServiceProvider).resolveCurrentLocation();
-      if(loc==null)throw Exception('Location unavailable. Enable location access or use the Karnataka location picker.');
-      final w=await ref.read(backendApiProvider).getWeatherByCoordinates(latitude:loc.latitude,longitude:loc.longitude,label:loc.label);
+      WeatherData w;
+      if(loc!=null){ w=await ref.read(backendApiProvider).getWeatherByCoordinates(latitude:loc.latitude,longitude:loc.longitude,label:loc.label); }
+      else {
+        final saved=await ref.read(deviceLocationServiceProvider).loadLastWeatherPlace();
+        w=saved!=null?await ref.read(backendApiProvider).getWeatherByPlace(district:saved['district']!,taluk:saved['taluk']!,village:saved['village']!):await ref.read(backendApiProvider).getWeatherByPlace(district:'Shivamogga');
+      }
       if(mounted)setState((){_weather=w;_loading=false;});
     }catch(e){if(mounted)setState((){_loading=false;_error=e.toString().replaceFirst('Exception: ','');});}
   }
@@ -38,7 +43,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>{
     final user=ref.watch(authControllerProvider).user; final s=Theme.of(context).colorScheme;
     return AppNavigationScaffold(title:'Home',selectedIndex:0,body:RefreshIndicator(onRefresh:_loadWeather,child:ListView(padding:const EdgeInsets.fromLTRB(20,24,20,40),children:[
       _hero(context,user?.name,_weather),
-      if(_error!=null)Padding(padding:const EdgeInsets.only(top:12),child:Container(padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:s.secondaryContainer,borderRadius:BorderRadius.circular(14)),child:Text(_error!,style:TextStyle(color:s.onSecondaryContainer)))),
+      if(_error!=null)Padding(padding:const EdgeInsets.only(top:12),child:Container(padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:s.secondaryContainer,borderRadius:BorderRadius.circular(14)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(_error!,style:TextStyle(color:s.onSecondaryContainer)),TextButton(onPressed:()=>showManualLocationPicker(context,ref,onSelected:(d,t,v)async{await ref.read(backendApiProvider).getWeatherByPlace(district:d,taluk:t,village:v);await _loadWeather();}),child:const Text('Choose Karnataka location'))]))),
       const SizedBox(height:20),
       Wrap(spacing:10,runSpacing:10,children:[
         _action(context,Icons.cloud_outlined,'Weather',()=>context.push('/weather')),
