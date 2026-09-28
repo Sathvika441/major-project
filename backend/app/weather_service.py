@@ -21,6 +21,8 @@ HARVEST_MAX_WIND_KMH = 35.0
 IRRIGATION_RAIN_PROBABILITY = 65.0
 IRRIGATION_RAIN_MM = 3.0
 THUNDERSTORM_CODES = {95, 96, 97, 98, 99}
+FIELD_WORK_START_HOUR = 6
+FIELD_WORK_END_HOUR = 18
 
 class WeatherServiceError(RuntimeError):
     pass
@@ -102,12 +104,16 @@ class OpenMeteoWeatherService:
         rain_mm=sum(float(r.get("precipitation_mm") or 0) for r in hourly_rows)
         et0=sum(float(self._number_at(hourly.get("et0_fao_evapotranspiration"),i) or 0) for i in range(start,end))
         wind=float(current.get("wind_speed_10m") or 0); humidity=float(current.get("relative_humidity_2m") or 0); code=self._int(current.get("weather_code"))
-        guidance=self._guidance(rain_prob,rain_mm,wind,humidity,code)
+        local_hour=(datetime.now(timezone.utc)+timedelta(seconds=int(forecast.get('utc_offset_seconds') or 0))).hour
+        guidance=self._guidance(rain_prob,rain_mm,wind,humidity,code,local_hour)
         return {"source":"Open-Meteo","location":{"name":location["name"],"state":state,"district":district,"taluk":taluk,"village":village,"latitude":location["latitude"],"longitude":location["longitude"],"timezone":forecast.get("timezone"),"resolved_level":location["resolved_level"],"match_score":location.get("match_score")},"place":{"district":district or None,"locality":locality or location["name"]},"current":{"temperature":self._number(current.get("temperature_2m")),"humidity":self._number(current.get("relative_humidity_2m")),"wind_kmh":self._number(current.get("wind_speed_10m")),"precipitation_mm":self._number(current.get("precipitation")),"rain_mm":self._number(current.get("precipitation")),"weather_code":code},"hourly":hourly_rows,"daily":daily_rows,"next_24h":{"precipitation_mm":round(rain_mm,2),"precipitation_probability_max":round(rain_prob,1),"et0_mm":round(et0,2)},"guidance":guidance,"updated_at":datetime.now(timezone.utc).isoformat(),"fetched_at":datetime.now(timezone.utc).isoformat()}
 
     @staticmethod
-    def _guidance(rain_probability,precipitation,wind,humidity,weather_code):
+    def _guidance(rain_probability,precipitation,wind,humidity,weather_code,local_hour):
         thunder=weather_code in THUNDERSTORM_CODES
+        outside_field_hours=local_hour < FIELD_WORK_START_HOUR or local_hour >= FIELD_WORK_END_HOUR
+        if outside_field_hours:
+            return {'spraying':'Not suitable','drying':'Not suitable','transport':'Not suitable','irrigation':'Check soil','status_line':'Outside preferred field-work hours'}
         spraying="Suitable" if not thunder and rain_probability<=SPRAY_MAX_RAIN_PROBABILITY and precipitation<=SPRAY_MAX_RAIN_MM and wind<=SPRAY_MAX_WIND_KMH else ("Avoid" if thunder or rain_probability>=65 or wind>SPRAY_MAX_WIND_KMH else "Caution")
         drying="Suitable" if not thunder and rain_probability<=DRYING_MAX_RAIN_PROBABILITY and humidity<=DRYING_MAX_HUMIDITY else ("Avoid" if thunder or rain_probability>=60 else "Caution")
         transport="Suitable" if not thunder and rain_probability<=HARVEST_MAX_RAIN_PROBABILITY and wind<=HARVEST_MAX_WIND_KMH else ("Avoid" if thunder or wind>HARVEST_MAX_WIND_KMH else "Caution")
