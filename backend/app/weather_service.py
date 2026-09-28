@@ -1,426 +1,147 @@
 """Weather and location service backed by Open-Meteo."""
-
 from __future__ import annotations
-
 from datetime import datetime, timedelta, timezone
 import json
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-
 GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 CACHE_TTL = timedelta(minutes=15)
 
+SPRAY_MAX_RAIN_PROBABILITY = 35.0
+SPRAY_MAX_RAIN_MM = 0.5
+SPRAY_MAX_WIND_KMH = 20.0
+DRYING_MAX_RAIN_PROBABILITY = 25.0
+DRYING_MAX_HUMIDITY = 75.0
+DRYING_MAX_WIND_KMH = 30.0
+HARVEST_MAX_RAIN_PROBABILITY = 45.0
+HARVEST_MAX_WIND_KMH = 35.0
+IRRIGATION_RAIN_PROBABILITY = 65.0
+IRRIGATION_RAIN_MM = 3.0
+THUNDERSTORM_CODES = {95, 96, 97, 98, 99}
 
 class WeatherServiceError(RuntimeError):
-    """Raised when weather or location data cannot be resolved."""
-
+    pass
 
 class OpenMeteoWeatherService:
-    def __init__(self) -> None:
+    def __init__(self):
         self._cache: dict[str, tuple[datetime, dict]] = {}
 
-    def get_weather(
-        self,
-        *,
-        state: str,
-        district: str,
-        taluk: str,
-        village: str,
-        location: str = "",
-    ) -> dict:
-        location_key = self._location_key(state, district, taluk, village, location)
-        cached = self._cache.get(location_key)
+    def get_weather(self, *, state="Karnataka", district="", taluk="", village="", location="", lat=None, lon=None):
+        if (lat is None) != (lon is None):
+            raise WeatherServiceError("Both latitude and longitude are required for coordinate weather requests.")
+        key = self._location_key(state,district,taluk,village,location,lat,lon)
         now = datetime.now(timezone.utc)
-        if cached and now - cached[0] < CACHE_TTL:
-            return cached[1]
-
-        location = self._resolve_location(
-            state=state,
-            district=district,
-            taluk=taluk,
-            village=village,
-            location=location,
-        )
-        forecast = self._fetch_forecast(location["latitude"], location["longitude"])
-        result = self._normalize(
-            forecast=forecast,
-            location=location,
-            state=state,
-            district=district,
-            taluk=taluk,
-            village=village,
-        )
-        self._cache[location_key] = (now, result)
+        cached = self._cache.get(key)
+        if cached and now-cached[0] < CACHE_TTL: return cached[1]
+        if lat is not None and lon is not None:
+            resolved={"name":location.strip() or "Current location","latitude":float(lat),"longitude":float(lon),"resolved_level":"coordinates","match_score":None}
+            resolved_state,resolved_district,resolved_locality=state,district,location.strip()
+        else:
+            if not district and not taluk and not village and not location: district="Shivamogga"
+            resolved=self._resolve_location(state=state,district=district,taluk=taluk,village=village,location=location)
+            resolved_state,resolved_district,resolved_locality=state,district,resolved["name"]
+        forecast=self._fetch_forecast(resolved["latitude"],resolved["longitude"])
+        result=self._normalize(forecast=forecast,location=resolved,state=resolved_state,district=resolved_district,taluk=taluk,village=village,locality=resolved_locality)
+        self._cache[key]=(now,result)
         return result
 
     @staticmethod
-    def _location_key(
-        state: str,
-        district: str,
-        taluk: str,
-        village: str,
-        location: str = "",
-    ) -> str:
-        return "|".join(
-            value.strip().lower()
-            for value in (state, district, taluk, village, location)
-        )
+    def _location_key(state,district,taluk,village,location,lat,lon):
+        if lat is not None and lon is not None: return f"gps:{round(float(lat),2):.2f}:{round(float(lon),2):.2f}"
+        return "|".join(str(v).strip().lower() for v in (state,district,taluk,village,location))
 
-    def _resolve_location(
-        self,
-        *,
-        state: str,
-        district: str,
-        taluk: str,
-        village: str,
-        location: str = "",
-    ) -> dict:
-        # Open-Meteo geocoding accepts a place plus one country/admin1
-        # qualifier. We therefore search the most specific farmer-entered
-        # place first and validate the returned administrative hierarchy.
-        attempts = [
-            ("village", village),
-            ("taluk", taluk),
-            ("district", district),
-        ]
-        if location.strip():
-            attempts.insert(0, ("location", location))
+    def _resolve_location(self,*,state,district,taluk,village,location=""):
+        attempts=[("village",village),("taluk",taluk),("district",district)]
+        if location.strip(): attempts.insert(0,("location",location))
+        for level,name in attempts:
+            if not name.strip(): continue
+            results=self._geocode(name=name,state=state)
+            ranked=sorted(results,key=lambda x:self._location_score(x,name,district,taluk),reverse=True)
+            if not ranked: continue
+            best=ranked[0]; score=self._location_score(best,name,district,taluk)
+            minimum=150 if level in {"village","taluk","location"} else 130
+            if score<minimum: continue
+            return {"name":best.get("name",name),"latitude":float(best["latitude"]),"longitude":float(best["longitude"]),"timezone":best.get("timezone"),"resolved_level":level,"match_score":score}
+        raise WeatherServiceError(f"Could not resolve location. Village='{village}', Taluk='{taluk}', District='{district}'.")
 
-        for level, name in attempts:
-            if not name.strip():
-                continue
-
-            results = self._geocode(name=name, state=state)
-            ranked = sorted(
-                results,
-                key=lambda item: self._location_score(
-                    item,
-                    requested_name=name,
-                    district=district,
-                    taluk=taluk,
-                ),
-                reverse=True,
-            )
-            if not ranked:
-                continue
-
-            best = ranked[0]
-            score = self._location_score(
-                best,
-                requested_name=name,
-                district=district,
-                taluk=taluk,
-            )
-
-            # Do not silently use an unrelated village returned by a
-            # normalized/prefix search. A district-level result is a safe
-            # fallback when the exact village/taluk is not indexed.
-            minimum_score = 150 if level in {"village", "taluk", "location"} else 130
-            if score < minimum_score:
-                continue
-
-            return {
-                "name": best.get("name", name),
-                "latitude": float(best["latitude"]),
-                "longitude": float(best["longitude"]),
-                "timezone": best.get("timezone"),
-                "resolved_level": level,
-                "match_score": score,
-                "admin1": best.get("admin1"),
-                "admin2": best.get("admin2"),
-                "admin3": best.get("admin3"),
-                "feature_code": best.get("feature_code"),
-            }
-
-        # Last-resort district lookup. This still gives a real coordinate
-        # instead of returning empty weather values when a small village is
-        # not present in the geocoder index.
-        district_results = self._geocode(name=district, state=state)
-        ranked = sorted(
-            district_results,
-            key=lambda item: self._location_score(
-                item,
-                requested_name=district,
-                district=district,
-                taluk=taluk,
-            ),
-            reverse=True,
-        )
-        if ranked:
-            best = ranked[0]
-            score = self._location_score(
-                best,
-                requested_name=district,
-                district=district,
-                taluk=taluk,
-            )
-            if score >= 130:
-                return {
-                    "name": best.get("name", district),
-                    "latitude": float(best["latitude"]),
-                    "longitude": float(best["longitude"]),
-                    "timezone": best.get("timezone"),
-                    "resolved_level": "district",
-                    "match_score": score,
-                    "admin1": best.get("admin1"),
-                    "admin2": best.get("admin2"),
-                    "admin3": best.get("admin3"),
-                    "feature_code": best.get("feature_code"),
-                }
-
-        raise WeatherServiceError(
-            "Could not resolve the selected farm location to coordinates. "
-            f"Village='{village}', Taluk='{taluk}', District='{district}'. "
-            "Try refreshing the farm location and weather data."
-        )
-
-    def _geocode(self, *, name: str, state: str) -> list[dict]:
-        query = urlencode(
-            {
-                "name": f"{name.strip()}, {state.strip()}",
-                "count": 20,
-                "language": "en",
-                "format": "json",
-                "countryCode": "IN",
-            }
-        )
-        payload = self._get_json(f"{GEOCODING_URL}?{query}")
-        return payload.get("results", []) if isinstance(payload, dict) else []
+    def _geocode(self,*,name,state):
+        query=urlencode({"name":f"{name.strip()}, {state.strip()}","count":20,"language":"en","format":"json","countryCode":"IN"})
+        payload=self._get_json(f"{GEOCODING_URL}?{query}")
+        return payload.get("results",[]) if isinstance(payload,dict) else []
 
     @staticmethod
-    def _location_score(
-        item: dict,
-        *,
-        requested_name: str,
-        district: str,
-        taluk: str,
-    ) -> int:
-        score = 0
-        requested = requested_name.strip().lower()
-        name = str(item.get("name", "")).strip().lower()
-        admin1 = str(item.get("admin1", "")).strip().lower()
-        admin2 = str(item.get("admin2", "")).strip().lower()
-        admin3 = str(item.get("admin3", "")).strip().lower()
-        admin4 = str(item.get("admin4", "")).strip().lower()
-
-        if name == requested:
-            score += 120
-        elif name.startswith(requested):
-            score += 50
-
-        if admin1 in {"karnataka", "ka"}:
-            score += 50
-
-        district_name = district.strip().lower()
-        taluk_name = taluk.strip().lower()
-
-        if district_name and district_name in {admin2, admin3, admin4}:
-            score += 50
-        if taluk_name and taluk_name in {admin2, admin3, admin4}:
-            score += 30
-
-        feature_code = str(item.get("feature_code", "")).upper()
-        if feature_code.startswith("PPL") or feature_code.startswith("ADM"):
-            score += 10
-
+    def _location_score(item,requested_name,district,taluk):
+        score=0; requested=requested_name.strip().lower(); name=str(item.get("name","")).strip().lower()
+        admins={str(item.get(k,"")).strip().lower() for k in ("admin2","admin3","admin4")}
+        if name==requested: score+=120
+        elif name.startswith(requested): score+=50
+        if str(item.get("admin1","")).strip().lower() in {"karnataka","ka"}: score+=50
+        if district.strip().lower() in admins: score+=50
+        if taluk.strip().lower() in admins: score+=30
+        code=str(item.get("feature_code","")).upper()
+        if code.startswith("PPL") or code.startswith("ADM"): score+=10
         return score
 
-    def _fetch_forecast(self, latitude: float, longitude: float) -> dict:
-        query = urlencode(
-            {
-                "latitude": latitude,
-                "longitude": longitude,
-                "current": ",".join(
-                    [
-                        "temperature_2m",
-                        "relative_humidity_2m",
-                        "precipitation",
-                        "rain",
-                        "weather_code",
-                    ]
-                ),
-                "hourly": ",".join(
-                    [
-                        "temperature_2m",
-                        "relative_humidity_2m",
-                        "precipitation_probability",
-                        "precipitation",
-                        "et0_fao_evapotranspiration",
-                    ]
-                ),
-                "daily": ",".join(
-                    [
-                        "temperature_2m_max",
-                        "temperature_2m_min",
-                        "precipitation_sum",
-                        "precipitation_probability_max",
-                        "et0_fao_evapotranspiration",
-                        "weather_code",
-                    ]
-                ),
-                "forecast_days": 3,
-                "timezone": "auto",
-                "temperature_unit": "celsius",
-                "precipitation_unit": "mm",
-            }
-        )
+    def _fetch_forecast(self,latitude,longitude):
+        query=urlencode({"latitude":latitude,"longitude":longitude,
+            "current":"temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,weather_code",
+            "hourly":"temperature_2m,precipitation_probability,precipitation,weather_code,et0_fao_evapotranspiration",
+            "daily":"temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,weather_code,et0_fao_evapotranspiration",
+            "forecast_days":7,"timezone":"auto","temperature_unit":"celsius","wind_speed_unit":"kmh","precipitation_unit":"mm"})
         return self._get_json(f"{FORECAST_URL}?{query}")
 
-    def _normalize(
-        self,
-        *,
-        forecast: dict,
-        location: dict,
-        state: str,
-        district: str,
-        taluk: str,
-        village: str,
-    ) -> dict:
-        current = forecast.get("current") or {}
-        hourly = forecast.get("hourly") or {}
-        daily = forecast.get("daily") or {}
+    def _normalize(self,*,forecast,location,state,district,taluk,village,locality):
+        current=forecast.get("current") or {}; hourly=forecast.get("hourly") or {}; daily=forecast.get("daily") or {}
+        times=hourly.get("time") or []; start=self._current_hour_index(times,forecast); end=min(start+24,len(times))
+        hourly_rows=[{"time":times[i],"temperature":self._number_at(hourly.get("temperature_2m"),i),"precipitation_probability":self._number_at(hourly.get("precipitation_probability"),i),"precipitation_mm":self._number_at(hourly.get("precipitation"),i),"weather_code":self._int_at(hourly.get("weather_code"),i)} for i in range(start,end)]
+        daily_rows=[{"date":str(date),"temperature_max":self._number_at(daily.get("temperature_2m_max"),i),"temperature_min":self._number_at(daily.get("temperature_2m_min"),i),"precipitation_mm":self._number_at(daily.get("precipitation_sum"),i),"precipitation_probability":self._number_at(daily.get("precipitation_probability_max"),i),"et0_mm":self._number_at(daily.get("et0_fao_evapotranspiration"),i),"weather_code":self._int_at(daily.get("weather_code"),i)} for i,date in enumerate((daily.get("time") or [])[:7])]
+        rain_prob=max((float(r.get("precipitation_probability") or 0) for r in hourly_rows),default=0)
+        rain_mm=sum(float(r.get("precipitation_mm") or 0) for r in hourly_rows)
+        et0=sum(float(self._number_at(hourly.get("et0_fao_evapotranspiration"),i) or 0) for i in range(start,end))
+        wind=float(current.get("wind_speed_10m") or 0); humidity=float(current.get("relative_humidity_2m") or 0); code=self._int(current.get("weather_code"))
+        guidance=self._guidance(rain_prob,rain_mm,wind,humidity,code)
+        return {"source":"Open-Meteo","location":{"name":location["name"],"state":state,"district":district,"taluk":taluk,"village":village,"latitude":location["latitude"],"longitude":location["longitude"],"timezone":forecast.get("timezone"),"resolved_level":location["resolved_level"],"match_score":location.get("match_score")},"place":{"district":district or None,"locality":locality or location["name"]},"current":{"temperature":self._number(current.get("temperature_2m")),"humidity":self._number(current.get("relative_humidity_2m")),"wind_kmh":self._number(current.get("wind_speed_10m")),"precipitation_mm":self._number(current.get("precipitation")),"rain_mm":self._number(current.get("precipitation")),"weather_code":code},"hourly":hourly_rows,"daily":daily_rows,"next_24h":{"precipitation_mm":round(rain_mm,2),"precipitation_probability_max":round(rain_prob,1),"et0_mm":round(et0,2)},"guidance":guidance,"updated_at":datetime.now(timezone.utc).isoformat(),"fetched_at":datetime.now(timezone.utc).isoformat()}
 
-        hourly_times = hourly.get("time") or []
-        now_local = self._local_now(forecast)
-        start_index = 0
-        for index, raw_time in enumerate(hourly_times):
+    @staticmethod
+    def _guidance(rain_probability,precipitation,wind,humidity,weather_code):
+        thunder=weather_code in THUNDERSTORM_CODES
+        spraying="Suitable" if not thunder and rain_probability<=SPRAY_MAX_RAIN_PROBABILITY and precipitation<=SPRAY_MAX_RAIN_MM and wind<=SPRAY_MAX_WIND_KMH else ("Avoid" if thunder or rain_probability>=65 or wind>SPRAY_MAX_WIND_KMH else "Caution")
+        drying="Suitable" if not thunder and rain_probability<=DRYING_MAX_RAIN_PROBABILITY and humidity<=DRYING_MAX_HUMIDITY else ("Avoid" if thunder or rain_probability>=60 else "Caution")
+        transport="Suitable" if not thunder and rain_probability<=HARVEST_MAX_RAIN_PROBABILITY and wind<=HARVEST_MAX_WIND_KMH else ("Avoid" if thunder or wind>HARVEST_MAX_WIND_KMH else "Caution")
+        irrigation="Not required" if precipitation>=IRRIGATION_RAIN_MM or rain_probability>=IRRIGATION_RAIN_PROBABILITY else ("Until afternoon" if rain_probability>=35 else "Check soil")
+        status="Thunderstorm risk" if thunder else ("Rain likely later today" if rain_probability>=65 else ("Weather may change during field work" if rain_probability>=35 else ("Humidity is high" if humidity>=85 else "Weather suitable for field work")))
+        return {"spraying":spraying,"drying":drying,"transport":transport,"irrigation":irrigation,"status_line":status}
+
+    @staticmethod
+    def _current_hour_index(times,forecast):
+        now=datetime.now(timezone.utc)+timedelta(seconds=int(forecast.get("utc_offset_seconds") or 0)); target=now.replace(minute=0,second=0,microsecond=0).replace(tzinfo=None)
+        for i,raw in enumerate(times):
             try:
-                hour = datetime.fromisoformat(str(raw_time))
-            except ValueError:
-                continue
-            if hour >= now_local.replace(minute=0, second=0, microsecond=0):
-                start_index = index
-                break
-        else:
-            start_index = max(0, len(hourly_times) - 24)
-
-        end_index = min(start_index + 24, len(hourly_times))
-        precipitation = self._slice_numbers(
-            hourly.get("precipitation"), start_index, end_index
-        )
-        precipitation_probability = self._slice_numbers(
-            hourly.get("precipitation_probability"), start_index, end_index
-        )
-        et0 = self._slice_numbers(
-            hourly.get("et0_fao_evapotranspiration"), start_index, end_index
-        )
-
-        next_24h = {
-            "precipitation_mm": round(sum(precipitation), 2),
-            "precipitation_probability_max": round(
-                max(precipitation_probability, default=0.0), 1
-            ),
-            "et0_mm": round(sum(et0), 2),
-        }
-
-        days = []
-        times = daily.get("time") or []
-        max_temps = daily.get("temperature_2m_max") or []
-        min_temps = daily.get("temperature_2m_min") or []
-        rain_sums = daily.get("precipitation_sum") or []
-        rain_probs = daily.get("precipitation_probability_max") or []
-        et0_days = daily.get("et0_fao_evapotranspiration") or []
-        codes = daily.get("weather_code") or []
-
-        for index, date in enumerate(times[:3]):
-            days.append(
-                {
-                    "date": str(date),
-                    "temperature_max": self._number_at(max_temps, index),
-                    "temperature_min": self._number_at(min_temps, index),
-                    "precipitation_mm": self._number_at(rain_sums, index),
-                    "precipitation_probability": self._number_at(rain_probs, index),
-                    "et0_mm": self._number_at(et0_days, index),
-                    "weather_code": self._int_at(codes, index),
-                }
-            )
-
-        return {
-            "source": "Open-Meteo",
-            "location": {
-                "name": location["name"],
-                "state": state,
-                "district": district,
-                "taluk": taluk,
-                "village": village,
-                "latitude": location["latitude"],
-                "longitude": location["longitude"],
-                "timezone": forecast.get("timezone"),
-                "resolved_level": location["resolved_level"],
-                "match_score": location.get("match_score"),
-            },
-            "current": {
-                "temperature": self._number(current.get("temperature_2m")),
-                "humidity": self._number(current.get("relative_humidity_2m")),
-                "precipitation_mm": self._number(current.get("precipitation")),
-                "rain_mm": self._number(current.get("rain")),
-                "weather_code": self._int(current.get("weather_code")),
-            },
-            "next_24h": next_24h,
-            "forecast": days,
-            "fetched_at": datetime.now(timezone.utc).isoformat(),
-        }
+                if datetime.fromisoformat(str(raw))>=target:return i
+            except ValueError: pass
+        return max(0,len(times)-24)
 
     @staticmethod
-    def _local_now(forecast: dict) -> datetime:
-        offset = int(forecast.get("utc_offset_seconds") or 0)
-        return (datetime.now(timezone.utc) + timedelta(seconds=offset)).replace(
-            tzinfo=None
-        )
+    def _number(v): return float(v) if isinstance(v,(int,float)) else None
+    @staticmethod
+    def _int(v): return int(v) if isinstance(v,(int,float)) else None
+    @staticmethod
+    def _number_at(values,index): return OpenMeteoWeatherService._number(values[index] if values and index<len(values) else None)
+    @staticmethod
+    def _int_at(values,index): return OpenMeteoWeatherService._int(values[index] if values and index<len(values) else None)
 
     @staticmethod
-    def _slice_numbers(values, start: int, end: int) -> list[float]:
-        result = []
-        for value in (values or [])[start:end]:
-            number = OpenMeteoWeatherService._number(value)
-            if number is not None:
-                result.append(number)
-        return result
-
-    @staticmethod
-    def _number(value) -> float | None:
-        return float(value) if isinstance(value, (int, float)) else None
-
-    @staticmethod
-    def _int(value) -> int | None:
-        return int(value) if isinstance(value, (int, float)) else None
-
-    @staticmethod
-    def _number_at(values, index: int) -> float | None:
-        return OpenMeteoWeatherService._number(
-            values[index] if index < len(values) else None
-        )
-
-    @staticmethod
-    def _int_at(values, index: int) -> int | None:
-        return OpenMeteoWeatherService._int(
-            values[index] if index < len(values) else None
-        )
-
-    @staticmethod
-    def _get_json(url: str) -> dict:
-        request = Request(
-            url,
-            headers={"User-Agent": "ArecaSmart/1.0"},
-            method="GET",
-        )
+    def _get_json(url):
+        request=Request(url,headers={"User-Agent":"ArecaSmart/1.0"},method="GET")
         try:
-            with urlopen(request, timeout=12) as response:
-                payload = json.loads(response.read().decode("utf-8"))
-                if isinstance(payload, dict) and payload.get("error"):
-                    raise WeatherServiceError(
-                        str(payload.get("reason", "Weather provider returned an error."))
-                    )
+            with urlopen(request,timeout=12) as response:
+                payload=json.loads(response.read().decode("utf-8"))
+                if isinstance(payload,dict) and payload.get("error"): raise WeatherServiceError(str(payload.get("reason","Weather provider returned an error.")))
                 return payload
         except HTTPError as exc:
-            detail = exc.read().decode("utf-8", errors="replace")
-            raise WeatherServiceError(
-                f"Weather provider request failed ({exc.code}): {detail[:200]}"
-            ) from exc
-        except (URLError, TimeoutError, ValueError) as exc:
-            raise WeatherServiceError(
-                "Weather provider is temporarily unavailable."
-            ) from exc
+            detail=exc.read().decode("utf-8",errors="replace"); raise WeatherServiceError(f"Weather provider request failed ({exc.code}): {detail[:200]}") from exc
+        except (URLError,TimeoutError,ValueError) as exc:
+            raise WeatherServiceError("Weather provider is temporarily unavailable.") from exc
