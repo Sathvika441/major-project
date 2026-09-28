@@ -50,6 +50,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   String? _weatherError;
   bool _weatherLoading = false;
   String? _weatherFarmKey;
+  final ScrollController _workspaceScrollController = ScrollController();
 
   SensorReading _presetReading(String preset) {
     final now = DateTime.now();
@@ -348,11 +349,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       return;
     }
 
-    setState(() {
-      _mlImage = file;
-      _mlResult = null;
-      _mlError = null;
-      _mlUploading = false;
+    FocusScope.of(context).unfocus();
+    _preserveWorkspaceScroll(() {
+      setState(() {
+        _mlImage = file;
+        _mlResult = null;
+        _mlError = null;
+        _mlUploading = false;
+      });
     });
   }
 
@@ -364,10 +368,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       return;
     }
 
-    setState(() {
-      _mlResult = null;
-      _mlError = null;
-      _mlUploading = true;
+    FocusScope.of(context).unfocus();
+    _preserveWorkspaceScroll(() {
+      setState(() {
+        _mlResult = null;
+        _mlError = null;
+        _mlUploading = true;
+      });
     });
 
     try {
@@ -376,32 +383,41 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         filename: file.name,
       );
       if (!mounted) return;
-      setState(() {
-        _mlResult = result;
-        _mlUploading = false;
+      _preserveWorkspaceScroll(() {
+        setState(() {
+          _mlResult = result;
+          _mlUploading = false;
+        });
       });
     } on BackendApiException catch (e) {
       if (!mounted) return;
-      setState(() {
-        _mlUploading = false;
-        _mlError = e.message;
+      _preserveWorkspaceScroll(() {
+        setState(() {
+          _mlUploading = false;
+          _mlError = e.message;
+        });
       });
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _mlUploading = false;
-        _mlError =
-            'Unexpected error while contacting the ML service. Please try again.';
+      _preserveWorkspaceScroll(() {
+        setState(() {
+          _mlUploading = false;
+          _mlError =
+              'Unexpected error while contacting the ML service. Please try again.';
+        });
       });
     }
   }
 
   void _clearMlPrediction() {
-    setState(() {
-      _mlImage = null;
-      _mlResult = null;
-      _mlError = null;
-      _mlUploading = false;
+    FocusScope.of(context).unfocus();
+    _preserveWorkspaceScroll(() {
+      setState(() {
+        _mlImage = null;
+        _mlResult = null;
+        _mlError = null;
+        _mlUploading = false;
+      });
     });
   }
 
@@ -671,6 +687,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   @override
+  void dispose() {
+    _workspaceScrollController.dispose();
+    super.dispose();
+  }
+
+  void _preserveWorkspaceScroll(VoidCallback update) {
+    final controller = _workspaceScrollController;
+    final offset = controller.hasClients ? controller.offset : 0.0;
+    update();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !controller.hasClients) return;
+      final target = offset.clamp(0.0, controller.position.maxScrollExtent);
+      if ((controller.offset - target).abs() > 0.5) controller.jumpTo(target);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final ref = this.ref;
     final user = ref.watch(authControllerProvider).user;
@@ -680,6 +713,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     return AppNavigationScaffold(
       title: isFarmWorkspace ? 'Farm workspace' : 'My farms',
+      showBackButton: isFarmWorkspace,
       subtitle: isFarmWorkspace ? 'Monitor crop, weather and irrigation signals' : 'Your smart agriculture workspace',
       selectedIndex: 0,
       actions: [
@@ -824,6 +858,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     return RefreshIndicator(
                       onRefresh: () => _refreshDashboard(uid),
                       child: ListView(
+                        key: const PageStorageKey<String>('farm-workspace'),
+                        controller: _workspaceScrollController,
                         padding: const EdgeInsets.all(16),
                         children: [
                           Container(
@@ -894,56 +930,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   ],
                                 ),
                                 const SizedBox(height: 16),
-                                FilledButton.tonalIcon(
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: Theme.of(context).colorScheme.primary,
-                                  ),
-                                  onPressed: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          const FarmManagementScreen(),
-                                    ),
-                                  ),
-                                  icon: const Icon(Icons.edit_outlined),
-                                  label: const Text('Manage farm'),
-                                ),
+                                const SizedBox.shrink(),
                               ],
                             ),
                           ),
                           const SizedBox(height: 14),
-                          if (farms.length > 1)
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                OutlinedButton.icon(
-                                  onPressed: () => _showFarmSwitcher(
-                                    context,
-                                    farms,
-                                    farm.id,
-                                  ),
-                                  icon: const Icon(Icons.swap_horiz),
-                                  label: const Text('Switch farm'),
-                                  style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 14,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Viewing ' +
-                                  (farm.name.isEmpty ? 'Unnamed farm' : farm.name) +
-                                  ' • Farm ' +
-                                  '${farms.indexOf(farm) + 1} of ${farms.length}',
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                              ],
-                            ),
                           const SizedBox(height: 14),
                           Container(
                              padding: const EdgeInsets.all(16),
