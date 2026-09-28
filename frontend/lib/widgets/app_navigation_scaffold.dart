@@ -13,6 +13,7 @@ class AppNavigationScaffold extends ConsumerWidget {
   final Widget? floatingActionButton;
   final String? subtitle;
   final bool showBackButton;
+  final bool showGuestActions;
 
   const AppNavigationScaffold({
     super.key,
@@ -23,10 +24,12 @@ class AppNavigationScaffold extends ConsumerWidget {
     this.floatingActionButton,
     this.subtitle,
     this.showBackButton = false,
+    this.showGuestActions = true,
   });
 
   static const _destinations = [
-    _NavDestination(Icons.dashboard_outlined, Icons.dashboard_rounded, 'Home', '/dashboard'),
+    _NavDestination(Icons.dashboard_outlined, Icons.dashboard_rounded, 'Home', '/'),
+    _NavDestination(Icons.cloud_outlined, Icons.cloud_rounded, 'Weather', '/weather'),
     _NavDestination(Icons.agriculture_outlined, Icons.agriculture_rounded, 'Farms', '/farms'),
     _NavDestination(Icons.sensors_outlined, Icons.sensors_rounded, 'Devices', '/devices'),
     _NavDestination(Icons.person_outline_rounded, Icons.person_rounded, 'Profile', '/profile'),
@@ -264,8 +267,7 @@ class AppNavigationScaffold extends ConsumerWidget {
                 child: ListTile(
                   leading: const Icon(Icons.logout_rounded),
                   title: const Text('Sign out'),
-                  onTap: () =>
-                      ref.read(authControllerProvider.notifier).logout(),
+                  onTap: user == null ? null : () => ref.read(authControllerProvider.notifier).logout(),
                 ),
               ),
               const SizedBox(height: 8),
