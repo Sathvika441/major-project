@@ -38,6 +38,15 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   final Map<String, List<PlotModel>> _farmPlots = {};
   String? _pendingPhone;
 
+  String _initialName = '';
+  String _initialPhone = '';
+  String _initialDistrict = '';
+  String _initialTaluk = '';
+  String _initialVillage = '';
+  String _initialVillageCode = '';
+  String _initialLanguage = 'English';
+  bool _initialNotifications = true;
+
   @override
   void initState() {
     super.initState();
@@ -90,6 +99,14 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       _taluk = taluk;
       _language = existing?.language ?? 'English';
       _notifications = existing?.notificationsEnabled ?? true;
+      _initialName = _name.text.trim();
+      _initialPhone = _phone.text.trim();
+      _initialDistrict = _district;
+      _initialTaluk = _taluk;
+      _initialVillage = _village.text.trim();
+      _initialVillageCode = _villageCode;
+      _initialLanguage = _language;
+      _initialNotifications = _notifications;
       _farms = farms;
       _loading = false;
     });
@@ -107,6 +124,17 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
   List<VillageEntry> get _villages =>
       ref.read(locationMasterServiceProvider).villagesFor(_taluk);
+
+  bool get _hasUnsavedChanges {
+    return _name.text.trim() != _initialName ||
+        _phone.text.trim() != _initialPhone ||
+        _district != _initialDistrict ||
+        _taluk != _initialTaluk ||
+        _village.text.trim() != _initialVillage ||
+        _villageCode != _initialVillageCode ||
+        _language != _initialLanguage ||
+        _notifications != _initialNotifications;
+  }
 
   Future<void> _requestPhoneOtp() async {
     final phone = _phone.text.trim();
@@ -221,6 +249,16 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     try {
       await ref.read(profileRepositoryProvider).save(profile);
       if (!mounted) return;
+      setState(() {
+        _initialName = _name.text.trim();
+        _initialPhone = newPhone;
+        _initialDistrict = _district;
+        _initialTaluk = _taluk;
+        _initialVillage = _village.text.trim();
+        _initialVillageCode = _villageCode;
+        _initialLanguage = _language;
+        _initialNotifications = _notifications;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile saved successfully')),
       );
@@ -276,6 +314,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                                 const SizedBox(height: 18),
                                 TextFormField(
                                   controller: _name,
+                                  onChanged: (_) => setState(() {}),
                                   decoration: const InputDecoration(
                                     labelText: 'Full name',
                                     prefixIcon: Icon(Icons.person_outline),
@@ -290,6 +329,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                                     prefixIcon: Icon(Icons.phone_outlined),
                                   ),
                                   keyboardType: TextInputType.phone,
+                                  onChanged: (_) => setState(() {}),
                                   validator: AuthValidators.validatePhone,
                                 ),
                               ],
@@ -419,7 +459,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                                     validator: (_) => _villageCode.isEmpty
                                         ? 'Select a village from the list'
                                         : null,
-                                    onChanged: (_) => _villageCode = '',
+                                    onChanged: (_) => setState(() => _villageCode = ''),
                                   ),
                                 ),
                               ],
@@ -557,9 +597,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 18),
-                        FilledButton.icon(
-                          onPressed: _saving ? null : _save,
+                        if (_hasUnsavedChanges) ...[
+                          const SizedBox(height: 18),
+                          FilledButton.icon(
+                            onPressed: _saving ? null : _save,
                           icon: _saving
                               ? const SizedBox(
                                   width: 18,
@@ -569,10 +610,11 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                                   ),
                                 )
                               : const Icon(Icons.check_rounded),
-                          label: Text(
-                            _saving ? 'Saving profile...' : 'Save changes',
+                            label: Text(
+                              _saving ? 'Saving profile...' : 'Save changes',
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
