@@ -7,7 +7,12 @@ import '../../core/utils/app_logger.dart';
 import '../../models/user/user_model.dart';
 
 abstract class AuthService {
-  Future<UserModel> signUp({required String name, required String email, required String phone, required String password});
+  Future<UserModel> signUp({
+    required String name,
+    required String email,
+    required String phone,
+    required String password,
+  });
   Future<UserModel> login({required String email, required String password});
   Future<UserModel> signInWithGoogle();
   Future<void> updateCurrentUser(UserModel user);
@@ -22,11 +27,15 @@ class FirebaseAuthService implements AuthService {
   final FirebaseFirestore _firestore;
   final LocalStorageService _storage;
 
-  FirebaseAuthService(this._storage, {FirebaseAuth? auth, FirebaseFirestore? firestore})
-      : _auth = auth ?? FirebaseAuth.instance,
-        _firestore = firestore ?? FirebaseFirestore.instance;
+  FirebaseAuthService(
+    this._storage, {
+    FirebaseAuth? auth,
+    FirebaseFirestore? firestore,
+  }) : _auth = auth ?? FirebaseAuth.instance,
+       _firestore = firestore ?? FirebaseFirestore.instance;
 
-  CollectionReference<Map<String, dynamic>> get _users => _firestore.collection('users');
+  CollectionReference<Map<String, dynamic>> get _users =>
+      _firestore.collection('users');
 
   DateTime? _readDateTime(dynamic value) {
     if (value is Timestamp) return value.toDate();
@@ -45,7 +54,8 @@ class FirebaseAuthService implements AuthService {
       email: user.email ?? (data['email'] as String? ?? ''),
       phone: phone ?? (data['phone'] as String? ?? user.phoneNumber ?? ''),
       isEmailVerified: user.emailVerified,
-      isPhoneVerified: (data['isPhoneVerified'] as bool?) ?? user.phoneNumber != null,
+      isPhoneVerified:
+          (data['isPhoneVerified'] as bool?) ?? user.phoneNumber != null,
       termsAccepted: (data['termsAccepted'] as bool?) ?? true,
       createdAt: created,
       updatedAt: DateTime.now(),
@@ -60,9 +70,17 @@ class FirebaseAuthService implements AuthService {
   }
 
   @override
-  Future<UserModel> signUp({required String name, required String email, required String phone, required String password}) async {
+  Future<UserModel> signUp({
+    required String name,
+    required String email,
+    required String phone,
+    required String password,
+  }) async {
     AppLogger.info('Firebase signup: $email', tag: 'AuthService');
-    final credential = await _auth.createUserWithEmailAndPassword(email: email.trim(), password: password);
+    final credential = await _auth.createUserWithEmailAndPassword(
+      email: email.trim(),
+      password: password,
+    );
     final user = credential.user!;
     await user.updateDisplayName(name.trim());
     await user.sendEmailVerification();
@@ -91,8 +109,14 @@ class FirebaseAuthService implements AuthService {
   }
 
   @override
-  Future<UserModel> login({required String email, required String password}) async {
-    final credential = await _auth.signInWithEmailAndPassword(email: email.trim(), password: password);
+  Future<UserModel> login({
+    required String email,
+    required String password,
+  }) async {
+    final credential = await _auth.signInWithEmailAndPassword(
+      email: email.trim(),
+      password: password,
+    );
     return _userModel(credential.user!);
   }
 
@@ -108,9 +132,7 @@ class FirebaseAuthService implements AuthService {
     AppLogger.info('Starting Google sign-in popup', tag: 'AuthService');
     final provider = GoogleAuthProvider();
     provider.addScope('email');
-    provider.setCustomParameters({
-      'prompt': 'select_account',
-    });
+    provider.setCustomParameters({'prompt': 'select_account'});
 
     final credential = await _auth.signInWithPopup(provider);
     final user = credential.user;
@@ -124,8 +146,10 @@ class FirebaseAuthService implements AuthService {
   @override
   Future<void> updateCurrentUser(UserModel user) async {
     final current = _auth.currentUser;
-    if (current == null || current.uid != user.uid) throw StateError('No matching Firebase session.');
-    if (current.email != user.email) await current.verifyBeforeUpdateEmail(user.email);
+    if (current == null || current.uid != user.uid)
+      throw StateError('No matching Firebase session.');
+    if (current.email != user.email)
+      await current.verifyBeforeUpdateEmail(user.email);
     await current.updateDisplayName(user.name);
     await _users.doc(user.uid).set({
       ...user.toMap(),
@@ -135,7 +159,8 @@ class FirebaseAuthService implements AuthService {
   }
 
   @override
-  Future<void> sendPasswordResetEmail(String email) => _auth.sendPasswordResetEmail(email: email.trim());
+  Future<void> sendPasswordResetEmail(String email) =>
+      _auth.sendPasswordResetEmail(email: email.trim());
 
   @override
   Future<void> sendEmailVerification() async {
@@ -163,10 +188,15 @@ class FirebaseAuthService implements AuthService {
 
 
 /// In-memory/local implementation used by isolated unit tests.
+///
+/// This class is intentionally not wired into the application; production
+/// authentication continues to use [FirebaseAuthService].
 @visibleForTesting
 class IsolatedAuthService implements AuthService {
   static const _usersKey = 'isolated_auth_users';
+
   final LocalStorageService _storage;
+
   IsolatedAuthService(this._storage);
 
   Map<String, String> _users() {
@@ -183,19 +213,30 @@ class IsolatedAuthService implements AuthService {
   Future<void> _saveUsers(Map<String, String> users) async {
     await _storage.raw.setStringList(
       _usersKey,
-      users.entries.map((entry) => entry.key + '|' + entry.value).toList(),
+      users.entries.map((entry) => '${entry.key}|${entry.value}').toList(),
     );
   }
 
   @override
-  Future<UserModel> signUp({required String name, required String email, required String phone, required String password}) async {
-    if (password.length < 8) throw AuthFailure.weakPassword();
+  Future<UserModel> signUp({
+    required String name,
+    required String email,
+    required String phone,
+    required String password,
+  }) async {
+    if (password.length < 8) {
+      throw AuthFailure.weakPassword();
+    }
+
     final normalizedEmail = email.trim().toLowerCase();
     final users = _users();
-    if (users.containsKey(normalizedEmail)) throw AuthFailure.emailAlreadyInUse();
+    if (users.containsKey(normalizedEmail)) {
+      throw AuthFailure.emailAlreadyInUse();
+    }
+
     final now = DateTime.now();
     final user = UserModel(
-      uid: 'isolated-' + normalizedEmail.hashCode.abs().toString(),
+      uid: 'isolated-${normalizedEmail.hashCode.abs()}',
       name: name.trim(),
       email: normalizedEmail,
       phone: phone.trim(),
@@ -209,9 +250,14 @@ class IsolatedAuthService implements AuthService {
   }
 
   @override
-  Future<UserModel> login({required String email, required String password}) async {
+  Future<UserModel> login({
+    required String email,
+    required String password,
+  }) async {
     final userJson = _users()[email.trim().toLowerCase()];
-    if (userJson == null) throw AuthFailure.userNotFound();
+    if (userJson == null) {
+      throw AuthFailure.userNotFound();
+    }
     final user = UserModel.fromJson(userJson);
     await _storage.saveSession(user.uid, user.toJson());
     return user;
@@ -239,7 +285,9 @@ class IsolatedAuthService implements AuthService {
   @override
   Future<void> updateCurrentUser(UserModel user) async {
     final currentUid = _storage.getSessionUserId();
-    if (currentUid != user.uid) throw StateError('No matching isolated auth session.');
+    if (currentUid != user.uid) {
+      throw StateError('No matching isolated auth session.');
+    }
     final users = _users();
     users[user.email] = user.toJson();
     await _saveUsers(users);
