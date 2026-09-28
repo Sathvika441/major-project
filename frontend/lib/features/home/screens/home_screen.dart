@@ -6,6 +6,7 @@ import '../../../services/backend/backend_api.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../../core/services/device_location_service.dart';
 import '../../../models/weather/weather_model.dart';
+import '../../../widgets/app_navigation_scaffold.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -35,7 +36,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>{
   }
   @override Widget build(BuildContext context){
     final user=ref.watch(authControllerProvider).user; final s=Theme.of(context).colorScheme;
-    return Scaffold(backgroundColor:s.surface,body:RefreshIndicator(onRefresh:_loadWeather,child:ListView(padding:const EdgeInsets.fromLTRB(20,24,20,40),children:[
+    return AppNavigationScaffold(title:'Home',selectedIndex:0,body:RefreshIndicator(onRefresh:_loadWeather,child:ListView(padding:const EdgeInsets.fromLTRB(20,24,20,40),children:[
       _hero(context,user?.name,_weather),
       if(_error!=null)Padding(padding:const EdgeInsets.only(top:12),child:Container(padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:s.secondaryContainer,borderRadius:BorderRadius.circular(14)),child:Text(_error!,style:TextStyle(color:s.onSecondaryContainer)))),
       const SizedBox(height:20),
