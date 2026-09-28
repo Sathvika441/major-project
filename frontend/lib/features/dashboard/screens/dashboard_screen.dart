@@ -458,7 +458,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
             const SizedBox(height: 16),
             if (hasImage) ...[
-              SizedBox(
+              Container(
                 width: double.infinity,
                 height: 240,
                 decoration: BoxDecoration(
