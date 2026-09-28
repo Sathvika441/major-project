@@ -12,6 +12,7 @@ class AppNavigationScaffold extends ConsumerWidget {
   final List<Widget>? actions;
   final Widget? floatingActionButton;
   final String? subtitle;
+  final bool showBackButton;
 
   const AppNavigationScaffold({
     super.key,
@@ -21,6 +22,7 @@ class AppNavigationScaffold extends ConsumerWidget {
     this.actions,
     this.floatingActionButton,
     this.subtitle,
+    this.showBackButton = false,
   });
 
   static const _destinations = [
@@ -73,6 +75,19 @@ class AppNavigationScaffold extends ConsumerWidget {
 
         return Scaffold(
           appBar: AppBar(
+            leading: showBackButton
+                ? IconButton(
+                    tooltip: 'Back',
+                    onPressed: () {
+                      if (Navigator.of(context).canPop()) {
+                        Navigator.of(context).pop();
+                      } else if (context.canPop()) {
+                        context.pop();
+                      }
+                    },
+                    icon: const Icon(Icons.arrow_back_rounded),
+                  )
+                : null,
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -298,6 +313,21 @@ class _DesktopHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
+          if (showBackButton)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: IconButton(
+                tooltip: 'Back',
+                onPressed: () {
+                  if (Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  } else if (context.canPop()) {
+                    context.pop();
+                  }
+                },
+                icon: const Icon(Icons.arrow_back_rounded),
+              ),
+            ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
