@@ -18,6 +18,7 @@ final deviceLocationServiceProvider=Provider<DeviceLocationService>((ref)=>Devic
 
 class DeviceLocationService {
   static const _key='arecasmart_last_device_location';
+  static const _placeKey='arecasmart_last_weather_place';
 
   Future<DeviceLocation?> resolveCurrentLocation() async {
     if (kIsWeb) {
@@ -45,6 +46,9 @@ class DeviceLocationService {
     final prefs=await SharedPreferences.getInstance();
     await prefs.setString(_key,jsonEncode(value.toMap()));
   }
+
+  Future<void> saveLastWeatherPlace({required String district,required String taluk,required String village}) async { final prefs=await SharedPreferences.getInstance(); await prefs.setString(_placeKey,jsonEncode({'district':district,'taluk':taluk,'village':village})); }
+  Future<Map<String,String>?> loadLastWeatherPlace() async { final prefs=await SharedPreferences.getInstance(); final raw=prefs.getString(_placeKey); if(raw==null||raw.isEmpty)return null; try{final m=Map<String,dynamic>.from(jsonDecode(raw) as Map);return {'district':m['district']?.toString()??'','taluk':m['taluk']?.toString()??'','village':m['village']?.toString()??''};}catch(_){return null;} }
 
   Future<DeviceLocation?> loadLastLocation() async {
     final prefs=await SharedPreferences.getInstance();
