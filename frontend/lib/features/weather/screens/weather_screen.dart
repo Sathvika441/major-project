@@ -25,32 +25,40 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
   }
 
   Future<void> _load({bool refresh = false}) async {
+    final locationService = ref.read(deviceLocationServiceProvider);
+    final api = ref.read(backendApiProvider);
+    final cache = ref.read(weatherCacheServiceProvider);
+
     if (mounted) {
       setState(() {
         _loading = true;
         if (refresh) _error = null;
       });
     }
+
     try {
-      final location = await ref.read(deviceLocationServiceProvider).resolveCurrentLocation();
+      final location = await locationService.resolveCurrentLocation();
       WeatherData weather;
+
       if (location != null) {
-        weather = await ref.read(backendApiProvider).getWeatherByCoordinates(
+        weather = await api.getWeatherByCoordinates(
           latitude: location.latitude,
           longitude: location.longitude,
           label: location.label,
         );
       } else {
-        final saved = await ref.read(deviceLocationServiceProvider).loadLastWeatherPlace();
+        final saved = await locationService.loadLastWeatherPlace();
         weather = saved != null
-            ? await ref.read(backendApiProvider).getWeatherByPlace(
+            ? await api.getWeatherByPlace(
                 district: saved['district']!,
                 taluk: saved['taluk']!,
                 village: saved['village']!,
               )
-            : await ref.read(backendApiProvider).getWeatherByPlace(district: 'Shivamogga');
+            : await api.getWeatherByPlace(district: 'Shivamogga');
       }
-      await ref.read(weatherCacheServiceProvider).save(_toMap(weather));
+
+      await cache.save(_toMap(weather));
+
       if (!mounted) return;
       setState(() {
         _weather = weather;
@@ -58,7 +66,8 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
         _error = null;
       });
     } catch (e) {
-      final cached = await ref.read(weatherCacheServiceProvider).load();
+      final cached = await cache.load();
+
       if (cached != null) {
         try {
           final weather = WeatherData.fromMap(cached);
@@ -71,6 +80,7 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
           return;
         } catch (_) {}
       }
+
       if (!mounted) return;
       setState(() {
         _loading = false;
