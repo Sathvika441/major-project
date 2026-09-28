@@ -1452,3 +1452,101 @@ Farmer sees information and recommendations
 ~~~
 
 That is the current architecture of ArecaSmart on the integration/frontend-backend-ml branch.
+
+
+---
+
+# Guest Weather & Public Home Extension
+
+The current branch also supports a public, no-login Home and Weather experience.
+
+## Guest behaviour
+
+```
+App launch
+  ↓
+Public Home
+  ↓
+Foreground device location
+  ↓
+FastAPI /api/v1/weather?lat=...&lon=...
+  ↓
+Open-Meteo forecast
+```
+
+If device location is unavailable:
+
+1. Last locally saved GPS location is tried.
+2. Last manually selected Karnataka place is tried.
+3. Shivamogga district is used as the configured default.
+4. The user can choose State → District → Taluk → Village from Karnataka_Location_Master.json.
+
+Only foreground location is requested; no background location permission is used.
+
+## Authenticated farm weather
+
+When a farmer opens a farm workspace, weather is requested from the farm's saved State/District/Taluk/Village/Location through the existing FarmRepository + BackendApi flow. The phone's guest GPS is not used as the farm's authoritative weather context.
+
+## Weather API extension
+
+GET /api/v1/weather now accepts either:
+
+- Existing place fields: state, district, taluk, village, location
+- Or coordinates: lat, lon
+
+The backend requests current weather, 24 hourly records, seven daily records, ET₀ and named field-guidance inputs from Open-Meteo. Weather responses are cached in-process for about 15 minutes and coordinate cache keys are rounded to two decimal places.
+
+Open-Meteo's public geocoding API is a forward location search API (place name → coordinates), not a reverse-geocoding API. For raw GPS requests ArecaSmart therefore keeps the coordinate context rather than inventing a district/locality result.
+
+## Guidance heuristics
+
+The backend calculates four field-operation guidance values:
+
+- Spraying
+- Drying produce
+- Harvest and transport
+- Irrigation
+
+Thresholds are named constants in backend/app/weather_service.py and covered by backend/tests/test_weather_guidance.py. They are application heuristics for decision support, not agronomic guarantees.
+
+## Public ML
+
+POST /api/v1/predict/image remains unauthenticated. It keeps the 10 MB limit and JPG/JPEG/PNG/WEBP validation and now has a lightweight in-process per-IP limiter (12 requests per 60 seconds). A 429 response is returned when the limit is exceeded.
+
+## Frontend weather files
+
+- frontend/lib/features/home/screens/home_screen.dart
+- frontend/lib/features/weather/screens/weather_screen.dart
+- frontend/lib/features/weather/widgets/manual_location_picker.dart
+- frontend/lib/core/services/device_location_service.dart
+- frontend/lib/services/backend/weather_cache_service.dart
+- frontend/lib/models/weather/weather_model.dart
+
+## Run
+
+Frontend:
+
+```
+cd frontend
+flutter pub get
+flutter run -d chrome --dart-define=BACKEND_BASE_URL=http://127.0.0.1:8000
+```
+
+Android emulator:
+
+```
+cd frontend
+flutter run --dart-define=BACKEND_BASE_URL=http://10.0.2.2:8000
+```
+
+Backend:
+
+```
+python -m uvicorn backend.app.main:app --reload
+```
+
+Guidance tests:
+
+```
+python -m unittest backend.tests.test_weather_guidance
+```
