@@ -199,6 +199,12 @@ major-project/
 └── README.md
 ```
 
+## Dashboard Layout Stability
+
+The disease-detection card uses fixed, bounded image and vertical action layouts to avoid unconstrained web rendering. Farm-age display values are also null-safe so incomplete farm records do not trigger runtime layout exceptions.
+
+If Flutter reports repeated `RenderBox`, `sliver_multi_box_adaptor`, or `mouse_tracker` assertions after a hot reload, stop the web app and restart it after pulling the latest branch changes.
+
 ## Development Notes
 
 - Current sensor readings are simulated; no physical sensor hardware is required to run the dashboard.
