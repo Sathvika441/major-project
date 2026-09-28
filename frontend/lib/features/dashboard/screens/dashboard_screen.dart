@@ -15,7 +15,6 @@ import '../../../core/irrigation/irrigation_models.dart';
 import '../../../services/sensors/simulated_sensor_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../devices/screens/device_management_screen.dart';
-import '../../farm/screens/farm_management_screen.dart';
 import '../../profile/screens/profile_edit_screen.dart';
 import '../../../widgets/app_navigation_scaffold.dart';
 
@@ -33,9 +32,7 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   String? _selectedFarmId;
-  SensorReading? _demoReading;
-  String _demoPreset = 'Normal';
-  int? _selectedFarmCropAgeDays;
+   int? _selectedFarmCropAgeDays;
   double? _selectedFarmCropAgeYears;
   String? _selectedFarmGrowthStage;
   String? _selectedFarmPlantingDate;
@@ -51,22 +48,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   bool _weatherLoading = false;
   String? _weatherFarmKey;
   final ScrollController _workspaceScrollController = ScrollController();
-
-  SensorReading _presetReading(String preset) {
-    final now = DateTime.now();
-    final soilMoisture = switch (preset) {
-      'Dry soil' => 18.0,
-      'Wet soil' => 72.0,
-      _ => 38.0,
-    };
-    return SensorReading(soilMoisture: soilMoisture, timestamp: now);
-  }
-
-  void _generateDemoReading() {
-    setState(() {
-      _demoReading = _presetReading(_demoPreset);
-    });
-  }
 
   Future<void> _refreshDashboard(String uid) async {
     if (_syncing) return;
@@ -654,38 +635,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Future<void> _testDemoBackend(BuildContext context, WidgetRef ref) async {
-    final reading = _demoReading ?? _presetReading(_demoPreset);
-    setState(() => _demoReading = reading);
-    try {
-      final result = await ref.read(backendApiProvider).predict({
-        'soil_moisture': reading.soilMoisture,
-        'temperature': reading.temperature,
-        'humidity': reading.humidity,
-        'rainfall': reading.rainfall,
-        'crop': 'Arecanut',
-        'crop_age_days': _selectedFarmCropAgeDays,
-        'crop_age_years': _selectedFarmCropAgeYears,
-        'growth_stage': _selectedFarmGrowthStage,
-        'planting_date': _selectedFarmPlantingDate,
-        'source': 'simulated',
-      });
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(
-            result['detail']?.toString() ?? 'Backend response received.',
-          )),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Demo backend call (ML placeholder): $e')),
-        );
-      }
-    }
-  }
-
   @override
   void dispose() {
     _workspaceScrollController.dispose();
@@ -788,7 +737,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         _selectedFarmGrowthStage = growthStage;
                         _selectedFarmPlantingDate = plantingDate;
                         if (farmChanged) {
-                          _demoReading = _presetReading(_demoPreset);
                           _weather = null;
                           _weatherError = null;
                           _weatherFarmKey = null;
@@ -821,12 +769,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         devices.where((d) => d.farmId == farm.id).toList();
                     final alerts = _generateAlertsForFarm(
                       farmDevices,
-                      _demoReading,
+                      null,
                       _weather,
                     );
-                    final sensorAgg = _demoReading == null
-                        ? _aggregate(farmDevices)
-                        : _aggregateReading(_demoReading!);
+                    final sensorAgg = _aggregate(farmDevices);
                     final agg = _ReadingSummary(
                       soilMoisture: sensorAgg.soilMoisture,
                       temperature: _weather?.temperature ?? sensorAgg.temperature,
@@ -1239,25 +1185,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             ],
                           ),
                           const SizedBox(height: 14),
-                          if (_demoReading != null)
-                            Card(
-                              child: ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor: Theme.of(context)
-                                      .colorScheme
-                                      .secondaryContainer,
-                                  child: const Icon(Icons.water_drop_outlined),
-                                ),
-                                title: const Text(
-                                  'Demo irrigation recommendation',
-                                  style: TextStyle(fontWeight: FontWeight.w700),
-                                ),
-                                subtitle: Text(
-                                  _demoRecommendation(_demoReading!),
-                                ),
-                              ),
-                            ),
-                          if (_demoReading != null) const SizedBox(height: 10),
                           Card(
                             child: ListTile(
                               contentPadding: const EdgeInsets.symmetric(
@@ -1360,7 +1287,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                     runSpacing: 8,
                                     children: [
                                       ActionChip(avatar: const Icon(Icons.refresh, size: 18), label: Text(_syncing ? 'Syncing...' : 'Sync now'), onPressed: _syncing ? null : () => _refreshDashboard(uid)),
-                                      ActionChip(avatar: const Icon(Icons.agriculture_outlined, size: 18), label: const Text('Manage farm'), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FarmManagementScreen()))),
                                       ActionChip(avatar: const Icon(Icons.sensors_outlined, size: 18), label: const Text('Manage devices'), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DeviceManagementScreen()))),
                                       ActionChip(avatar: const Icon(Icons.notifications_outlined, size: 18), label: const Text('View alerts'), onPressed: () => _showAlertsSheet(context, ref, uid, _selectedFarmId)),
                                     ],
@@ -2068,69 +1994,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     } catch (_) {
       // The decision remains visible locally even if audit persistence is offline.
     }
-  }
-
-  Future<void> _showFarmSwitcher(
-    BuildContext context,
-    List<FarmModel> farms,
-    String currentFarmId,
-  ) async {
-    final selected = await showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: ListView(
-            shrinkWrap: true,
-            padding: const EdgeInsets.only(bottom: 16),
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-                child: Text(
-                  'Switch farm',
-                  style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              ...farms.map(
-                (item) => ListTile(
-                  leading: CircleAvatar(
-                    child: Icon(
-                      item.id == currentFarmId
-                          ? Icons.check
-                          : Icons.agriculture_outlined,
-                    ),
-                  ),
-                  title: Text(
-                    item.name.isEmpty ? 'Unnamed farm' : item.name,
-                  ),
-                  subtitle: item.location.isEmpty ? null : Text(item.location),
-                  trailing: item.id == currentFarmId
-                      ? const Icon(Icons.check_circle)
-                      : null,
-                  onTap: () => Navigator.of(sheetContext).pop(item.id),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-
-    if (selected != null && mounted && selected != currentFarmId) {
-      setState(() => _selectedFarmId = selected);
-    }
-  }
-  String _demoRecommendation(SensorReading reading) {
-    final moisture = reading.soilMoisture ?? 0;
-    if (moisture < 20) {
-      return 'Irrigation recommended in this demo scenario. Soil moisture is low.';
-    }
-    if (moisture > 80 || (reading.rainfall ?? 0) > 25) {
-      return 'Irrigation can be delayed in this demo scenario because moisture or rainfall is high.';
-    }
-    return 'No immediate irrigation recommended in this demo scenario.';
   }
 
   List<_FarmAlert> _generateAlertsForFarm(
