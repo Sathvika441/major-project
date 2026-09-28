@@ -6,6 +6,25 @@ import '../../core/storage/local_storage_service.dart';
 import '../../core/utils/app_logger.dart';
 import '../../models/user/user_model.dart';
 
+/// Normalized auth failure used by the isolated/local authentication implementation.
+///
+/// Firebase production authentication continues to surface FirebaseAuth errors;
+/// this type keeps the isolated test implementation independent of Firebase.
+class AuthFailure extends StateError {
+  final String code;
+
+  AuthFailure._(this.code, String message) : super(message);
+
+  factory AuthFailure.weakPassword() =>
+      AuthFailure._('weak-password', 'The password must contain at least 8 characters.');
+
+  factory AuthFailure.emailAlreadyInUse() =>
+      AuthFailure._('email-already-in-use', 'An account already exists for this email.');
+
+  factory AuthFailure.userNotFound() =>
+      AuthFailure._('user-not-found', 'No account was found for this email.');
+}
+
 abstract class AuthService {
   Future<UserModel> signUp({
     required String name,
