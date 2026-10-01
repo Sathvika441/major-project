@@ -1275,7 +1275,7 @@ For a formal report, treatment recommendations should be supported by appropriat
 ### Terminal 1 — Backend
 
 ```powershell
-cd C:\Users\Spandu\projects\major-project\backend
+cd backend
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 uvicorn app.main:app --reload
@@ -1284,7 +1284,7 @@ uvicorn app.main:app --reload
 ### Terminal 2 — Frontend
 
 ```powershell
-cd C:\Users\Spandu\projects\major-project\frontend
+cd frontend
 flutter clean
 flutter pub get
 flutter run -d chrome
