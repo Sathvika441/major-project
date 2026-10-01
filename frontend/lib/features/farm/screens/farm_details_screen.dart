@@ -796,7 +796,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
                             label: Text(
                               _saving
                                   ? 'Saving...'
-                                  : 'Save & complete setup',
+                                  : (editing ? 'Save changes' : 'Save & complete setup'),
                             ),
                           ),
                           if (_savedFarmCount > 0) ...[

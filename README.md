@@ -1,1341 +1,1552 @@
-# ArecaSmart — Smart Arecanut Farm Management and Disease Detection System
+# ArecaSmart 🌱
 
-## 1. Project Overview
+ArecaSmart is a smart agriculture application for arecanut farmers. It brings farm management, weather intelligence, device monitoring, irrigation recommendations, and AI-based arecanut disease detection into one farmer-facing application.
 
-**ArecaSmart** is a smart agriculture application developed for arecanut farm management. The system combines:
-
-- farmer authentication and profile management,
-- multi-farm management,
-- structured Karnataka farm-location selection,
-- crop-age and growth-stage tracking,
-- simulated agricultural sensor readings,
-- weather information,
-- explainable irrigation recommendations,
-- image-based arecanut disease detection using a trained TensorFlow/Keras model, and
-- a Flutter dashboard that brings these functions together.
-
-The project is implemented as a **Flutter frontend + FastAPI backend + TensorFlow/Keras ML service**, with Firebase Authentication and Cloud Firestore used for application data.
-
-> **Report note:** This README documents the implementation currently present in the repository. Dataset size, exact dataset source, measured accuracy values, and hardware specifications should only be added to the final report when those details are available from the project's actual dataset/training records.
+**Documented branch:** `integration/frontend-backend-ml`
 
 ---
 
-# 2. Problem Statement
+## 1. What is ArecaSmart?
 
-Arecanut farmers need timely information about farm conditions, irrigation requirements, weather conditions, and visible crop diseases. In a conventional workflow, these activities can be separated across manual observation, external weather information, and individual farm records.
+The application is designed around a simple idea:
 
-ArecaSmart addresses this problem by providing a single application through which a farmer can:
+> Give the farmer one workspace where farm information, environmental information, device information and crop-health information can be viewed together and used for better decisions.
 
-1. maintain farm information,
-2. monitor simulated sensor conditions,
-3. view weather information for the selected farm,
-4. receive irrigation recommendations, and
-5. upload an arecanut image for ML-based disease classification.
+The current application can:
 
-The system is intended as a **decision-support application**. It does not claim to replace agricultural experts, laboratory diagnosis, or professional treatment advice.
+- Authenticate users.
+- Guide new users through required setup.
+- Create and manage farms.
+- Store farm location and crop information.
+- Manage plots belonging to farms.
+- Register farm devices/sensors.
+- Show device status and available readings.
+- Retrieve current and forecast weather for the selected farm.
+- Use weather and farm/sensor information in an irrigation recommendation engine.
+- Upload an arecanut image and run the trained TensorFlow/Keras disease-classification model.
+- Maintain a farmer profile.
+- Persist the light/dark theme preference.
+- Provide responsive desktop and mobile navigation.
 
----
-
-# 3. Aim
-
-The aim of the project is to develop an integrated smart agriculture application for arecanut cultivation that combines farm information, environmental data, irrigation decision support, weather information, and machine-learning-based disease detection in a single user interface.
-
----
-
-# 4. Objectives
-
-The major objectives are:
-
-- Provide secure farmer authentication.
-- Maintain farmer profile and multiple farm records.
-- Capture structured farm location information.
-- Track arecanut crop age and growth stage.
-- Provide simulated sensor readings for development and demonstration.
-- Use farm and environmental information to generate irrigation recommendations.
-- Retrieve weather information for the selected farm location.
-- Detect selected arecanut diseases from uploaded images using a trained deep-learning model.
-- Display prediction confidence and available treatment information.
-- Provide meaningful validation and error messages.
-- Separate frontend presentation, backend services, and ML inference for maintainability.
-- Maintain a usable web dashboard for demonstration and future extension.
+The application is currently a **decision-support and monitoring system**. It should not be understood as a completed autonomous irrigation controller merely because irrigation logic and device models exist in the codebase.
 
 ---
 
-# 5. Scope
+# 2. Technology stack
 
-## 5.1 Included in the current implementation
-
-- Flutter web application.
-- Firebase Email/Password authentication.
-- Google sign-in support.
-- Firestore-backed farmer/farm/device data.
-- Multi-farm management.
-- Karnataka district/taluk/village selection data.
-- Crop-age and growth-stage calculation/display.
-- Simulated sensor readings.
-- Irrigation recommendation engine.
-- Weather lookup and forecast integration.
-- Arecanut image upload.
-- ML disease classification.
-- Prediction confidence display.
-- Basic disease-specific medicine information where configured.
-- Backend API validation and error handling.
-
-## 5.2 Not currently included
-
-- Physical sensor hardware.
-- Real pump/actuator control.
-- Automatic physical irrigation.
-- Laboratory confirmation of disease.
-- A medical/agricultural prescription system.
-- Native mobile deployment as the primary documented runtime.
-- A production cloud deployment configuration.
-
-The current sensor values are simulated, and irrigation is recommendation-oriented rather than physical actuator control.
+| Layer | Technology | Purpose |
+|---|---|---|
+| Frontend | Flutter / Dart | Cross-platform farmer application |
+| UI | Material 3 | Application interface |
+| State | Riverpod | State/dependency management |
+| Navigation | GoRouter | Route management and auth-aware redirects |
+| Authentication | Firebase Authentication | User authentication |
+| Database | Cloud Firestore | Profiles, farms, plots and devices |
+| Backend | FastAPI / Python | Weather and ML API |
+| ML | TensorFlow / Keras | Arecanut disease image classification |
+| Image handling | Pillow / NumPy | Backend image preprocessing |
+| Weather | Open-Meteo | Geocoding and forecast data |
+| Local storage | Shared Preferences | Local application state/preferences |
+| Location data | Karnataka location master JSON | Structured State → District → Taluk → Village selection |
 
 ---
 
-# 6. System Architecture
+# 3. High-level architecture
 
-The application follows a layered architecture:
+~~~text
+                         ARECASMART
+                              |
+                    +---------+---------+
+                    |                   |
+                    v                   v
+             Flutter Frontend       Firebase
+                    |                   |
+          +---------+---------+    +----+----------------+
+          |         |         |    |                     |
+       Dashboard  Farms    Devices  Authentication    Firestore
+          |         |         |                            |
+          +---------+---------+----------------------------+
+                    |
+                    | HTTP
+                    v
+              FastAPI Backend
+                    |
+             +------+------+
+             |             |
+             v             v
+       TensorFlow/Keras  Open-Meteo
+          ML model       Geocoding
+             |           Forecast
+             +-----+-------+
+                   |
+                   v
+              Results back
+              to Flutter
+~~~
 
-```text
-+------------------------------------------------------+
-|                  Flutter Frontend                    |
-|                                                      |
-| Authentication | Farm Management | Dashboard        |
-| Sensors        | Irrigation       | Weather          |
-| Disease Upload | ML Result        | Profile          |
-+---------------------------+--------------------------+
-                            |
-                            | HTTP/JSON + Multipart
-                            v
-+------------------------------------------------------+
-|                    FastAPI Backend                   |
-|                                                      |
-| /health                                             |
-| /api/v1/weather                                     |
-| /api/v1/predict                                     |
-| /api/v1/predict/image                               |
-+----------------------+-------------------------------+
-                       |
-          +------------+------------+
-          |                         |
-          v                         v
-+----------------------+   +---------------------------+
-| Weather Service     |   | TensorFlow/Keras ML       |
-| Open-Meteo          |   | Inference Service         |
-+----------------------+   +---------------------------+
-                                      |
-                                      v
-                           arecanut_model.keras
-                           class_names.json
+### Responsibility of each layer
 
-+------------------------------------------------------+
-| Firebase                                             |
-| Firebase Authentication + Cloud Firestore            |
-+------------------------------------------------------+
-```
+**Flutter**
+- Displays the application.
+- Collects farmer input.
+- Handles navigation and UI state.
+- Reads/writes Firebase data through repositories.
+- Calls the FastAPI backend for weather and image prediction.
 
-### Architecture flow
+**Firebase**
+- Handles authentication.
+- Stores cloud application data.
+- Provides Firestore collections for profiles, farms, plots and devices.
 
-1. The user interacts with the Flutter application.
-2. Authentication is handled using Firebase Authentication.
-3. Farm/application records are stored through Firestore repositories.
-4. Flutter calls FastAPI for weather and ML functionality.
-5. FastAPI resolves farm locations and obtains weather data from Open-Meteo.
-6. For disease detection, Flutter uploads an image to FastAPI.
-7. FastAPI validates the file and passes it to the ML inference service.
-8. The trained Keras model produces class probabilities.
-9. The predicted class and confidence are returned to Flutter.
-10. Flutter displays the result to the farmer.
+**FastAPI**
+- Acts as the backend boundary.
+- Provides health checking.
+- Resolves farmer-entered locations.
+- Retrieves weather.
+- Runs ML inference for uploaded images.
 
----
+**TensorFlow/Keras**
+- Loads the trained arecanut model.
+- Classifies uploaded images into the nine configured classes.
 
-# 7. Technology Stack
-
-## Frontend
-
-| Technology | Purpose |
-|---|---|
-| Flutter | User interface and application framework |
-| Dart | Frontend programming language |
-| Riverpod | State management |
-| GoRouter | Application navigation |
-| Firebase Auth | Authentication |
-| Cloud Firestore | Application data |
-| HTTP | Backend API communication |
-| File Picker | Image selection |
-| Shared Preferences | Local/session-related persistence |
-| PInput | OTP-style input UI |
-| Google Fonts | UI typography |
-| Intl | Formatting/localization utilities |
-
-The frontend dependency configuration is maintained in `frontend/pubspec.yaml`.
-
-## Backend
-
-| Technology | Purpose |
-|---|---|
-| Python | Backend language |
-| FastAPI | REST API framework |
-| Uvicorn | ASGI server |
-| TensorFlow/Keras | ML model loading and inference |
-| NumPy | Numerical processing |
-| Pillow | Image decoding/validation |
-| python-multipart | Multipart file upload handling |
-
-## External services
-
-| Service | Purpose |
-|---|---|
-| Firebase Authentication | User authentication |
-| Cloud Firestore | User/farm/application data |
-| Open-Meteo Geocoding API | Farm-location coordinate resolution |
-| Open-Meteo Forecast API | Current and forecast weather |
+**Open-Meteo**
+- Converts farmer-entered place information into coordinates.
+- Supplies current and forecast weather data.
 
 ---
 
-# 8. Major Functional Modules
+# 4. Complete application flow
 
-## 8.1 Authentication Module
+~~~text
+Application launch
+       |
+       v
+     Splash
+       |
+       +---- User not authenticated ----> Login / Signup
+       |
+       +---- User authenticated
+                    |
+                    v
+              Setup checks
+                    |
+          +---------+---------+
+          |         |         |
+     Permissions Onboarding Farm details
+          |         |         |
+          +---------+---------+
+                    |
+                    v
+                Dashboard
+                    |
+       +------------+-------------+----------------+
+       |            |             |                |
+       v            v             v                v
+     Farms       Devices       Profile       Selected farm
+                                                   |
+                                  +----------------+----------------+
+                                  |                |                |
+                                  v                v                v
+                              Weather        Irrigation        AI disease
+                                              recommendation    detection
+~~~
 
-The application supports:
-
-- Email/Password authentication.
-- Google sign-in support.
-- Firebase Authentication integration.
-- Farmer profile data associated with authenticated users.
-- Session restoration.
-
-The application uses Firebase Authentication for account identity while Firestore stores application-specific user/farm information.
-
-The project's current OTP flow is application-level/mock verification rather than Firebase Phone Authentication.
-
----
-
-## 8.2 Farmer and Farm Management
-
-The application supports multiple farms for a farmer.
-
-Farm information includes fields such as:
-
-- farm name,
-- location,
-- state,
-- district,
-- taluk,
-- village,
-- village code where available,
-- farm size,
-- crop,
-- planting date,
-- irrigation method, and
-- crop-age/growth-stage information.
-
-The application does not currently use a separate plot-management layer.
-
-### Karnataka location data
-
-The frontend contains:
-
-```text
-frontend/assets/Karnataka_Location_Master.json
-```
-
-The project uses structured Karnataka location information for district, taluk, and village selection.
-
-The current project data contains the documented Karnataka master of:
-
-- 31 districts,
-- 240 taluks,
-- 29,781 villages.
+Existing authenticated users who have completed the required setup can go directly to the dashboard.
 
 ---
 
-# 9. Crop Age and Growth Stage
+# 5. Authentication and routing
 
-The application derives the crop age from planting information and uses growth-stage categories.
+The main routes currently include:
 
-The current growth-stage mapping is:
+- /splash
+- /login
+- /signup
+- /forgot-password
+- /verify-email
+- /otp-verification
+- /permission-setup
+- /onboarding
+- /farm-details
+- /dashboard
+- /farm/:farmId
+- /farms
+- /devices
+- /profile
 
-| Crop age | Growth stage |
-|---|---|
-| Less than 1 year | Establishment |
-| 1 to less than 3 years | Young palm |
-| 3 to less than 6 years | Juvenile / pre-bearing |
-| 6 to less than 12 years | Bearing |
-| 12 years or more | Mature bearing |
+Routing is implemented in:
 
-These stages are used as application inputs for dashboard information and irrigation decision support.
+~~~text
+frontend/lib/app/router.dart
+~~~
 
----
+The router watches authentication state and redirects users depending on whether they are:
 
-# 10. Sensor Module
+- Loading authentication state.
+- Unauthenticated.
+- Waiting for email verification.
+- Waiting for OTP verification.
+- Completing required onboarding/setup.
+- Fully authenticated.
 
-The project currently uses a **simulated sensor service** rather than physical sensor hardware.
-
-The simulated environment provides values such as:
-
-- soil moisture,
-- temperature,
-- humidity,
-- rainfall, and
-- reading timestamp.
-
-The purpose of the simulated sensor layer is to allow the complete application workflow to be demonstrated without requiring physical IoT hardware.
-
-The architecture can be extended later to replace simulated readings with real sensor data.
-
----
-
-# 11. Weather Module
-
-Weather functionality is implemented in the FastAPI backend.
-
-The backend uses Open-Meteo services for:
-
-1. geocoding the farmer-selected location, and
-2. retrieving weather and forecast information.
-
-The location resolution process considers:
-
-- village,
-- taluk,
-- district,
-- state, and
-- optional farmer-entered location text.
-
-The service validates the administrative hierarchy before accepting a geocoded result and can fall back to district-level coordinates when a small village is not available in the geocoder.
-
-### Weather information
-
-The backend retrieves current and forecast values including:
-
-- temperature,
-- relative humidity,
-- precipitation,
-- rain,
-- weather code,
-- precipitation probability,
-- evapotranspiration-related values,
-- daily maximum/minimum temperature,
-- daily precipitation,
-- daily precipitation probability, and
-- daily ET0.
-
-The weather service caches resolved results for approximately 15 minutes.
+This prevents an unauthenticated user from directly opening authenticated application pages.
 
 ---
 
-# 12. Irrigation Decision Support
+# 6. Farm management
 
-The application contains an irrigation decision engine that combines environmental and crop information.
+Farm data is stored in Cloud Firestore.
 
-Inputs include:
+A farm can contain information such as:
 
-- soil moisture,
-- crop age,
-- growth stage,
-- temperature,
-- humidity,
-- rainfall,
-- current weather context,
-- next-24-hour precipitation,
-- next-24-hour precipitation probability,
-- next-24-hour ET0,
-- recent irrigation context, and
-- observation time.
+- Farm name
+- Location
+- State
+- District
+- Taluk
+- Village
+- Village code
+- Land survey number
+- Farm size in acres
+- Crop
+- Arecanut cultivation type
+- Soil type
+- Planting date
+- Water source
+- Irrigation method
+- Active/inactive status
 
-The system produces an irrigation recommendation and explanation rather than directly controlling a pump.
+The repository also supports plots belonging to a farm.
 
-### Irrigation modes
+### Firestore structure
 
-The project defines application-level irrigation modes including:
+~~~text
+users/
+└── {userId}/
+    └── farms/
+        └── {farmId}/
+            └── plots/
+                └── {plotId}
+~~~
 
-- recommendation-only,
-- automatic, and
-- manual.
+The farm repository reads active farms using the isActive field.
 
-The dashboard currently uses the recommendation-oriented workflow.
+### Planting-date history
 
-### Important implementation note
+When an existing farm's planting date is changed to another calendar date, the repository records:
 
-The numerical decision logic is a **project-specific heuristic/decision engine**. Its weights and thresholds should not be presented in the report as an official CPCRI irrigation formula unless independently validated against an official source.
+- Previous planting date
+- New planting date
+- Time of the change
+- Source of the change
+
+This creates a history rather than silently losing the previous value.
 
 ---
 
-# 13. Machine Learning Disease Detection
+# 7. Farm dashboard
 
-## 13.1 Purpose
+The dashboard is the main farmer workspace.
 
-The ML subsystem classifies an uploaded arecanut image into one of the disease/health classes represented by the trained model.
+For a selected farm it combines:
 
-The model is integrated into the backend rather than executed as a separate application process.
+- Farm information.
+- Location.
+- Crop information.
+- Crop age/growth stage.
+- Weather.
+- Irrigation recommendation.
+- Device/sensor readings when available.
+- Crop-health information.
+- AI disease detection.
+- Alerts/activity.
+
+The dashboard is responsive.
+
+### Desktop
+
+Uses an adaptive sidebar/navigation rail.
+
+### Mobile
+
+Uses bottom navigation.
+
+### Farm-specific navigation
+
+When a user opens a particular farm, the screen provides contextual back navigation that follows actual navigation history.
+
+The dashboard remains vertically scrollable. ML image upload/prediction state changes are handled so that the dashboard does not unexpectedly jump to another scroll position.
 
 ---
 
-## 13.2 Model files
+# 8. Weather system
 
-```text
-ML model/
-├── models/
-│   ├── arecanut_model.keras
-│   └── class_names.json
-├── src/
-│   ├── train.py
-│   ├── evaluate.py
-│   └── predict.py
-```
+Weather is intentionally routed through FastAPI.
 
-The backend loads:
+~~~text
+Flutter
+   |
+   | GET /api/v1/weather
+   v
+FastAPI
+   |
+   +--> Open-Meteo Geocoding API
+   |        |
+   |        +--> place -> latitude/longitude
+   |
+   +--> Open-Meteo Forecast API
+            |
+            +--> current weather
+            +--> hourly forecast
+            +--> daily forecast
+   |
+   v
+Normalized weather response
+   |
+   v
+Flutter weather card
+~~~
 
-```text
+The Flutter app sends:
+
+- State
+- District
+- Taluk
+- Village
+- Optional location text
+
+to the weather endpoint.
+
+## Location resolution
+
+The backend attempts to find the most specific usable location.
+
+It can try:
+
+1. Farmer-entered location text.
+2. Village.
+3. Taluk.
+4. District.
+
+The returned location is scored using the requested name and administrative hierarchy.
+
+If a small village cannot be resolved reliably, the backend can fall back to a district-level coordinate rather than returning no weather data.
+
+The response also reports the resolved level and coordinates.
+
+## Weather data currently requested
+
+### Current
+
+- Temperature
+- Relative humidity
+- Precipitation
+- Rain
+- Weather code
+
+### Next 24 hours
+
+- Total precipitation
+- Maximum precipitation probability
+- ET0 / reference evapotranspiration
+
+### Three-day forecast
+
+- Maximum temperature
+- Minimum temperature
+- Precipitation
+- Precipitation probability
+- ET0
+- Weather code
+
+The backend caches weather responses for approximately 15 minutes per location.
+
+### Weather source
+
+Open-Meteo:
+
+- https://open-meteo.com/en/docs
+- https://open-meteo.com/en/docs/geocoding-api
+
+The UI identifies the source as Open-Meteo.
+
+---
+
+# 9. Irrigation recommendation engine
+
+The irrigation logic is implemented under:
+
+~~~text
+frontend/lib/core/irrigation/
+~~~
+
+The main decision engine is:
+
+~~~text
+irrigation_decision_engine.dart
+~~~
+
+It does not make a recommendation from one value alone. It combines multiple signals.
+
+## Inputs
+
+The engine can consider:
+
+- Soil moisture
+- Crop age
+- Crop growth stage
+- Temperature
+- Humidity
+- Rainfall
+- Weather context
+- Forecast precipitation for the next 24 hours
+- Forecast precipitation probability
+- Forecast ET0
+- Recent irrigation activity
+
+## Decision flow
+
+~~~text
+Farm information
+   |
+   +--> crop age
+   +--> growth stage
+
+Sensor information
+   |
+   +--> soil moisture
+
+Weather information
+   |
+   +--> temperature
+   +--> humidity
+   +--> rainfall
+   +--> forecast rain
+   +--> rain probability
+   +--> ET0
+
+Recent irrigation
+   |
+   v
+Input validation
+   |
+   v
+Individual factors contribute to score
+   |
+   v
+Score is clamped
+   |
+   v
+Recommendation threshold is evaluated
+   |
+   +--> Irrigation recommended
+   |
+   +--> Irrigation not recommended
+   |
+   v
+Reason + factors + confidence + suggested duration
+~~~
+
+The engine also returns the factors that contributed to the recommendation, making the result more explainable.
+
+### Safety validation
+
+The input model validates ranges for values such as:
+
+- Soil moisture: 0–100
+- Humidity: 0–100
+- Temperature: -50–70 °C
+- Rainfall: 0–2000 mm
+- Crop age: non-negative
+
+Invalid input blocks the irrigation recommendation.
+
+### Current irrigation boundary
+
+The application should currently be understood as **recommendation-only decision support**.
+
+The irrigation model contains enums for recommendation-only, automatic and manual modes, but that does not mean physical automatic pump control is currently implemented.
+
+---
+
+# 10. AI arecanut disease detection
+
+The trained model is located at:
+
+~~~text
 ML model/models/arecanut_model.keras
+~~~
+
+The class list is located at:
+
+~~~text
 ML model/models/class_names.json
-```
-
----
-
-# 14. ML Classes
-
-The current `class_names.json` contains the following nine classes:
-
-1. `Healthy_Leaf`
-2. `Healthy_Nut`
-3. `Healthy_Trunk`
-4. `Mahali_Koleroga`
-5. `Stem_bleeding`
-6. `bud borer`
-7. `healthy_foot`
-8. `stem cracking`
-9. `yellow leaf disease`
-
-The exact class names above should be preserved in the report because they correspond to the current model artifact.
-
----
-
-# 15. ML Training Methodology
-
-The training implementation is contained in:
-
-```text
-ML model/src/train.py
-```
-
-## 15.1 Dataset directory structure expected by training
-
-```text
-ML model/
-└── dataset/
-    ├── train/
-    │   ├── <class-name>/
-    │   └── ...
-    └── test/
-        ├── <class-name>/
-        └── ...
-```
-
-The training script uses TensorFlow's `image_dataset_from_directory` loader.
-
-The training dataset is split into:
-
-- 80% training subset,
-- 20% validation subset.
-
-The test directory is evaluated separately.
-
-A fixed random seed of **42** is used for the train/validation split.
-
----
-
-# 16. Image Preprocessing and Augmentation
-
-The model operates on:
-
-```text
-224 × 224 × 3
-```
-
-RGB images.
-
-Training uses the following augmentation operations:
-
-- Random horizontal flip.
-- Random rotation of 0.1.
-- Random zoom of 0.1.
-- Random contrast adjustment of 0.1.
-
-MobileNetV2 preprocessing is applied before feature extraction.
-
-This same preprocessing requirement is respected by the trained model used for backend inference.
-
----
-
-# 17. Transfer Learning Model
-
-The training implementation uses:
-
-**MobileNetV2 with ImageNet weights**
-
-Configuration:
-
-- input shape: `224 × 224 × 3`
-- `include_top=False`
-- ImageNet pretrained weights
-- pretrained base initially frozen
-
-The classification head contains:
-
-1. Global Average Pooling.
-2. Dropout with rate 0.3.
-3. Dense output layer with `num_classes` units.
-4. Softmax activation.
-
-Conceptually:
-
-```text
-Input Image
-    ↓
-Data Augmentation
-    ↓
-MobileNetV2 Preprocessing
-    ↓
-MobileNetV2 Feature Extractor
-    ↓
-Global Average Pooling
-    ↓
-Dropout (0.3)
-    ↓
-Dense Layer
-    ↓
-Softmax
-    ↓
-Disease / Health Class
-```
-
----
-
-# 18. Model Training Configuration
-
-The current training script uses:
-
-| Parameter | Current value |
-|---|---:|
-| Image size | 224 × 224 |
-| Batch size | 32 |
-| Random seed | 42 |
-| Optimizer | Adam |
-| Learning rate | 0.0001 |
-| Loss | Sparse categorical crossentropy |
-| Metric | Accuracy |
-| Epochs | 15 |
-| Base model | MobileNetV2 |
-| Dropout | 0.3 |
-
-The exact training dataset size and resulting measured accuracy are not hard-coded in the README because those values depend on the dataset/training run and should be taken from the generated evaluation artifacts.
-
----
-
-# 19. ML Evaluation
-
-The training script evaluates the trained model on the test dataset and generates:
-
-- test loss,
-- test accuracy,
-- classification report,
-- confusion matrix,
-- training/validation accuracy graph, and
-- training/validation loss graph.
-
-Expected output artifacts are:
-
-```text
-ML model/outputs/
-├── accuracy.png
-├── loss.png
-├── confusion_matrix.png
-└── classification_report.txt
-```
-
-### Report usage
-
-For the final academic report, the following values should be copied from the actual generated artifacts:
-
-- overall test accuracy,
-- overall test loss,
-- per-class precision,
-- per-class recall,
-- per-class F1-score,
-- support/count per class,
-- confusion matrix values,
-- training accuracy,
-- validation accuracy,
-- training loss, and
-- validation loss.
-
-Do not insert estimated values into the report.
-
----
-
-# 20. ML Inference Pipeline
-
-The production application inference path is:
-
-```text
-Farmer
-  ↓
-Flutter Image Picker
-  ↓
-Image Thumbnail Preview
-  ↓
-Predict Button
-  ↓
-Multipart HTTP Request
-  ↓
-FastAPI /api/v1/predict/image
-  ↓
-File Validation
-  ↓
-Pillow/Keras Image Decoding
-  ↓
-Resize to 224 × 224 RGB
-  ↓
-Trained Keras Model
-  ↓
-Softmax Probabilities
-  ↓
-Argmax
-  ↓
-Predicted Class + Confidence
-  ↓
-Flutter Result Card
-```
-
-The backend also returns a ranked list of class predictions.
-
-The standalone `predict.py` script is useful for command-line testing, but it does not need to be run separately when using the application.
-
----
-
-# 21. Disease Detection User Workflow
-
-The dashboard deliberately separates image selection from model execution.
-
-1. Open the dashboard.
-2. Locate **Arecanut disease detection**.
-3. Select **Upload image**.
-4. Choose a JPG, JPEG, PNG, or WEBP image.
-5. Review the thumbnail.
-6. Click **Predict**.
-7. Flutter sends the image to the FastAPI backend.
-8. The backend validates and decodes the image.
-9. The TensorFlow/Keras model performs inference.
-10. The backend returns the predicted class, confidence, and ranked predictions.
-11. Flutter displays the result.
-12. If treatment information exists for the predicted class, the configured medicine information is displayed.
-13. **Clear** removes the image and prediction.
-
-This workflow prevents an image from triggering inference immediately upon selection.
-
----
-
-# 22. Disease Detection API
-
-## Endpoint
-
-```text
+~~~
+
+## Current model classes
+
+The current class_names.json contains nine classes:
+
+1. Healthy_Leaf
+2. Healthy_Nut
+3. Healthy_Trunk
+4. Mahali_Koleroga
+5. Stem_bleeding
+6. bud borer
+7. healthy_foot
+8. stem cracking
+9. yellow leaf disease
+
+These names are taken directly from the current model class configuration.
+
+## Prediction pipeline
+
+~~~text
+Farmer selects image
+       |
+       v
+Flutter checks image
+       |
+       | maximum 10 MB
+       v
 POST /api/v1/predict/image
-```
+       |
+       v
+FastAPI validates file
+       |
+       +--> extension check
+       +--> empty file check
+       +--> 10 MB size check
+       |
+       v
+ML inference service
+       |
+       +--> load model/class names once
+       +--> read image
+       +--> convert to RGB
+       +--> resize to 224 x 224
+       +--> model.predict()
+       |
+       v
+Prediction probabilities
+       |
+       +--> predicted class
+       +--> confidence
+       +--> ranked predictions
+       |
+       v
+Flutter displays result
+~~~
 
-The image is sent as a multipart form field named:
+The ML service uses an in-process cache so the trained model is loaded once rather than from disk for every request.
 
-```text
-file
-```
+### Preprocessing
 
-### Supported formats
+The inference service resizes images to:
+
+~~~text
+224 × 224
+~~~
+
+The current code notes that MobileNetV2 preprocessing is already part of the trained model, so the backend does not apply a second external MobileNetV2 preprocessing operation.
+
+### Important limitation
+
+The model output is an AI classification result. Its confidence value is the model's prediction score; it should not be treated as a guaranteed field diagnosis.
+
+---
+
+# 11. FastAPI backend
+
+Backend location:
+
+~~~text
+backend/
+~~~
+
+Main application:
+
+~~~text
+backend/app/main.py
+~~~
+
+ML service:
+
+~~~text
+backend/app/ml_service.py
+~~~
+
+Weather service:
+
+~~~text
+backend/app/weather_service.py
+~~~
+
+## API endpoints
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| GET | /health | Backend + ML availability |
+| GET | /api/v1/weather | Farm location + weather |
+| POST | /api/v1/predict | Feature-prediction interface for supplied feature data |
+| POST | /api/v1/predict/image | Trained image disease prediction |
+
+## Health endpoint
+
+A healthy local setup can return:
+
+~~~json
+{
+  "status": "ok",
+  "ml": "ready"
+}
+~~~
+
+If the backend is running but the model cannot be loaded:
+
+~~~json
+{
+  "status": "ok",
+  "ml": "unavailable"
+}
+~~~
+
+## Image endpoint
+
+Accepted image extensions:
 
 - JPG
 - JPEG
 - PNG
 - WEBP
 
-### Maximum size
+Maximum size:
 
-```text
+~~~text
 10 MB
-```
+~~~
 
-### Example response structure
+Typical error statuses:
 
-```json
-{
-  "filename": "sample.jpg",
-  "prediction": "Healthy_Leaf",
-  "confidence": 0.95,
-  "predictions": [
-    {
-      "class_name": "Healthy_Leaf",
-      "confidence": 0.95
-    }
-  ],
-  "model": "arecanut_model.keras"
-}
-```
-
-The numerical values above are illustrative response structure only; they are not a claimed model result.
-
----
-
-# 23. Backend API Reference
-
-| Method | Endpoint | Purpose |
-|---|---|---|
-| GET | `/health` | Checks backend and ML availability |
-| GET | `/api/v1/weather` | Retrieves weather for farm location |
-| POST | `/api/v1/predict` | Compatibility endpoint for simulated sensor features |
-| POST | `/api/v1/predict/image` | Performs trained image-based disease prediction |
-
-## Health endpoint
-
-Expected successful response when the model is available:
-
-```json
-{
-  "status": "ok",
-  "ml": "ready"
-}
-```
-
-If the backend is running but the model cannot be loaded, the health response reports ML availability as `unavailable`.
-
----
-
-# 24. Backend Error Handling
-
-The image endpoint validates the request before inference.
-
-| HTTP status | Meaning |
-|---:|---|
-| 400 | Unsupported extension, empty upload, or invalid image |
+| Status | Meaning |
+|---|---|
+| 400 | Invalid/unsupported/empty image |
 | 413 | Image exceeds 10 MB |
-| 503 | ML model or class-name artifact unavailable |
-| 500 | Model inference failed |
-
-The frontend converts these backend failures into user-visible error messages.
+| 500 | ML prediction failed |
+| 503 | ML model/artifacts unavailable |
 
 ---
 
-# 25. Frontend Dashboard
+# 12. Firebase data structure
 
-The dashboard combines:
+The current repositories use these Firestore paths:
 
-- farm selection,
-- farm summary,
-- crop information,
-- device/sensor status,
-- environmental metrics,
-- weather information,
-- irrigation recommendation,
-- alerts,
-- disease detection, and
-- navigation to farm/device/profile management.
+~~~text
+users/{userId}/profile/current
 
-The disease-detection section uses:
+users/{userId}/farms/{farmId}
 
-- bounded image preview,
-- vertical Predict/Clear actions,
-- explicit loading state,
-- prediction result card, and
-- error display.
+users/{userId}/farms/{farmId}/plots/{plotId}
 
----
+users/{userId}/devices/{deviceId}
+~~~
 
-# 26. UI and Rendering Stability
+## Profile
 
-Flutter web can surface rendering assertions when widgets receive invalid or unconstrained layout configurations.
+Profile information is stored at:
 
-The current implementation includes several defensive changes:
+~~~text
+users/{userId}/profile/current
+~~~
 
-- ML image preview uses a bounded fixed-height container.
-- Image preview uses `Container` for decoration and clipping.
-- Predict/Clear controls use a vertical layout.
-- Result content uses a vertical layout.
-- Farm crop-age display is null-safe.
-- The dashboard avoids unnecessary unbounded image layouts.
+The profile contains information including:
 
-The image preview specifically uses a decorated `Container`, because Flutter's `SizedBox` does not provide a `decoration` parameter.
+- Name
+- Phone
+- Location
+- State
+- District
+- Taluk
+- Village
+- Village code
+- Language
+- Notification preference
+- Farm-related profile fields
 
-If repeated `RenderBox`, `sliver_multi_box_adaptor`, or `mouse_tracker` assertions occur after hot reload, restart the Flutter web application after pulling the latest branch.
+A local copy is also maintained for profile/onboarding migration handling.
 
----
+## Farms
 
-# 27. Data Storage
+Farm records are stored under the user's farms collection.
 
-The project uses Cloud Firestore for application data.
+The farm repository returns active farms and supports:
 
-The repository contains data/repository layers for areas such as:
+- Read
+- Stream/watch
+- Save/update
+- Deactivate
 
-- farmer information,
-- farm information,
-- devices, and
-- irrigation audit records.
+## Plots
 
-The ML model itself is stored as a repository artifact and is loaded by the backend from the project filesystem.
+Plots belong to farms.
 
----
+~~~text
+users/{userId}/farms/{farmId}/plots/{plotId}
+~~~
 
-# 28. Irrigation Audit Trail
+## Devices
 
-The dashboard can record irrigation recommendation decisions using an audit layer.
+Devices are stored under:
 
-Recorded information includes items such as:
+~~~text
+users/{userId}/devices/{deviceId}
+~~~
 
-- decision identifier,
-- decision type,
-- action,
-- status,
-- reason,
-- timestamp, and
-- decision details.
-
-The audit record is intended to provide traceability for recommendation events.
-
-If audit persistence is unavailable, the dashboard can still keep the decision visible locally.
+The device repository supports retrieving, watching and registering devices.
 
 ---
 
-# 29. Repository Structure
+# 13. Devices and sensors
 
-```text
+The Devices & Sensors screen currently provides:
+
+- Total device count.
+- Online device count.
+- Offline device count.
+- Device registration.
+- Farm assignment.
+- Device information and available readings.
+
+A new device requires:
+
+- Device ID.
+- Device name.
+- Farm assignment.
+
+The repository also validates an attached latest reading when one exists.
+
+### Important boundary
+
+Registering a device in Firestore is not the same thing as connecting physical hardware.
+
+The current application contains the application-side device/sensor architecture, but a physical IoT deployment still requires the actual hardware communication layer, telemetry transport, authentication and device-side firmware/integration.
+
+---
+
+# 14. User profile and validation
+
+The Profile screen loads existing values and records them as the current baseline.
+
+The Save Changes action is only shown when a user actually changes a tracked value.
+
+~~~text
+Profile loaded
+     |
+     v
+Compare current values with original values
+     |
+     +--> No difference -> no save action
+     |
+     +--> Difference -> Save Changes
+                         |
+                         v
+                       Save
+                         |
+                         v
+                  New values become baseline
+~~~
+
+Tracked profile changes include:
+
+- Name
+- Phone
+- District
+- Taluk
+- Village
+- Village code
+- Language
+- Notification preference
+
+Phone changes also go through the application's phone verification flow.
+
+---
+
+# 15. Responsive navigation
+
+The main navigation component is:
+
+~~~text
+frontend/lib/widgets/app_navigation_scaffold.dart
+~~~
+
+## Desktop
+
+Uses an adaptive navigation rail/sidebar.
+
+Destinations:
+
+- Home
+- Farms
+- Devices
+- Profile
+
+## Mobile
+
+Uses bottom navigation for the same main destinations.
+
+## Contextual back navigation
+
+Farm-specific pages can display a back button that uses actual navigation history instead of always sending the user to a fixed screen.
+
+This is particularly important for:
+
+~~~text
+Farm list
+   ↓
+Particular farm
+   ↓
+Back
+   ↓
+Actual previous page
+~~~
+
+---
+
+# 16. Theme system
+
+The application supports:
+
+- Light mode.
+- Dark mode.
+
+Theme state is managed through Riverpod and persisted locally.
+
+Important files:
+
+~~~text
+frontend/lib/app/theme/app_theme.dart
+frontend/lib/app/theme/theme_mode_controller.dart
+~~~
+
+The visual design uses a nature/agriculture-inspired palette with:
+
+- Green primary colors.
+- Sage tones.
+- Earth/amber accents.
+- Soft application surfaces.
+- Material 3 components.
+- Consistent cards, fields and buttons.
+
+---
+
+# 17. Karnataka location master
+
+The frontend contains:
+
+~~~text
+frontend/assets/Karnataka_Location_Master.json
+~~~
+
+The location service loads this data at application startup.
+
+It supports structured selection:
+
+~~~text
+State
+  ↓
+District
+  ↓
+Taluk
+  ↓
+Village
+  ↓
+Village code
+~~~
+
+This is used to reduce free-text location errors when creating farms or editing the profile.
+
+The weather service still performs its own external geocoding because the local location master is primarily application selection data, not a weather-coordinate database.
+
+---
+
+# 18. Project structure
+
+Important project structure:
+
+~~~text
 major-project/
+│
+├── frontend/
+│   ├── lib/
+│   │   ├── app/
+│   │   │   ├── router.dart
+│   │   │   └── theme/
+│   │   │
+│   │   ├── core/
+│   │   │   ├── irrigation/
+│   │   │   ├── services/
+│   │   │   ├── storage/
+│   │   │   ├── validators/
+│   │   │   └── utils/
+│   │   │
+│   │   ├── features/
+│   │   │   ├── auth/
+│   │   │   ├── dashboard/
+│   │   │   ├── devices/
+│   │   │   ├── farm/
+│   │   │   ├── onboarding/
+│   │   │   └── profile/
+│   │   │
+│   │   ├── models/
+│   │   ├── repositories/
+│   │   ├── services/
+│   │   └── widgets/
+│   │
+│   ├── assets/
+│   │   └── Karnataka_Location_Master.json
+│   │
+│   ├── pubspec.yaml
+│   └── firebase_options.dart
 │
 ├── backend/
 │   ├── app/
 │   │   ├── main.py
 │   │   ├── ml_service.py
 │   │   └── weather_service.py
-│   ├── ml/
+│   │
 │   └── requirements.txt
 │
-├── frontend/
-│   ├── lib/
-│   │   ├── core/
-│   │   ├── features/
-│   │   ├── models/
-│   │   ├── repositories/
-│   │   ├── services/
-│   │   └── widgets/
-│   ├── assets/
-│   │   └── Karnataka_Location_Master.json
-│   └── pubspec.yaml
-│
 ├── ML model/
-│   ├── dataset/
-│   ├── models/
-│   │   ├── arecanut_model.keras
-│   │   └── class_names.json
-│   ├── outputs/
-│   └── src/
-│       ├── train.py
-│       ├── evaluate.py
-│       └── predict.py
+│   └── models/
+│       ├── arecanut_model.keras
+│       └── class_names.json
 │
 └── README.md
-```
+~~~
+
+There are additional supporting files; the structure above highlights the parts needed to understand the application architecture.
 
 ---
 
-# 30. Local Development Setup
+# 19. Important Flutter dependencies
 
-## 30.1 Development branch
+The current frontend uses packages including:
 
-Current development branch:
+- flutter_riverpod
+- go_router
+- shared_preferences
+- google_fonts
+- intl
+- firebase_core
+- firebase_auth
+- cloud_firestore
+- permission_handler
+- pinput
+- crypto
+- http
+- file_picker
 
-```powershell
-git checkout feature/ml-disease-detection-ui
-git pull origin feature/ml-disease-detection-ui
-```
+The authoritative dependency list is:
 
-Feature work is kept off `main`.
+~~~text
+frontend/pubspec.yaml
+~~~
 
 ---
 
-## 30.2 Backend
+# 20. Backend dependencies
+
+The backend requirements currently include:
+
+~~~text
+fastapi
+uvicorn
+python-multipart
+numpy
+tensorflow
+pillow
+~~~
+
+The authoritative dependency list is:
+
+~~~text
+backend/requirements.txt
+~~~
+
+The ML model is served through the backend, so a separate ML server is not required for the current architecture.
+
+---
+
+# 21. Local development setup
+
+## Prerequisites
+
+Install:
+
+- Flutter SDK.
+- Dart SDK compatible with the Flutter version.
+- Python 3.x.
+- Git.
+- A Firebase project/configuration.
+- Chrome for Flutter web development, or an Android emulator/device for Android.
+
+Check Flutter:
+
+~~~powershell
+flutter --version
+~~~
+
+Check Python:
+
+~~~powershell
+python --version
+~~~
+
+---
+
+## Clone the project
+
+~~~powershell
+git clone https://github.com/Sathvika441/major-project.git
+cd major-project
+git checkout integration/frontend-backend-ml
+~~~
+
+---
+
+# 22. Frontend setup
+
+~~~powershell
+cd frontend
+flutter pub get
+~~~
+
+The application initializes Firebase during startup through:
+
+~~~text
+frontend/lib/firebase_options.dart
+~~~
+
+A new Firebase environment must have the appropriate Firebase project/platform configuration.
+
+Do not commit private service-account credentials or other secret keys.
+
+---
+
+# 23. Backend setup
 
 From the repository root:
 
-```powershell
-cd backend
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
+~~~powershell
+python -m venv .venv
+~~~
 
-The backend normally runs at:
+Activate the environment:
 
-```text
+~~~powershell
+.venv\Scripts\Activate.ps1
+~~~
+
+Install dependencies:
+
+~~~powershell
+pip install -r backend/requirements.txt
+~~~
+
+Start FastAPI:
+
+~~~powershell
+python -m uvicorn backend.app.main:app --reload
+~~~
+
+Default local backend:
+
+~~~text
 http://127.0.0.1:8000
-```
+~~~
 
-Health check:
+Interactive FastAPI documentation:
 
-```text
-http://127.0.0.1:8000/health
-```
+~~~text
+http://127.0.0.1:8000/docs
+~~~
 
 ---
 
-## 30.3 Flutter
+# 24. Run the Flutter application
 
-Open a second terminal:
+From frontend:
 
-```powershell
+~~~powershell
 cd frontend
-flutter pub get
 flutter run -d chrome
-```
+~~~
 
-The local Flutter web application communicates with:
+For Android:
 
-```text
+~~~powershell
+flutter devices
+flutter run
+~~~
+
+The backend URL is configurable through BACKEND_BASE_URL.
+
+Current defaults:
+
+~~~text
+Flutter Web:
 http://127.0.0.1:8000
-```
+
+Android emulator:
+http://10.0.2.2:8000
+~~~
+
+Example:
+
+~~~powershell
+flutter run -d chrome --dart-define=BACKEND_BASE_URL=http://YOUR_HOST:8000
+~~~
 
 ---
 
-# 31. Normal Runtime
+# 25. Verify the backend
 
-Only two application processes are normally required:
+With FastAPI running, open:
 
-```text
-Terminal 1
-    FastAPI
-       ↓
-    TensorFlow/Keras model
-
-Terminal 2
-    Flutter web application
-```
-
-The ML model does **not** need to be started as a third process.
-
----
-
-# 32. Optional Standalone ML Prediction
-
-For command-line model testing, run the script from the ML model directory:
-
-```powershell
-cd "ML model"
-python src\predict.py "C:\path\to\image.jpg"
-```
-
-This is important because the standalone script uses model paths relative to the `ML model` directory.
-
-Normal application usage does not require this command.
-
----
-
-# 33. Testing and Validation
-
-The current implementation includes validation at multiple layers.
-
-## Frontend validation
-
-- File selection cancellation handling.
-- Empty image data handling.
-- Supported extension selection.
-- 10 MB frontend size limit.
-- Loading state during prediction.
-- Clear/reset workflow.
-- User-visible backend errors.
-
-## Backend validation
-
-- File extension validation.
-- Empty upload validation.
-- 10 MB request-size validation.
-- Image decoding validation.
-- Model artifact validation.
-- Class-name/model output compatibility validation.
-- ML inference exception handling.
-
-## Model validation
-
-The training implementation provides:
-
-- test-set evaluation,
-- classification report,
-- confusion matrix,
-- training/validation accuracy curves,
-- training/validation loss curves.
-
----
-
-# 34. Non-Functional Requirements
-
-## Performance
-
-- ML model artifacts are cached after loading in the backend.
-- Weather responses are cached for approximately 15 minutes.
-- Image uploads are size-limited.
-- Flutter image previews use bounded dimensions.
-
-## Reliability
-
-- Backend validates model artifacts before declaring ML as ready.
-- Invalid images are rejected before inference.
-- API errors are converted into readable frontend messages.
-- Weather failures are surfaced without crashing the dashboard.
-
-## Maintainability
-
-The project separates:
-
-- UI,
-- models,
-- repositories,
-- services,
-- irrigation logic,
-- backend APIs,
-- weather service, and
-- ML inference.
-
-## Usability
-
-The disease detection workflow explicitly separates:
-
-```text
-Upload → Preview → Predict → Result
-```
-
-rather than automatically running inference immediately after upload.
-
----
-
-# 35. Security and Safety Considerations
-
-- Authentication is delegated to Firebase Authentication.
-- Firestore is used for application data.
-- Uploaded images are validated before processing.
-- File types are restricted.
-- Upload size is restricted to 10 MB.
-- The ML model runs on the backend rather than exposing model execution directly in the browser.
-- Treatment information is presented as application-provided information and should not be treated as professional agricultural advice.
-
-For production deployment, additional controls such as authenticated backend requests, stricter CORS configuration, rate limiting, secure secrets management, HTTPS, monitoring, and stronger Firestore security rules should be implemented and documented.
-
----
-
-# 36. Current Limitations
-
-1. Sensor readings are simulated rather than collected from physical IoT devices.
-2. The irrigation system provides recommendations and does not control a physical pump.
-3. Disease classification is limited to the nine classes represented in the current model.
-4. Prediction quality depends on the training dataset and the similarity between uploaded images and training data.
-5. Weather resolution depends on the availability and accuracy of the external geocoding service.
-6. Small village locations may fall back to district-level weather coordinates when an exact geocoder match is unavailable.
-7. Treatment information is only configured for selected predictions.
-8. The repository currently documents the model training configuration but does not by itself establish a universally applicable field-level disease diagnosis.
-9. The current project is primarily demonstrated through Flutter web and local FastAPI execution.
-
----
-
-# 37. Future Enhancements
-
-Potential future work includes:
-
-- Integration with physical soil-moisture, temperature, humidity, and rainfall sensors.
-- ESP32/Arduino/IoT gateway integration.
-- Real-time device telemetry.
-- Real pump/valve integration with safety controls.
-- Mobile Android/iOS deployment.
-- Push notifications for important farm events.
-- Historical sensor charts and trend analysis.
-- More arecanut disease classes.
-- Larger and more diverse image datasets.
-- Model fine-tuning and systematic hyperparameter optimization.
-- Model versioning and automated evaluation.
-- Confidence thresholds and human-review workflows.
-- Improved disease treatment knowledge base.
-- Secure production backend deployment.
-- Role-based access control.
-- Automated testing and CI/CD.
-- More detailed irrigation optimization using historical observations.
-- Offline support for selected farm information.
-
----
-
-# 38. Suggested Academic Report Structure
-
-The project implementation maps naturally to the following report chapters.
-
-## Chapter 1 — Introduction
-
-Include:
-
-- agricultural context,
-- arecanut cultivation context,
-- problem statement,
-- motivation,
-- aim,
-- objectives,
-- scope,
-- significance of the project.
-
-## Chapter 2 — Literature / Existing System
-
-Discuss:
-
-- conventional farm monitoring,
-- manual disease identification,
-- irrigation decision support,
-- IoT-based agriculture,
-- machine-learning-based crop disease detection,
-- limitations of existing approaches.
-
-This chapter requires external academic sources and should not be fabricated from this README.
-
-## Chapter 3 — Proposed System
-
-Use this README's:
-
-- architecture,
-- objectives,
-- functional modules,
-- workflow,
-- system components,
-- data flow,
-- API design.
-
-## Chapter 4 — Requirements and Design
-
-Document:
-
-- functional requirements,
-- non-functional requirements,
-- software requirements,
-- hardware requirements,
-- system architecture,
-- database/storage design,
-- module design,
-- API design,
-- UI design.
-
-## Chapter 5 — Machine Learning Methodology
-
-Document:
-
-- dataset source,
-- dataset size,
-- class distribution,
-- preprocessing,
-- augmentation,
-- train/validation/test split,
-- MobileNetV2 transfer learning,
-- model architecture,
-- optimizer,
-- learning rate,
-- loss function,
-- epochs,
-- batch size,
-- evaluation metrics.
-
-Only use measured dataset and evaluation values from the actual training artifacts.
-
-## Chapter 6 — Implementation
-
-Document:
-
-- Flutter implementation,
-- Firebase integration,
-- Firestore repositories,
-- FastAPI backend,
-- weather integration,
-- irrigation engine,
-- ML inference service,
-- disease upload UI,
-- error handling.
-
-## Chapter 7 — Results and Testing
-
-Include actual:
-
-- screenshots,
-- API test results,
-- model accuracy,
-- precision,
-- recall,
-- F1-score,
-- confusion matrix,
-- training/validation graphs,
-- application test cases,
-- error-handling test cases.
-
-## Chapter 8 — Conclusion and Future Scope
-
-Summarize:
-
-- implemented features,
-- practical usefulness,
-- current limitations,
-- future IoT integration,
-- future model improvements,
-- production deployment possibilities.
-
----
-
-# 39. Recommended Report Figures
-
-The following figures can be generated or captured from the project for the academic report:
-
-1. System architecture diagram.
-2. Overall application workflow.
-3. Authentication flow.
-4. Farm registration/management flow.
-5. Sensor-to-dashboard flow.
-6. Weather data flow.
-7. Irrigation decision flow.
-8. ML training pipeline.
-9. ML inference pipeline.
-10. Disease detection UI — image upload.
-11. Disease detection UI — prediction result.
-12. Dashboard screenshot.
-13. Farm management screenshot.
-14. Weather/irrigation dashboard screenshot.
-15. Training accuracy graph.
-16. Training loss graph.
-17. Confusion matrix.
-18. Classification report table.
-19. API request/response examples.
-20. Repository/module architecture.
-
----
-
-# 40. Important Report Data That Must Be Taken From Actual Project Artifacts
-
-Before submitting the final report, verify and insert the actual values for:
-
-- dataset name/source,
-- total number of images,
-- number of images per class,
-- train/validation/test image counts,
-- training hardware,
-- training time,
-- final training accuracy,
-- final validation accuracy,
-- test accuracy,
-- test loss,
-- precision per class,
-- recall per class,
-- F1-score per class,
-- confusion matrix,
-- model file size,
-- average inference time, if measured.
-
-These values should come from actual experiment logs, generated output files, or measured tests. They should not be guessed.
-
----
-
-# 41. Current Disease Treatment Information
-
-The frontend currently has configured treatment information for selected predictions.
-
-For `Stem_bleeding`, the current application text is:
-
-```text
-Apply Tridemorph (0.1%) or Copper Oxychloride (5 g/L).
-```
-
-This is application-provided information and is not a substitute for professional agricultural diagnosis or treatment guidance.
-
-For a formal report, treatment recommendations should be supported by appropriate agricultural references before being presented as authoritative recommendations.
-
----
-
-# 42. Development Notes
-
-- The trained ML model is part of the repository.
-- The backend loads the model lazily and caches the loaded artifacts.
-- Backend inference validates that the number of model output classes matches `class_names.json`.
-- Images are converted to RGB and resized to 224 × 224 before inference.
-- The application returns ranked prediction probabilities in addition to the top prediction.
-- The frontend uses `file_picker` for image selection.
-- The weather service uses Open-Meteo.
-- Sensor data is simulated.
-- Irrigation is recommendation-only in the current dashboard workflow.
-- README documentation should be updated alongside significant implementation changes.
-
----
-
-# 43. Quick Start
-
-### Terminal 1 — Backend
-
-```powershell
-cd backend
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
-
-### Terminal 2 — Frontend
-
-```powershell
-cd frontend
-flutter clean
-flutter pub get
-flutter run -d chrome
-```
-
-### Health check
-
-Open:
-
-```text
+~~~text
 http://127.0.0.1:8000/health
-```
+~~~
 
-Expected when the ML artifacts load:
+Then open:
 
-```json
+~~~text
+http://127.0.0.1:8000/docs
+~~~
+
+The health endpoint is the quickest way to check whether the ML artifacts are available.
+
+Expected local healthy result:
+
+~~~json
 {
   "status": "ok",
   "ml": "ready"
 }
-```
+~~~
 
 ---
 
-# 44. Project Status
+# 26. ML model requirements
 
-The current branch contains the integrated:
+The backend expects exactly:
 
-- Flutter application,
-- Firebase authentication/data layer,
-- farm management,
-- simulated sensor workflow,
-- weather service,
-- irrigation recommendation logic,
-- FastAPI backend,
-- trained arecanut disease model,
-- image upload and prediction workflow,
-- ML result display,
-- backend validation/error handling, and
-- report-oriented project documentation.
+~~~text
+ML model/
+└── models/
+    ├── arecanut_model.keras
+    └── class_names.json
+~~~
 
-**Current development branch:**
+When the backend loads the ML artifacts it verifies:
 
-```text
-feature/ml-disease-detection-ui
-```
+1. The model file exists.
+2. class_names.json exists.
+3. The class list is valid and non-empty.
+4. The model output class count equals the class-name count.
 
-`main` is not used for ongoing feature development.
+If these checks fail, ML status becomes unavailable.
 
 ---
 
-## License / Academic Use
+# 27. What is implemented vs what is not
 
-Add the project's actual license, college/university requirements, dataset license, and model/dataset attribution here before final submission if applicable.
+This distinction is important for anyone continuing the project.
+
+## Implemented
+
+- Flutter application structure.
+- Responsive UI.
+- Authentication flow.
+- Firebase Authentication integration.
+- Firestore profile storage.
+- Firestore farm storage.
+- Firestore plot storage.
+- Firestore device storage.
+- Farm CRUD/business logic.
+- Profile editing and dirty-state validation.
+- Light/dark theme.
+- Adaptive navigation.
+- Farm-specific back navigation.
+- FastAPI backend.
+- Backend health check.
+- Open-Meteo location resolution.
+- Open-Meteo current weather.
+- Open-Meteo forecast.
+- Weather caching.
+- TensorFlow/Keras disease inference.
+- Nine-class arecanut disease classification.
+- Image upload validation.
+- Irrigation decision engine.
+- Irrigation recommendation/audit models.
+
+## Do not assume these are already fully implemented
+
+- Physical IoT sensor communication.
+- Live hardware telemetry simply because a device exists in Firestore.
+- Automatic pump switching from the dashboard.
+- Production-grade disease diagnosis.
+- Production ML monitoring/retraining.
+- Production deployment infrastructure.
+- Complete offline-first operation.
+- Automated hardware safety interlocks.
+
+---
+
+# 28. Current limitations
+
+### Weather precision
+
+Weather coordinates come from external geocoding. A very small village may not be available in the geocoder, so the backend can fall back to a district-level location.
+
+### Sensor integration
+
+The application has device/sensor models and monitoring UI, but a Firestore device record does not establish a physical sensor connection.
+
+### Disease classification
+
+The ML model only knows the nine configured classes. An image outside the training distribution can still receive a prediction, so the confidence value must be interpreted cautiously.
+
+### Backend deployment
+
+The current frontend defaults to local backend URLs. A deployed application needs a deployed FastAPI URL configured through BACKEND_BASE_URL.
+
+### Production security
+
+Production use requires appropriate Firebase security rules, deployment secrets, authentication configuration, API security and infrastructure hardening.
+
+---
+
+# 29. Troubleshooting
+
+## FastAPI does not start
+
+Run:
+
+~~~powershell
+python --version
+pip install -r backend/requirements.txt
+python -m uvicorn backend.app.main:app --reload
+~~~
+
+If TensorFlow fails to install/load, check the Python/TensorFlow compatibility of the environment being used.
+
+## Flutter cannot connect to backend
+
+1. Confirm FastAPI is running.
+2. Confirm the correct backend URL.
+3. For Chrome use 127.0.0.1:8000 when running locally.
+4. For an Android emulator use 10.0.2.2:8000.
+5. If using another machine, configure BACKEND_BASE_URL.
+
+## ML says unavailable
+
+Check:
+
+~~~text
+ML model/models/arecanut_model.keras
+ML model/models/class_names.json
+~~~
+
+Then check:
+
+~~~text
+http://127.0.0.1:8000/health
+~~~
+
+## Image prediction fails
+
+Check:
+
+- JPG/JPEG/PNG/WEBP format.
+- File is below 10 MB.
+- Image is valid/openable.
+- FastAPI is running.
+- Model file exists.
+- class_names.json exists.
+- Model output count matches class_names.json.
+
+---
+
+# 30. Future development
+
+Potential next development areas include:
+
+- Real IoT sensor integration.
+- Live sensor synchronization.
+- Physical irrigation controller integration.
+- Better field/land mapping.
+- Historical farm analytics.
+- Historical weather analysis.
+- Crop-health trends.
+- Farmer notifications.
+- Improved disease-model evaluation.
+- Model retraining/versioning.
+- Production backend deployment.
+- Automated testing and CI/CD.
+- Offline/poor-network support.
+
+These are future directions, not claims about functionality already present on this branch.
+
+---
+
+# 31. Developer workflow
+
+When adding a feature:
+
+~~~text
+Understand user flow
+        ↓
+Identify Flutter screen/state
+        ↓
+Identify model/repository/service
+        ↓
+Decide Firebase vs FastAPI responsibility
+        ↓
+Add validation and error handling
+        ↓
+Implement UI/state changes
+        ↓
+Test locally
+        ↓
+Update README if behavior/architecture changes
+        ↓
+Commit with a meaningful message
+~~~
+
+For backend/ML changes, update this README whenever any of the following changes:
+
+- API endpoint.
+- Request/response format.
+- ML model.
+- Class names.
+- Preprocessing.
+- Environment variables.
+- Firebase data structure.
+- External API.
+- Major user workflow.
+- Known limitations.
+
+---
+
+# 32. Important files for new developers
+
+### Application entry point
+
+~~~text
+frontend/lib/main.dart
+~~~
+
+### Routing
+
+~~~text
+frontend/lib/app/router.dart
+~~~
+
+### Main navigation
+
+~~~text
+frontend/lib/widgets/app_navigation_scaffold.dart
+~~~
+
+### Dashboard
+
+~~~text
+frontend/lib/features/dashboard/screens/dashboard_screen.dart
+~~~
+
+### Farm management
+
+~~~text
+frontend/lib/features/farm/screens/farm_management_screen.dart
+frontend/lib/features/farm/screens/farm_details_screen.dart
+~~~
+
+### Devices
+
+~~~text
+frontend/lib/features/devices/screens/device_management_screen.dart
+~~~
+
+### Profile
+
+~~~text
+frontend/lib/features/profile/screens/profile_edit_screen.dart
+~~~
+
+### Backend
+
+~~~text
+backend/app/main.py
+backend/app/weather_service.py
+backend/app/ml_service.py
+~~~
+
+### Irrigation
+
+~~~text
+frontend/lib/core/irrigation/
+~~~
+
+### ML model
+
+~~~text
+ML model/models/arecanut_model.keras
+ML model/models/class_names.json
+~~~
+
+### Location data
+
+~~~text
+frontend/assets/Karnataka_Location_Master.json
+~~~
+
+---
+
+# 33. One-minute understanding of the project
+
+If you are completely new to this repository, remember these five things:
+
+**1. Flutter is the main application.**
+
+It is where the farmer logs in, manages farms, views the dashboard, checks devices, edits the profile and uploads disease images.
+
+**2. Firebase stores the application's user-side cloud data.**
+
+Authentication is handled by Firebase Authentication. Firestore stores profiles, farms, plots and devices.
+
+**3. FastAPI is the backend service.**
+
+Flutter calls it for weather and ML inference.
+
+**4. Open-Meteo provides weather.**
+
+The backend first resolves the farmer's location to coordinates and then requests current/forecast weather.
+
+**5. TensorFlow provides disease prediction.**
+
+Flutter uploads an image to FastAPI. FastAPI validates it, loads the trained arecanut model, resizes the image to 224 × 224, runs inference and returns the predicted class and confidence.
+
+So the core data flow is:
+
+~~~text
+Farmer
+  ↓
+Flutter
+  ├── Firebase → profile / farms / plots / devices
+  │
+  └── FastAPI
+        ├── Open-Meteo → weather
+        └── TensorFlow → disease prediction
+  ↓
+Farmer sees information and recommendations
+~~~
+
+That is the current architecture of ArecaSmart on the integration/frontend-backend-ml branch.
+
+
+---
+
+# Guest Weather & Public Home Extension
+
+The current branch also supports a public, no-login Home and Weather experience.
+
+## Guest behaviour
+
+```
+App launch
+  ↓
+Public Home
+  ↓
+Foreground device location
+  ↓
+FastAPI /api/v1/weather?lat=...&lon=...
+  ↓
+Open-Meteo forecast
+```
+
+If device location is unavailable:
+
+1. Last locally saved GPS location is tried.
+2. Last manually selected Karnataka place is tried.
+3. Shivamogga district is used as the configured default.
+4. The user can choose State → District → Taluk → Village from Karnataka_Location_Master.json.
+
+Only foreground location is requested; no background location permission is used.
+
+## Authenticated farm weather
+
+When a farmer opens a farm workspace, weather is requested from the farm's saved State/District/Taluk/Village/Location through the existing FarmRepository + BackendApi flow. The phone's guest GPS is not used as the farm's authoritative weather context.
+
+## Weather API extension
+
+GET /api/v1/weather now accepts either:
+
+- Existing place fields: state, district, taluk, village, location
+- Or coordinates: lat, lon
+
+The backend requests current weather, 24 hourly records, seven daily records, ET₀ and named field-guidance inputs from Open-Meteo. Weather responses are cached in-process for about 15 minutes and coordinate cache keys are rounded to two decimal places.
+
+Open-Meteo's public geocoding API is a forward location search API (place name → coordinates), not a reverse-geocoding API. For raw GPS requests ArecaSmart therefore keeps the coordinate context rather than inventing a district/locality result.
+
+## Guidance heuristics
+
+The backend calculates four field-operation guidance values:
+
+- Spraying
+- Drying produce
+- Harvest and transport
+- Irrigation
+
+Thresholds are named constants in backend/app/weather_service.py and covered by backend/tests/test_weather_guidance.py. They are application heuristics for decision support, not agronomic guarantees.
+
+## Public ML
+
+POST /api/v1/predict/image remains unauthenticated. It keeps the 10 MB limit and JPG/JPEG/PNG/WEBP validation and now has a lightweight in-process per-IP limiter (12 requests per 60 seconds). A 429 response is returned when the limit is exceeded.
+
+## Frontend weather files
+
+- frontend/lib/features/home/screens/home_screen.dart
+- frontend/lib/features/weather/screens/weather_screen.dart
+- frontend/lib/features/weather/widgets/manual_location_picker.dart
+- frontend/lib/core/services/device_location_service.dart
+- frontend/lib/services/backend/weather_cache_service.dart
+- frontend/lib/models/weather/weather_model.dart
+
+## Run
+
+Frontend:
+
+```
+cd frontend
+flutter pub get
+flutter run -d chrome --dart-define=BACKEND_BASE_URL=http://127.0.0.1:8000
+```
+
+Android emulator:
+
+```
+cd frontend
+flutter run --dart-define=BACKEND_BASE_URL=http://10.0.2.2:8000
+```
+
+Backend:
+
+```
+python -m uvicorn backend.app.main:app --reload
+```
+
+Guidance tests:
+
+```
+python -m unittest backend.tests.test_weather_guidance
+```

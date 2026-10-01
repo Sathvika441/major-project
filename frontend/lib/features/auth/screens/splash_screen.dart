@@ -65,13 +65,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
     switch (authState.status) {
       case AuthStatus.authenticated:
         final completed = storage.hasCompletedOnboarding();
-        context.go(completed ? '/dashboard' : '/onboarding');
+        context.go(completed ? '/' : '/onboarding');
         break;
       case AuthStatus.unauthenticated:
       case AuthStatus.error:
       case AuthStatus.emailVerificationPending:
       default:
-        context.go('/login');
+        context.go('/');
         break;
     }
   }

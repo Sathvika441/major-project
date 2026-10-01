@@ -68,6 +68,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final authState = ref.watch(authControllerProvider);
     final themeMode = ref.watch(themeModeProvider);
     final scheme = Theme.of(context).colorScheme;
+    final prompt = GoRouterState.of(context).uri.queryParameters['prompt'];
 
     return Scaffold(
       body: SafeArea(
@@ -91,6 +92,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       rememberMe: _rememberMe,
                       authState: authState,
                       themeMode: themeMode,
+                      prompt: prompt,
                       onRememberChanged: (value) =>
                           setState(() => _rememberMe = value),
                       onLogin: _submitLogin,
@@ -115,6 +117,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   rememberMe: _rememberMe,
                   authState: authState,
                   themeMode: themeMode,
+                  prompt: prompt,
                   compact: true,
                   onRememberChanged: (value) =>
                       setState(() => _rememberMe = value),
@@ -323,6 +326,7 @@ class _LoginForm extends StatelessWidget {
   final AuthState authState;
   final ThemeMode themeMode;
   final bool compact;
+  final String? prompt;
   final ValueChanged<bool> onRememberChanged;
   final VoidCallback onLogin;
   final VoidCallback onGoogleLogin;
@@ -338,6 +342,7 @@ class _LoginForm extends StatelessWidget {
     required this.authState,
     required this.themeMode,
     this.compact = false,
+    this.prompt,
     required this.onRememberChanged,
     required this.onLogin,
     required this.onGoogleLogin,

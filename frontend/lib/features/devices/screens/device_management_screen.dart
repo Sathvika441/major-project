@@ -23,7 +23,7 @@ class DeviceManagementScreen extends ConsumerWidget {
     return AppNavigationScaffold(
       title: 'Devices & sensors',
       subtitle: 'Monitor connectivity and available field readings',
-      selectedIndex: 2,
+      selectedIndex: 3,
       actions: [
         IconButton(
           tooltip: 'Refresh devices',

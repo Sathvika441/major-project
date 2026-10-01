@@ -15,6 +15,7 @@ class LocalStorageKeys {
   static const String hasCompletedPhaseB = 'has_completed_phase_b';
   static const String phaseBMigrated = 'phase_b_migrated';
   static const String onboardingRequired = 'onboarding_required';
+  static const String guestLocation = 'guest_location';
 }
 
 /// Service wrapping persistent local storage via SharedPreferences.

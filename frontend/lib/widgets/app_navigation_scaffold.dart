@@ -12,6 +12,8 @@ class AppNavigationScaffold extends ConsumerWidget {
   final List<Widget>? actions;
   final Widget? floatingActionButton;
   final String? subtitle;
+  final bool showBackButton;
+  final bool showGuestActions;
 
   const AppNavigationScaffold({
     super.key,
@@ -21,10 +23,13 @@ class AppNavigationScaffold extends ConsumerWidget {
     this.actions,
     this.floatingActionButton,
     this.subtitle,
+    this.showBackButton = false,
+    this.showGuestActions = true,
   });
 
   static const _destinations = [
-    _NavDestination(Icons.dashboard_outlined, Icons.dashboard_rounded, 'Home', '/dashboard'),
+    _NavDestination(Icons.dashboard_outlined, Icons.dashboard_rounded, 'Home', '/'),
+    _NavDestination(Icons.cloud_outlined, Icons.cloud_rounded, 'Weather', '/weather'),
     _NavDestination(Icons.agriculture_outlined, Icons.agriculture_rounded, 'Farms', '/farms'),
     _NavDestination(Icons.sensors_outlined, Icons.sensors_rounded, 'Devices', '/devices'),
     _NavDestination(Icons.person_outline_rounded, Icons.person_rounded, 'Profile', '/profile'),
@@ -58,6 +63,7 @@ class AppNavigationScaffold extends ConsumerWidget {
                         title: title,
                         subtitle: subtitle,
                         actions: actions,
+                        showBackButton: showBackButton,
                         onThemeToggle: () => ref.read(themeModeProvider.notifier).toggle(),
                         isDark: themeMode == ThemeMode.dark,
                       ),
@@ -73,6 +79,19 @@ class AppNavigationScaffold extends ConsumerWidget {
 
         return Scaffold(
           appBar: AppBar(
+            leading: showBackButton
+                ? IconButton(
+                    tooltip: 'Back',
+                    onPressed: () {
+                      if (Navigator.of(context).canPop()) {
+                        Navigator.of(context).pop();
+                      } else if (context.canPop()) {
+                        context.pop();
+                      }
+                    },
+                    icon: const Icon(Icons.arrow_back_rounded),
+                  )
+                : null,
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -249,8 +268,7 @@ class AppNavigationScaffold extends ConsumerWidget {
                 child: ListTile(
                   leading: const Icon(Icons.logout_rounded),
                   title: const Text('Sign out'),
-                  onTap: () =>
-                      ref.read(authControllerProvider.notifier).logout(),
+                  onTap: user == null ? null : () => ref.read(authControllerProvider.notifier).logout(),
                 ),
               ),
               const SizedBox(height: 8),
@@ -275,6 +293,7 @@ class _DesktopHeader extends StatelessWidget {
   final List<Widget>? actions;
   final VoidCallback onThemeToggle;
   final bool isDark;
+  final bool showBackButton;
 
   const _DesktopHeader({
     required this.title,
@@ -282,6 +301,7 @@ class _DesktopHeader extends StatelessWidget {
     required this.actions,
     required this.onThemeToggle,
     required this.isDark,
+    required this.showBackButton,
   });
 
   @override
@@ -298,6 +318,21 @@ class _DesktopHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
+          if (showBackButton)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: IconButton(
+                tooltip: 'Back',
+                onPressed: () {
+                  if (Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  } else if (context.canPop()) {
+                    context.pop();
+                  }
+                },
+                icon: const Icon(Icons.arrow_back_rounded),
+              ),
+            ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
