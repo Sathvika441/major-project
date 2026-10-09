@@ -138,13 +138,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 _action(
                   context,
-                  Icons.cloud_outlined,
+                  Icons.wb_cloudy_rounded,
                   'Weather',
                   () => context.push('/weather'),
                 ),
                 _action(
                   context,
-                  Icons.document_scanner_outlined,
+                  Icons.biotech_rounded,
                   'Detect disease',
                   () => showDialog<void>(
                     context: context,
@@ -153,15 +153,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 _action(
                   context,
-                  Icons.agriculture_outlined,
+                  Icons.agriculture_rounded,
                   'My farms',
                   () => context.push('/farms'),
                 ),
                 _action(
                   context,
                   user == null
-                      ? Icons.login_outlined
-                      : Icons.person_outline_rounded,
+                      ? Icons.login_rounded
+                      : Icons.account_circle_rounded,
                   user == null ? 'Sign in' : 'Profile',
                   () => context.push(user == null ? '/login' : '/profile'),
                 ),
@@ -268,7 +268,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     Text(
                       weather == null
                           ? 'Getting local weather…'
-                          : '${weather.district?.isNotEmpty == true ? weather.district : weather.locationName} • today',
+                          : '${weather.locality?.isNotEmpty == true ? weather.locality : (weather.district?.isNotEmpty == true ? weather.district : weather.locationName)} • today',
                       style: TextStyle(
                         color: scheme.onPrimary.withValues(alpha: 0.8),
                         fontSize: 12,
@@ -342,13 +342,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     String label,
     VoidCallback onTap,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final actionTextColor = isDark ? Colors.white : Colors.black;
     return SizedBox(
       width: 150,
       child: OutlinedButton.icon(
         onPressed: onTap,
-        icon: Icon(icon),
-        label: Text(label),
+        icon: Icon(icon, color: actionTextColor),
+        label: Text(label, style: TextStyle(color: actionTextColor)),
         style: OutlinedButton.styleFrom(
+          foregroundColor: actionTextColor,
+          side: BorderSide(color: actionTextColor.withValues(alpha: 0.28)),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
