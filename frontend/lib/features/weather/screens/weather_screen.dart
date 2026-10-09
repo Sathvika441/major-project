@@ -490,36 +490,32 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
   }
 
   Widget _daily(BuildContext context, WeatherData weather) {
+    final scheme = Theme.of(context).colorScheme;
     return Card(
+      clipBehavior: Clip.antiAlias,
       child: Column(
-        children: weather.forecast.map((day) {
+        children: weather.forecast.asMap().entries.map((entry) {
+          final index = entry.key;
+          final day = entry.value;
           final date = DateTime.tryParse(day.date);
           final weekday = date == null
               ? day.date
-              : const [
-                  'Mon',
-                  'Tue',
-                  'Wed',
-                  'Thu',
-                  'Fri',
-                  'Sat',
-                  'Sun',
-                ][date.weekday - 1];
-          return ListTile(
-            title: Text(
-              weekday,
-              style: const TextStyle(fontWeight: FontWeight.w700),
+              : const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][date.weekday - 1];
+          final isToday = date != null && DateUtils.isSameDay(date, DateTime.now());
+          return Container(
+            decoration: BoxDecoration(
+              border: index == weather.forecast.length - 1
+                  ? null
+                  : Border(bottom: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.65))),
             ),
-            leading: Text(
-              '${day.precipitationProbability?.round() ?? 0}%',
-              style: TextStyle(color: Theme.of(context).colorScheme.primary),
-            ),
-            subtitle: Text(
-              '${day.temperatureMin?.round() ?? '--'}° / ${day.temperatureMax?.round() ?? '--'}°',
-            ),
-            trailing: Text(
-              '${(day.precipitationMm ?? 0).toStringAsFixed(1)} mm',
-              style: Theme.of(context).textTheme.bodySmall,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            child: Row(
+              children: [
+                Expanded(flex: 4, child: Text(isToday ? 'Today' : weekday, style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onSurface))),
+                Expanded(flex: 2, child: Text('${day.precipitationProbability?.round() ?? 0}%', textAlign: TextAlign.center, style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w800))),
+                Expanded(flex: 4, child: Text('${day.temperatureMin?.round() ?? '--'}° / ${day.temperatureMax?.round() ?? '--'}°', textAlign: TextAlign.center, style: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w500))),
+                Expanded(flex: 3, child: Text('${(day.precipitationMm ?? 0).toStringAsFixed(1)} mm', textAlign: TextAlign.end, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12))),
+              ],
             ),
           );
         }).toList(),
