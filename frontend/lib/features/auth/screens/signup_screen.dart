@@ -82,9 +82,22 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset('assets/images/images (2).jpeg', fit: BoxFit.cover),
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xD9000805), Color(0xA6000805), Color(0xD9000805)],
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 620),
@@ -250,8 +263,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 ],
               ),
             ),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
