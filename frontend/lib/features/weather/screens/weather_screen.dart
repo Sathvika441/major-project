@@ -261,16 +261,26 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      weather?.locationName ?? 'Current location',
-                      style: TextStyle(
-                        color: scheme.onPrimary,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    Row(
+                      children: [
+                        Icon(Icons.location_on_rounded, size: 17, color: scheme.onPrimary),
+                        const SizedBox(width: 5),
+                        Expanded(
+                          child: Text(
+                            weather?.locality?.isNotEmpty == true
+                                ? weather!.locality!
+                                : (weather?.district?.isNotEmpty == true
+                                    ? weather!.district!
+                                    : (weather?.locationName ?? 'Current location')),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: scheme.onPrimary, fontSize: 17, fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                      ],
                     ),
                     Text(
-                      weather?.district ?? 'Local weather',
+                      weather?.district ?? weather?.resolvedLevel ?? 'Local weather',
                       style: TextStyle(
                         color: scheme.onPrimary.withValues(alpha: 0.72),
                         fontSize: 11,
