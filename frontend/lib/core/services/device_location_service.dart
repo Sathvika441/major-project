@@ -28,8 +28,14 @@ class DeviceLocationService {
   }
 
   Future<DeviceLocation?> _resolve() async {
+    // Reuse a recent fix so opening another screen does not trigger location
+    // permission prompts or a fresh GPS lookup on every navigation.
+    final cached = await loadLastLocation();
+    if (cached != null && DateTime.now().difference(cached.savedAt).abs() < const Duration(hours: 6)) {
+      return cached;
+    }
     try {
-      if (!await Geolocator.isLocationServiceEnabled()) return await loadLastLocation();
+      if (!await Geolocator.isLocationServiceEnabled()) return cached;
       var permission=await Geolocator.checkPermission();
       if (permission==LocationPermission.denied) permission=await Geolocator.requestPermission();
       if (permission==LocationPermission.denied || permission==LocationPermission.deniedForever) return await loadLastLocation();
