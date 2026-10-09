@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../services/backend/backend_api.dart';
 import '../../../services/backend/weather_cache_service.dart';
 import '../../../core/services/device_location_service.dart';
@@ -110,25 +111,34 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
       },
       'next_24h': {
         'precipitation_mm': weather.next24hPrecipitationMm,
-        'precipitation_probability_max': weather.next24hPrecipitationProbability,
+        'precipitation_probability_max':
+            weather.next24hPrecipitationProbability,
         'et0_mm': weather.next24hEt0Mm,
       },
-      'hourly': weather.hourly.map((hour) => {
-        'time': hour.time,
-        'temperature': hour.temperature,
-        'precipitation_probability': hour.precipitationProbability,
-        'precipitation_mm': hour.precipitationMm,
-        'weather_code': hour.weatherCode,
-      }).toList(),
-      'daily': weather.forecast.map((day) => {
-        'date': day.date,
-        'temperature_max': day.temperatureMax,
-        'temperature_min': day.temperatureMin,
-        'precipitation_mm': day.precipitationMm,
-        'precipitation_probability': day.precipitationProbability,
-        'et0_mm': day.et0Mm,
-        'weather_code': day.weatherCode,
-      }).toList(),
+      'hourly': weather.hourly
+          .map(
+            (hour) => {
+              'time': hour.time,
+              'temperature': hour.temperature,
+              'precipitation_probability': hour.precipitationProbability,
+              'precipitation_mm': hour.precipitationMm,
+              'weather_code': hour.weatherCode,
+            },
+          )
+          .toList(),
+      'daily': weather.forecast
+          .map(
+            (day) => {
+              'date': day.date,
+              'temperature_max': day.temperatureMax,
+              'temperature_min': day.temperatureMin,
+              'precipitation_mm': day.precipitationMm,
+              'precipitation_probability': day.precipitationProbability,
+              'et0_mm': day.et0Mm,
+              'weather_code': day.weatherCode,
+            },
+          )
+          .toList(),
       'guidance': {
         'spraying': weather.guidance.spraying,
         'drying': weather.guidance.drying,
@@ -149,7 +159,10 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
       title: 'Weather',
       selectedIndex: 1,
       actions: [
-        IconButton(onPressed: () => _load(refresh: true), icon: const Icon(Icons.refresh_rounded)),
+        IconButton(
+          onPressed: () => _load(refresh: true),
+          icon: const Icon(Icons.refresh_rounded),
+        ),
       ],
       body: RefreshIndicator(
         onRefresh: () => _load(refresh: true),
@@ -166,11 +179,13 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                       context,
                       ref,
                       onSelected: (district, taluk, village) async {
-                        final selected = await ref.read(backendApiProvider).getWeatherByPlace(
-                          district: district,
-                          taluk: taluk,
-                          village: village,
-                        );
+                        final selected = await ref
+                            .read(backendApiProvider)
+                            .getWeatherByPlace(
+                              district: district,
+                              taluk: taluk,
+                              village: village,
+                            );
                         if (!mounted) return;
                         setState(() {
                           _weather = selected;
@@ -185,7 +200,12 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
               ),
             _hero(context, weather),
             if (_loading && weather == null)
-              const Center(child: Padding(padding: EdgeInsets.all(30), child: CircularProgressIndicator())),
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(30),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
             if (weather != null) ...[
               _section(context, "Today's farm guidance"),
               _guidance(context, weather),
@@ -205,8 +225,14 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: scheme.secondaryContainer, borderRadius: BorderRadius.circular(14)),
-      child: Text(error, style: TextStyle(color: scheme.error, fontWeight: FontWeight.w600)),
+      decoration: BoxDecoration(
+        color: scheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Text(
+        error,
+        style: TextStyle(color: scheme.error, fontWeight: FontWeight.w600),
+      ),
     );
   }
 
@@ -214,7 +240,18 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
     final scheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
-      decoration: BoxDecoration(color: scheme.primary, borderRadius: BorderRadius.circular(26)),
+      decoration: BoxDecoration(
+        color: scheme.primary.withValues(alpha: 0.34),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.4)),
+        boxShadow: [
+          BoxShadow(
+            color: scheme.primary.withValues(alpha: 0.12),
+            blurRadius: 24,
+            spreadRadius: -8,
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -224,12 +261,28 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(weather?.locationName ?? 'Current location', style: TextStyle(color: scheme.onPrimary, fontSize: 17, fontWeight: FontWeight.w800)),
-                    Text(weather?.district ?? 'Local weather', style: TextStyle(color: scheme.onPrimary.withValues(alpha: 0.72), fontSize: 11)),
+                    Text(
+                      weather?.locationName ?? 'Current location',
+                      style: TextStyle(
+                        color: scheme.onPrimary,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      weather?.district ?? 'Local weather',
+                      style: TextStyle(
+                        color: scheme.onPrimary.withValues(alpha: 0.72),
+                        fontSize: 11,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              IconButton(onPressed: () => _load(refresh: true), icon: Icon(Icons.refresh_rounded, color: scheme.onPrimary)),
+              IconButton(
+                onPressed: () => _load(refresh: true),
+                icon: Icon(Icons.refresh_rounded, color: scheme.onPrimary),
+              ),
             ],
           ),
           Row(
@@ -238,28 +291,74 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(weather == null ? '--°C' : '${weather.temperature?.round() ?? '--'}°C', style: TextStyle(color: scheme.onPrimary, fontSize: 43, fontWeight: FontWeight.w800)),
-                    Text(weather?.weatherDescription ?? 'Loading weather', style: TextStyle(color: scheme.onPrimary, fontSize: 15)),
+                    Text(
+                      weather == null
+                          ? '--°C'
+                          : '${weather.temperature?.round() ?? '--'}°C',
+                      style: TextStyle(
+                        color: scheme.onPrimary,
+                        fontSize: 43,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      weather?.weatherDescription ?? 'Loading weather',
+                      style: TextStyle(color: scheme.onPrimary, fontSize: 15),
+                    ),
                   ],
                 ),
               ),
-              Icon(_glyph(weather?.weatherCode), color: scheme.onPrimary, size: 56),
+              Icon(
+                _glyph(weather?.weatherCode),
+                color: scheme.onPrimary,
+                size: 56,
+              ),
             ],
           ),
           const SizedBox(height: 5),
-          Text(weather?.guidance.statusLine ?? 'Getting local weather', style: TextStyle(color: scheme.onPrimary.withValues(alpha: 0.85), fontSize: 12)),
+          Text(
+            weather?.guidance.statusLine ?? 'Getting local weather',
+            style: TextStyle(
+              color: scheme.onPrimary.withValues(alpha: 0.85),
+              fontSize: 12,
+            ),
+          ),
           const SizedBox(height: 14),
           Row(
             children: [
-              _metric(scheme, 'Rain chance', '${weather?.next24hPrecipitationProbability.round() ?? '--'}%'),
-              _metric(scheme, 'Humidity', '${weather?.humidity?.round() ?? '--'}%'),
-              _metric(scheme, 'Wind', '${weather?.windKmh?.round() ?? '--'} km/h'),
-              _metric(scheme, 'Max/Min', weather?.forecast.isNotEmpty == true ? '${weather!.forecast.first.temperatureMax?.round() ?? '--'}° / ${weather.forecast.first.temperatureMin?.round() ?? '--'}°' : '-- / --'),
+              _metric(
+                scheme,
+                'Rain chance',
+                '${weather?.next24hPrecipitationProbability.round() ?? '--'}%',
+              ),
+              _metric(
+                scheme,
+                'Humidity',
+                '${weather?.humidity?.round() ?? '--'}%',
+              ),
+              _metric(
+                scheme,
+                'Wind',
+                '${weather?.windKmh?.round() ?? '--'} km/h',
+              ),
+              _metric(
+                scheme,
+                'Max/Min',
+                weather?.forecast.isNotEmpty == true
+                    ? '${weather!.forecast.first.temperatureMax?.round() ?? '--'}° / ${weather.forecast.first.temperatureMin?.round() ?? '--'}°'
+                    : '-- / --',
+              ),
             ],
           ),
           const SizedBox(height: 10),
           if (weather != null)
-            Text('Updated ${TimeOfDay.fromDateTime(weather.updatedAt).format(context)}', style: TextStyle(color: scheme.onPrimary.withValues(alpha: 0.7), fontSize: 10)),
+            Text(
+              'Updated ${TimeOfDay.fromDateTime(weather.updatedAt).format(context)}',
+              style: TextStyle(
+                color: scheme.onPrimary.withValues(alpha: 0.7),
+                fontSize: 10,
+              ),
+            ),
         ],
       ),
     );
@@ -270,9 +369,22 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: scheme.onPrimary.withValues(alpha: 0.65), fontSize: 9)),
+          Text(
+            label,
+            style: TextStyle(
+              color: scheme.onPrimary.withValues(alpha: 0.65),
+              fontSize: 9,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(value, style: TextStyle(color: scheme.onPrimary, fontSize: 14, fontWeight: FontWeight.w700)),
+          Text(
+            value,
+            style: TextStyle(
+              color: scheme.onPrimary,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ],
       ),
     );
@@ -281,7 +393,11 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
   Widget _section(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(2, 22, 2, 10),
-      child: Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleLarge
+            ?.copyWith(fontWeight: FontWeight.w800),
+      ),
     );
   }
 
@@ -294,7 +410,14 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
     ];
     return Card(
       child: Column(
-        children: rows.map((row) => ListTile(title: Text(row[0]), trailing: _status(context, row[1]))).toList(),
+        children: rows
+            .map(
+              (row) => ListTile(
+                title: Text(row[0]),
+                trailing: _status(context, row[1]),
+              ),
+            )
+            .toList(),
       ),
     );
   }
@@ -303,8 +426,15 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
     final scheme = Theme.of(context).colorScheme;
     const good = {'Suitable', 'Not required', 'Check soil', 'Until afternoon'};
     const avoid = {'Avoid', 'Not suitable'};
-    final color = avoid.contains(value) ? scheme.error : good.contains(value) ? scheme.primary : scheme.tertiary;
-    return Text(value, style: TextStyle(color: color, fontWeight: FontWeight.w700));
+    final color = avoid.contains(value)
+        ? scheme.error
+        : good.contains(value)
+        ? scheme.primary
+        : scheme.tertiary;
+    return Text(
+      value,
+      style: TextStyle(color: color, fontWeight: FontWeight.w700),
+    );
   }
 
   Widget _hourly(BuildContext context, WeatherData weather) {
@@ -319,15 +449,37 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
           return Container(
             width: 84,
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(border: Border.all(color: Theme.of(context).colorScheme.outlineVariant), borderRadius: BorderRadius.circular(20)),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: Column(
               children: [
-                Text(dateTime == null ? '--' : TimeOfDay.fromDateTime(dateTime).format(context), style: const TextStyle(fontSize: 11)),
+                Text(
+                  dateTime == null
+                      ? '--'
+                      : TimeOfDay.fromDateTime(dateTime).format(context),
+                  style: const TextStyle(fontSize: 11),
+                ),
                 const SizedBox(height: 9),
                 Icon(_glyph(hour.weatherCode), size: 22),
                 const SizedBox(height: 7),
-                Text('${hour.temperature?.round() ?? '--'}°', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                Text('${hour.precipitationProbability?.round() ?? 0}%', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.primary)),
+                Text(
+                  '${hour.temperature?.round() ?? '--'}°',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  '${hour.precipitationProbability?.round() ?? 0}%',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
               ],
             ),
           );
@@ -342,12 +494,33 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
       child: Column(
         children: weather.forecast.map((day) {
           final date = DateTime.tryParse(day.date);
-          final weekday = date == null ? day.date : const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][date.weekday - 1];
+          final weekday = date == null
+              ? day.date
+              : const [
+                  'Mon',
+                  'Tue',
+                  'Wed',
+                  'Thu',
+                  'Fri',
+                  'Sat',
+                  'Sun',
+                ][date.weekday - 1];
           return ListTile(
-            title: Text(weekday, style: const TextStyle(fontWeight: FontWeight.w700)),
-            leading: Text('${day.precipitationProbability?.round() ?? 0}%', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-            subtitle: Text('${day.temperatureMin?.round() ?? '--'}° / ${day.temperatureMax?.round() ?? '--'}°'),
-            trailing: Text('${(day.precipitationMm ?? 0).toStringAsFixed(1)} mm', style: Theme.of(context).textTheme.bodySmall),
+            title: Text(
+              weekday,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            leading: Text(
+              '${day.precipitationProbability?.round() ?? 0}%',
+              style: TextStyle(color: Theme.of(context).colorScheme.primary),
+            ),
+            subtitle: Text(
+              '${day.temperatureMin?.round() ?? '--'}° / ${day.temperatureMax?.round() ?? '--'}°',
+            ),
+            trailing: Text(
+              '${(day.precipitationMm ?? 0).toStringAsFixed(1)} mm',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           );
         }).toList(),
       ),
@@ -362,8 +535,14 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
         runSpacing: 7,
         children: weather.forecast.map((day) {
           final date = DateTime.tryParse(day.date);
-          final label = date == null ? '--' : const ['M', 'T', 'W', 'T', 'F', 'S', 'S'][date.weekday - 1];
-          return Chip(label: Text('${label} ${day.precipitationProbability?.round() ?? 0}%'));
+          final label = date == null
+              ? '--'
+              : const ['M', 'T', 'W', 'T', 'F', 'S', 'S'][date.weekday - 1];
+          return Chip(
+            label: Text(
+              '${label} ${day.precipitationProbability?.round() ?? 0}%',
+            ),
+          );
         }).toList(),
       ),
     );

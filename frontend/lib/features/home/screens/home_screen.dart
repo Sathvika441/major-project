@@ -2,11 +2,13 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../services/backend/backend_api.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../../core/services/device_location_service.dart';
 import '../../../models/weather/weather_model.dart';
 import '../../weather/widgets/manual_location_picker.dart';
+import '../../../widgets/asset_glass_panel.dart';
 import '../../../widgets/app_navigation_scaffold.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -19,9 +21,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   WeatherData? _weather;
   String? _error;
   bool _loading = true;
-  bool _mlLoading = false;
-  Map<String, dynamic>? _mlResult;
-  String? _mlError;
 
   @override
   void initState() {
@@ -35,23 +34,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _error = null;
     });
     try {
-      final location = await ref.read(deviceLocationServiceProvider).resolveCurrentLocation();
+      final location = await ref
+          .read(deviceLocationServiceProvider)
+          .resolveCurrentLocation();
       WeatherData weather;
       if (location != null) {
-        weather = await ref.read(backendApiProvider).getWeatherByCoordinates(
-          latitude: location.latitude,
-          longitude: location.longitude,
-          label: location.label,
-        );
+        weather = await ref
+            .read(backendApiProvider)
+            .getWeatherByCoordinates(
+              latitude: location.latitude,
+              longitude: location.longitude,
+              label: location.label,
+            );
       } else {
-        final saved = await ref.read(deviceLocationServiceProvider).loadLastWeatherPlace();
+        final saved = await ref
+            .read(deviceLocationServiceProvider)
+            .loadLastWeatherPlace();
         weather = saved != null
-            ? await ref.read(backendApiProvider).getWeatherByPlace(
-                district: saved['district']!,
-                taluk: saved['taluk']!,
-                village: saved['village']!,
-              )
-            : await ref.read(backendApiProvider).getWeatherByPlace(district: 'Shivamogga');
+            ? await ref
+                  .read(backendApiProvider)
+                  .getWeatherByPlace(
+                    district: saved['district']!,
+                    taluk: saved['taluk']!,
+                    village: saved['village']!,
+                  )
+            : await ref
+                  .read(backendApiProvider)
+                  .getWeatherByPlace(district: 'Shivamogga');
       }
       if (!mounted) return;
       setState(() {
@@ -63,48 +72,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       setState(() {
         _loading = false;
         _error = e.toString().replaceFirst('Exception: ', '');
-      });
-    }
-  }
-
-  Future<void> _detect() async {
-    final picked = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
-      withData: true,
-    );
-    if (picked == null || picked.files.single.bytes == null) return;
-    final file = picked.files.single;
-    if (file.size > 10 * 1024 * 1024) {
-      setState(() => _mlError = 'Please select an image smaller than 10 MB.');
-      return;
-    }
-    setState(() {
-      _mlLoading = true;
-      _mlError = null;
-      _mlResult = null;
-    });
-    try {
-      final result = await ref.read(backendApiProvider).predictImage(
-        file.bytes!,
-        filename: file.name,
-      );
-      if (!mounted) return;
-      setState(() {
-        _mlResult = result;
-        _mlLoading = false;
-      });
-    } on BackendApiException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _mlError = e.message;
-        _mlLoading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _mlError = 'Unable to contact the disease detection service.';
-        _mlLoading = false;
       });
     }
   }
@@ -139,17 +106,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(_error!, style: TextStyle(color: scheme.onSecondaryContainer)),
+                      Text(
+                        _error!,
+                        style: TextStyle(color: scheme.onSecondaryContainer),
+                      ),
                       TextButton(
                         onPressed: () => showManualLocationPicker(
                           context,
                           ref,
                           onSelected: (district, taluk, village) async {
-                            await ref.read(backendApiProvider).getWeatherByPlace(
-                              district: district,
-                              taluk: taluk,
-                              village: village,
-                            );
+                            await ref
+                                .read(backendApiProvider)
+                                .getWeatherByPlace(
+                                  district: district,
+                                  taluk: taluk,
+                                  village: village,
+                                );
                             await _loadWeather();
                           },
                         ),
@@ -164,19 +136,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               spacing: 10,
               runSpacing: 10,
               children: [
-                _action(context, Icons.cloud_outlined, 'Weather', () => context.push('/weather')),
-                _action(context, Icons.document_scanner_outlined, 'Detect disease', _detect),
-                _action(context, Icons.agriculture_outlined, 'My farms', () => context.push('/farms')),
                 _action(
                   context,
-                  user == null ? Icons.login_outlined : Icons.person_outline_rounded,
+                  Icons.cloud_outlined,
+                  'Weather',
+                  () => context.push('/weather'),
+                ),
+                _action(
+                  context,
+                  Icons.document_scanner_outlined,
+                  'Detect disease',
+                  () => showDialog<void>(
+                    context: context,
+                    builder: (_) => const _DiseaseDetectionDialog(),
+                  ),
+                ),
+                _action(
+                  context,
+                  Icons.agriculture_outlined,
+                  'My farms',
+                  () => context.push('/farms'),
+                ),
+                _action(
+                  context,
+                  user == null
+                      ? Icons.login_outlined
+                      : Icons.person_outline_rounded,
                   user == null ? 'Sign in' : 'Profile',
                   () => context.push(user == null ? '/login' : '/profile'),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            _diseaseCard(context),
             const SizedBox(height: 20),
             Card(
               child: Padding(
@@ -184,7 +174,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.agriculture_rounded, color: scheme.primary, size: 28),
+                    Icon(
+                      Icons.agriculture_rounded,
+                      color: scheme.primary,
+                      size: 28,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -192,7 +186,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         children: [
                           Text(
                             user == null ? 'Add your farm' : 'Your farms',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w800),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -205,7 +200,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     const SizedBox(width: 8),
                     TextButton(
-                      onPressed: () => context.push(user == null ? '/login' : '/farms'),
+                      onPressed: () =>
+                          context.push(user == null ? '/login' : '/farms'),
                       child: Text(user == null ? 'Sign in' : 'Open'),
                     ),
                   ],
@@ -220,10 +216,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _hero(BuildContext context, String? name, WeatherData? weather) {
     final scheme = Theme.of(context).colorScheme;
-    final temperature = weather?.temperature == null ? '--°C' : '${weather!.temperature!.round()}°C';
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(color: scheme.primary, borderRadius: BorderRadius.circular(28)),
+    final temperature = weather?.temperature == null
+        ? '--°C'
+        : '${weather!.temperature!.round()}°C';
+    return AssetGlassPanel(
+      imagePath: 'assets/images/360_F_973272541_ZKlahbFV5Tnn2GTd83z0wJQlSEPIWT4Y.jpg.jpeg',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -232,10 +229,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Expanded(
                 child: Text(
                   name == null ? 'Good day, farmer' : 'Welcome back, ${name}',
-                  style: TextStyle(color: scheme.onPrimary, fontSize: 18, fontWeight: FontWeight.w800),
+                  style: TextStyle(
+                    color: scheme.onPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
-              IconButton(onPressed: _loadWeather, icon: Icon(Icons.refresh_rounded, color: scheme.onPrimary)),
+              IconButton(
+                onPressed: _loadWeather,
+                icon: Icon(Icons.refresh_rounded, color: scheme.onPrimary),
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -245,20 +249,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(weather?.weatherDescription ?? 'Weather loading', style: TextStyle(color: scheme.onPrimary.withValues(alpha: 0.9))),
+                    Text(
+                      weather?.weatherDescription ?? 'Weather loading',
+                      style: TextStyle(
+                        color: scheme.onPrimary.withValues(alpha: 0.9),
+                      ),
+                    ),
                     const SizedBox(height: 3),
-                    Text(temperature, style: TextStyle(color: scheme.onPrimary, fontSize: 32, fontWeight: FontWeight.w800)),
+                    Text(
+                      temperature,
+                      style: TextStyle(
+                        color: scheme.onPrimary,
+                        fontSize: 32,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                     const SizedBox(height: 5),
                     Text(
                       weather == null
                           ? 'Getting local weather…'
                           : '${weather.district?.isNotEmpty == true ? weather.district : weather.locationName} • today',
-                      style: TextStyle(color: scheme.onPrimary.withValues(alpha: 0.8), fontSize: 12),
+                      style: TextStyle(
+                        color: scheme.onPrimary.withValues(alpha: 0.8),
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
               ),
-              Icon(_glyph(weather?.weatherCode), color: scheme.onPrimary, size: 56),
+              Icon(
+                _glyph(weather?.weatherCode),
+                color: scheme.onPrimary,
+                size: 56,
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -266,9 +289,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(height: 12),
           Row(
             children: [
-              _metric(scheme, 'Rain', '${weather?.next24hPrecipitationProbability.round() ?? '--'}%'),
-              _metric(scheme, 'Humidity', '${weather?.humidity?.round() ?? '--'}%'),
-              _metric(scheme, 'Wind', '${weather?.windKmh?.round() ?? '--'} km/h'),
+              _metric(
+                scheme,
+                'Rain',
+                '${weather?.next24hPrecipitationProbability.round() ?? '--'}%',
+              ),
+              _metric(
+                scheme,
+                'Humidity',
+                '${weather?.humidity?.round() ?? '--'}%',
+              ),
+              _metric(
+                scheme,
+                'Wind',
+                '${weather?.windKmh?.round() ?? '--'} km/h',
+              ),
             ],
           ),
         ],
@@ -281,15 +316,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: scheme.onPrimary.withValues(alpha: 0.7), fontSize: 11)),
+          Text(
+            label,
+            style: TextStyle(
+              color: scheme.onPrimary.withValues(alpha: 0.7),
+              fontSize: 11,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(value, style: TextStyle(color: scheme.onPrimary, fontWeight: FontWeight.w700)),
+          Text(
+            value,
+            style: TextStyle(
+              color: scheme.onPrimary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _action(BuildContext context, IconData icon, String label, VoidCallback onTap) {
+  Widget _action(
+    BuildContext context,
+    IconData icon,
+    String label,
+    VoidCallback onTap,
+  ) {
     return SizedBox(
       width: 150,
       child: OutlinedButton.icon(
@@ -298,62 +350,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         label: Text(label),
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        ),
-      ),
-    );
-  }
-
-  Widget _diseaseCard(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final prediction = _mlResult?['prediction']?.toString();
-    final confidence = (_mlResult?['confidence'] as num?)?.toDouble();
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.health_and_safety_outlined, color: scheme.primary),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'AI crop health check',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                ),
-                FilledButton.tonalIcon(
-                  onPressed: _mlLoading ? null : _detect,
-                  icon: const Icon(Icons.upload_file_outlined),
-                  label: const Text('Image'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (_mlLoading) const LinearProgressIndicator(),
-            if (_mlError != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Text(_mlError!, style: TextStyle(color: scheme.error)),
-              ),
-            if (prediction != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                prediction,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-              ),
-              if (confidence != null)
-                Text('Prediction score: ${(confidence * 100).toStringAsFixed(1)}%'),
-              const SizedBox(height: 6),
-              Text(
-                'AI prediction only — not a confirmed field diagnosis.',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ] else if (!_mlLoading)
-              const Text('Upload a JPG, PNG or WEBP image for arecanut disease classification.'),
-          ],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
         ),
       ),
     );
@@ -367,5 +366,175 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (code < 70) return Icons.grain;
     if (code < 90) return Icons.water_drop_outlined;
     return Icons.thunderstorm_outlined;
+  }
+}
+
+class _DiseaseDetectionDialog extends ConsumerStatefulWidget {
+  const _DiseaseDetectionDialog();
+
+  @override
+  ConsumerState<_DiseaseDetectionDialog> createState() =>
+      _DiseaseDetectionDialogState();
+}
+
+class _DiseaseDetectionDialogState
+    extends ConsumerState<_DiseaseDetectionDialog> {
+  PlatformFile? _image;
+  Map<String, dynamic>? _result;
+  String? _error;
+  bool _predicting = false;
+
+  Future<void> _pickImage() async {
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+      withData: true,
+    );
+    if (picked == null || !mounted) return;
+
+    final file = picked.files.single;
+    if (file.bytes == null || file.bytes!.isEmpty) {
+      setState(() {
+        _error = 'Unable to read the selected image. Please choose another.';
+        _result = null;
+      });
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setState(() {
+        _error = 'Please select an image smaller than 10 MB.';
+        _result = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _image = file;
+      _result = null;
+      _error = null;
+    });
+  }
+
+  Future<void> _predict() async {
+    final file = _image;
+    final bytes = file?.bytes;
+    if (file == null || bytes == null || bytes.isEmpty) {
+      setState(() => _error = 'Please upload an image before predicting.');
+      return;
+    }
+
+    setState(() {
+      _predicting = true;
+      _result = null;
+      _error = null;
+    });
+    try {
+      final result = await ref
+          .read(backendApiProvider)
+          .predictImage(bytes, filename: file.name);
+      if (!mounted) return;
+      setState(() {
+        _result = result;
+        _predicting = false;
+      });
+    } on BackendApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.message;
+        _predicting = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Unable to contact the disease detection service.';
+        _predicting = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final confidence = (_result?['confidence'] as num?)?.toDouble();
+
+    return AlertDialog(
+      title: const Text('Detect disease'),
+      content: SizedBox(
+        width: 420,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (_image?.bytes case final bytes?)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.memory(
+                    bytes,
+                    height: 240,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, _, _) => const SizedBox(
+                      height: 120,
+                      child: Center(
+                        child: Text('Unable to preview this image.'),
+                      ),
+                    ),
+                  ),
+                )
+              else
+                const Text('Upload a JPG, PNG or WEBP image to get started.'),
+              if (_image != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _image!.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Text(_error!, style: TextStyle(color: scheme.error)),
+              ],
+              if (_result != null) ...[
+                const SizedBox(height: 16),
+                Text(
+                  _result!['prediction']?.toString() ?? 'Result received',
+                  style: Theme.of(context).textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                if (confidence != null)
+                  Text(
+                    'Prediction score: ${(confidence * 100).toStringAsFixed(1)}%',
+                  ),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _predicting ? null : () => Navigator.of(context).pop(),
+          child: const Text('Close'),
+        ),
+        OutlinedButton.icon(
+          onPressed: _predicting ? null : _pickImage,
+          icon: const Icon(Icons.upload_file_outlined),
+          label: Text(_image == null ? 'Upload image' : 'Change image'),
+        ),
+        if (_image != null)
+          FilledButton.icon(
+            onPressed: _predicting ? null : _predict,
+            icon: _predicting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.auto_awesome),
+            label: Text(_predicting ? 'Predicting...' : 'Predict'),
+          ),
+      ],
+    );
   }
 }

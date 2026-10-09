@@ -13,7 +13,8 @@ class SplashScreen extends ConsumerStatefulWidget {
   ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends ConsumerState<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   late Animation<double> _fadeAnimation;
 
@@ -29,10 +30,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     );
-    _fadeAnimation = CurvedAnimation(parent: _animController, curve: Curves.easeIn);
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeIn,
+    );
 
     _animController.forward().then((_) async {
-      await Future.delayed(_minSplashDuration - const Duration(milliseconds: 1200));
+      await Future.delayed(
+        _minSplashDuration - const Duration(milliseconds: 1200),
+      );
       if (mounted) {
         setState(() => _animationDone = true);
         _tryNavigate();
@@ -41,7 +47,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
 
     Future.microtask(() {
       final authState = ref.read(authControllerProvider);
-      if (authState.status != AuthStatus.initial && authState.status != AuthStatus.loading) {
+      if (authState.status != AuthStatus.initial &&
+          authState.status != AuthStatus.loading) {
         _authCheckDone = true;
         WidgetsBinding.instance.addPostFrameCallback((_) => _tryNavigate());
       }
@@ -79,7 +86,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
   @override
   Widget build(BuildContext context) {
     ref.listen<AuthState>(authControllerProvider, (prev, next) {
-      if (next.status != AuthStatus.initial && next.status != AuthStatus.loading) {
+      if (next.status != AuthStatus.initial &&
+          next.status != AuthStatus.loading) {
         if (!_authCheckDone) {
           _authCheckDone = true;
           WidgetsBinding.instance.addPostFrameCallback((_) => _tryNavigate());
@@ -87,93 +95,99 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
       }
     });
 
-    final theme = Theme.of(context);
-
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              theme.primaryColor,
-              const Color(0xFF0F3814),
-            ],
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset('assets/images/arecanut06jpg.jpeg', fit: BoxFit.cover),
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xA6000805),
+                  Color(0xD9000805),
+                  Color(0xF2000805),
+                ],
+              ),
+            ),
           ),
-        ),
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Spacer(),
-              // App Icon / Logo Emblem
-              Container(
-                width: 110,
-                height: 110,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
+          FadeTransition(
+            opacity: _fadeAnimation,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Spacer(),
+                // App Icon / Logo Emblem
+                Container(
+                  width: 110,
+                  height: 110,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.28),
                     ),
-                  ],
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.eco_rounded,
-                    size: 64,
-                    color: theme.primaryColor,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF4F9A62).withValues(alpha: 0.28),
+                        blurRadius: 30,
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.eco_rounded,
+                      size: 64,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 28),
-              // App Title & Tagline
-              const Text(
-                'ArecaSmart',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 34,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.8,
+                const SizedBox(height: 28),
+                // App Title & Tagline
+                const Text(
+                  'ArecaSmart',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 34,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.8,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Precision Irrigation & Crop Health Intelligence',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.85),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
+                const SizedBox(height: 8),
+                Text(
+                  'Precision Irrigation & Crop Health Intelligence',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.85),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
-              ),
-              const Spacer(),
-              // Loading indicator
-              const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+                const Spacer(),
+                // Loading indicator
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 48),
-              Text(
-                'Version 1.0.0 (Phase 0 & 1 Architecture)',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
-                  fontSize: 12,
+                const SizedBox(height: 48),
+                Text(
+                  'Version 1.0.0 (Phase 0 & 1 Architecture)',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    fontSize: 12,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 32),
-            ],
+                const SizedBox(height: 32),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

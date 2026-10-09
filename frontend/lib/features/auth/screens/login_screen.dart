@@ -52,8 +52,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _submitGoogleLogin() async {
     FocusScope.of(context).unfocus();
 
-    final success =
-        await ref.read(authControllerProvider.notifier).signInWithGoogle();
+    final success = await ref
+        .read(authControllerProvider.notifier)
+        .signInWithGoogle();
 
     if (!mounted || !success) return;
 
@@ -79,10 +80,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             if (split) {
               return Row(
                 children: [
-                  Expanded(
-                    flex: 5,
-                    child: _BrandPanel(scheme: scheme),
-                  ),
+                  Expanded(flex: 5, child: _BrandPanel(scheme: scheme)),
                   Expanded(
                     flex: 4,
                     child: _LoginForm(
@@ -97,8 +95,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           setState(() => _rememberMe = value),
                       onLogin: _submitLogin,
                       onGoogleLogin: _submitGoogleLogin,
-                      onForgotPassword: () =>
-                          context.push('/forgot-password'),
+                      onForgotPassword: () => context.push('/forgot-password'),
                       onSignUp: () => context.go('/signup'),
                       onThemeToggle: () =>
                           ref.read(themeModeProvider.notifier).toggle(),
@@ -123,8 +120,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       setState(() => _rememberMe = value),
                   onLogin: _submitLogin,
                   onGoogleLogin: _submitGoogleLogin,
-                  onForgotPassword: () =>
-                      context.push('/forgot-password'),
+                  onForgotPassword: () => context.push('/forgot-password'),
                   onSignUp: () => context.go('/signup'),
                   onThemeToggle: () =>
                       ref.read(themeModeProvider.notifier).toggle(),
@@ -148,111 +144,139 @@ class _BrandPanel extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            scheme.primary,
-            Color.lerp(scheme.primary, scheme.secondary, 0.48)!,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
         borderRadius: BorderRadius.circular(30),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -70,
-            top: -70,
-            child: _GlowCircle(
-              size: 260,
-              color: scheme.onPrimary.withValues(alpha: 0.08),
-            ),
-          ),
-          Positioned(
-            left: -90,
-            bottom: -90,
-            child: _GlowCircle(
-              size: 300,
-              color: scheme.onPrimary.withValues(alpha: 0.07),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(44),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: scheme.onPrimary,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Icon(
-                        Icons.eco_rounded,
-                        color: scheme.primary,
-                        size: 28,
-                      ),
-                    ),
-                    const SizedBox(width: 13),
-                    Text(
-                      'ArecaSmart',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            color: scheme.onPrimary,
-                            fontWeight: FontWeight.w800,
-                          ),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                Text(
-                  'Smarter decisions\nfor healthier farms.',
-                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                        color: scheme.onPrimary,
-                        fontWeight: FontWeight.w800,
-                        height: 1.08,
-                      ),
-                ),
-                const SizedBox(height: 18),
-                Text(
-                  'Weather intelligence, irrigation recommendations and AI-powered arecanut disease detection in one farmer workspace.',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: scheme.onPrimary.withValues(alpha: 0.86),
-                        height: 1.6,
-                      ),
-                ),
-                const SizedBox(height: 30),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: const [
-                    _FeaturePill(
-                      icon: Icons.cloud_outlined,
-                      label: 'Live weather',
-                    ),
-                    _FeaturePill(
-                      icon: Icons.water_drop_outlined,
-                      label: 'Irrigation insights',
-                    ),
-                    _FeaturePill(
-                      icon: Icons.biotech_outlined,
-                      label: 'AI crop health',
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                Text(
-                  'Built for practical, data-informed farm management.',
-                  style: TextStyle(
-                    color: scheme.onPrimary.withValues(alpha: 0.72),
-                  ),
-                ),
-              ],
-            ),
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.4)),
+        boxShadow: [
+          BoxShadow(
+            color: scheme.primary.withValues(alpha: 0.16),
+            blurRadius: 30,
+            spreadRadius: -8,
           ),
         ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Image.asset(
+                'assets/images/images (2).jpeg',
+                fit: BoxFit.cover,
+              ),
+            ),
+            const Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xDC000805),
+                      Color(0xA6000805),
+                      Color(0xD9000805),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: -70,
+              top: -70,
+              child: _GlowCircle(
+                size: 260,
+                color: scheme.onPrimary.withValues(alpha: 0.08),
+              ),
+            ),
+            Positioned(
+              left: -90,
+              bottom: -90,
+              child: _GlowCircle(
+                size: 300,
+                color: scheme.onPrimary.withValues(alpha: 0.07),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(44),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: scheme.onPrimary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: scheme.onPrimary.withValues(alpha: 0.28),
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.eco_rounded,
+                          color: scheme.onPrimary,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(width: 13),
+                      Text(
+                        'ArecaSmart',
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(
+                              color: scheme.onPrimary,
+                              fontWeight: FontWeight.w800,
+                            ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Text(
+                    'Smarter decisions\nfor healthier farms.',
+                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                      color: scheme.onPrimary,
+                      fontWeight: FontWeight.w800,
+                      height: 1.08,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    'Weather intelligence, irrigation recommendations and AI-powered arecanut disease detection in one farmer workspace.',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: scheme.onPrimary.withValues(alpha: 0.86),
+                      height: 1.6,
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: const [
+                      _FeaturePill(
+                        icon: Icons.cloud_outlined,
+                        label: 'Live weather',
+                      ),
+                      _FeaturePill(
+                        icon: Icons.water_drop_outlined,
+                        label: 'Irrigation insights',
+                      ),
+                      _FeaturePill(
+                        icon: Icons.biotech_outlined,
+                        label: 'AI crop health',
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Text(
+                    'Built for practical, data-informed farm management.',
+                    style: TextStyle(
+                      color: scheme.onPrimary.withValues(alpha: 0.72),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -262,20 +286,14 @@ class _GlowCircle extends StatelessWidget {
   final double size;
   final Color color;
 
-  const _GlowCircle({
-    required this.size,
-    required this.color,
-  });
+  const _GlowCircle({required this.size, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }
@@ -284,10 +302,7 @@ class _FeaturePill extends StatelessWidget {
   final IconData icon;
   final String label;
 
-  const _FeaturePill({
-    required this.icon,
-    required this.label,
-  });
+  const _FeaturePill({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -403,10 +418,8 @@ class _LoginForm extends StatelessWidget {
               ],
               Text(
                 'Welcome back',
-                style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                      fontSize: 31,
-                      fontWeight: FontWeight.w800,
-                    ),
+                style: Theme.of(context).textTheme.displayMedium
+                    ?.copyWith(fontSize: 31, fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 8),
               Text(
@@ -498,11 +511,7 @@ class _LoginForm extends StatelessWidget {
               const SizedBox(height: 22),
               Row(
                 children: [
-                  Expanded(
-                    child: Divider(
-                      color: scheme.outlineVariant,
-                    ),
-                  ),
+                  Expanded(child: Divider(color: scheme.outlineVariant)),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Text(
@@ -510,11 +519,7 @@ class _LoginForm extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
-                  Expanded(
-                    child: Divider(
-                      color: scheme.outlineVariant,
-                    ),
-                  ),
+                  Expanded(child: Divider(color: scheme.outlineVariant)),
                 ],
               ),
               const SizedBox(height: 14),

@@ -1,15 +1,18 @@
 # ArecaSmart image assets
 
-Supply royalty-free or original images using these filenames. The UI currently uses theme-native fallback surfaces until the corresponding image is supplied.
+The app bundles the local images in this directory through the `assets/images/`
+entry in `pubspec.yaml`; no image is fetched from a remote URL.
 
-- arecanut_plantation_hero.webp — full-bleed plantation image for Splash/Login/Signup
-- weather_home_hero.webp — arecanut/farm weather hero image for Home
-- disease_detection_arecanut.webp — arecanut leaf/palm image for the AI detection card
-- farm_landscape.webp — soft farm landscape for onboarding/profile header
-- farm_card_arecanut.webp — farm/arecanut image for farm management cards
-- soil_red.webp — red soil texture
-- soil_black.webp — black soil texture
-- soil_sandy.webp — sandy soil texture
-- soil_laterite.webp — laterite soil texture
+Current UI placements use distinct images for distinct contexts:
 
-Requirements: optimized WebP/JPG, no hotlinks, royalty-free/original, readable contrast in light and dark mode. Do not copy assets from the Adike Market Price APK.
+- `arecanut06jpg.jpeg` — splash-screen arecanut crop, with a dark readability overlay.
+- `images (2).jpeg` — login brand panel, with a dark readability overlay.
+- `360_F_973272541_ZKlahbFV5Tnn2GTd83z0wJQlSEPIWT4Y.jpg.jpeg` — home weather/farm
+  hero background, with a left-to-right dark overlay.
+- `25_Areca-nut-trees_Rao_s-plantation_Sharmila-V-768x512.jpg.jpeg` — farm
+  portfolio header background, with a dark overlay.
+
+Other images are retained as local resources for future relevant screens. Select
+images by context and avoid visibly watermarked stock previews. Upload previews
+in disease detection come from the farmer-selected image rather than a
+decorative placeholder.

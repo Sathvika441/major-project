@@ -28,11 +28,36 @@ class AppNavigationScaffold extends ConsumerWidget {
   });
 
   static const _destinations = [
-    _NavDestination(Icons.dashboard_outlined, Icons.dashboard_rounded, 'Home', '/'),
-    _NavDestination(Icons.cloud_outlined, Icons.cloud_rounded, 'Weather', '/weather'),
-    _NavDestination(Icons.agriculture_outlined, Icons.agriculture_rounded, 'Farms', '/farms'),
-    _NavDestination(Icons.sensors_outlined, Icons.sensors_rounded, 'Devices', '/devices'),
-    _NavDestination(Icons.person_outline_rounded, Icons.person_rounded, 'Profile', '/profile'),
+    _NavDestination(
+      Icons.dashboard_outlined,
+      Icons.dashboard_rounded,
+      'Home',
+      '/',
+    ),
+    _NavDestination(
+      Icons.cloud_outlined,
+      Icons.cloud_rounded,
+      'Weather',
+      '/weather',
+    ),
+    _NavDestination(
+      Icons.agriculture_outlined,
+      Icons.agriculture_rounded,
+      'Farms',
+      '/farms',
+    ),
+    _NavDestination(
+      Icons.sensors_outlined,
+      Icons.sensors_rounded,
+      'Devices',
+      '/devices',
+    ),
+    _NavDestination(
+      Icons.person_outline_rounded,
+      Icons.person_rounded,
+      'Profile',
+      '/profile',
+    ),
   ];
 
   void _navigate(BuildContext context, int index) {
@@ -64,7 +89,8 @@ class AppNavigationScaffold extends ConsumerWidget {
                         subtitle: subtitle,
                         actions: actions,
                         showBackButton: showBackButton,
-                        onThemeToggle: () => ref.read(themeModeProvider.notifier).toggle(),
+                        onThemeToggle: () =>
+                            ref.read(themeModeProvider.notifier).toggle(),
                         isDark: themeMode == ThemeMode.dark,
                       ),
                       Expanded(child: body),
@@ -97,10 +123,7 @@ class AppNavigationScaffold extends ConsumerWidget {
               children: [
                 Text(title),
                 if (subtitle != null)
-                  Text(
-                    subtitle!,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
+                  Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
             actions: [
@@ -138,15 +161,12 @@ class AppNavigationScaffold extends ConsumerWidget {
     );
   }
 
-  Widget _buildRail(
-    BuildContext context,
-    WidgetRef ref,
-    ThemeMode themeMode,
-  ) {
+  Widget _buildRail(BuildContext context, WidgetRef ref, ThemeMode themeMode) {
     final user = ref.watch(authControllerProvider).user;
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: Theme.of(context).colorScheme.surface
+            .withValues(alpha: themeMode == ThemeMode.dark ? 0.8 : 0.9),
         border: Border(
           right: BorderSide(
             color: Theme.of(context).colorScheme.outlineVariant,
@@ -184,9 +204,8 @@ class AppNavigationScaffold extends ConsumerWidget {
                     children: [
                       Text(
                         'ArecaSmart',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
+                        style: Theme.of(context).textTheme.titleLarge
+                            ?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       Text(
                         'Smart farm workspace',
@@ -218,27 +237,28 @@ class AppNavigationScaffold extends ConsumerWidget {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 14),
                   child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                      leading: CircleAvatar(
-                        backgroundColor:
-                            Theme.of(context).colorScheme.primaryContainer,
-                        child: Text(
-                          _initials(user.name.isEmpty ? 'Farmer' : user.name),
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.w800,
-                          ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                    leading: CircleAvatar(
+                      backgroundColor: Theme.of(context)
+                          .colorScheme
+                          .primaryContainer,
+                      child: Text(
+                        _initials(user.name.isEmpty ? 'Farmer' : user.name),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
-                      title: Text(
-                        user.name.isEmpty ? 'Farmer' : user.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      subtitle: const Text('Signed in'),
                     ),
+                    title: Text(
+                      user.name.isEmpty ? 'Farmer' : user.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    subtitle: const Text('Signed in'),
                   ),
+                ),
               Divider(
                 indent: 12,
                 endIndent: 12,
@@ -255,9 +275,7 @@ class AppNavigationScaffold extends ConsumerWidget {
                           : Icons.dark_mode_outlined,
                     ),
                     title: Text(
-                      themeMode == ThemeMode.dark
-                          ? 'Light mode'
-                          : 'Dark mode',
+                      themeMode == ThemeMode.dark ? 'Light mode' : 'Dark mode',
                     ),
                     onTap: () => ref.read(themeModeProvider.notifier).toggle(),
                   ),
@@ -268,7 +286,10 @@ class AppNavigationScaffold extends ConsumerWidget {
                 child: ListTile(
                   leading: const Icon(Icons.logout_rounded),
                   title: const Text('Sign out'),
-                  onTap: user == null ? null : () => ref.read(authControllerProvider.notifier).logout(),
+                  onTap: user == null
+                      ? null
+                      : () =>
+                            ref.read(authControllerProvider.notifier).logout(),
                 ),
               ),
               const SizedBox(height: 8),
@@ -280,10 +301,15 @@ class AppNavigationScaffold extends ConsumerWidget {
   }
 
   String _initials(String value) {
-    final parts = value.trim().split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
+    final parts = value
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((e) => e.isNotEmpty)
+        .toList();
     if (parts.isEmpty) return 'F';
     if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-    return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'.toUpperCase();
+    return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'
+        .toUpperCase();
   }
 }
 
@@ -309,7 +335,8 @@ class _DesktopHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(28, 20, 28, 18),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: Theme.of(context).colorScheme.surface
+            .withValues(alpha: isDark ? 0.8 : 0.9),
         border: Border(
           bottom: BorderSide(
             color: Theme.of(context).colorScheme.outlineVariant,
@@ -339,9 +366,8 @@ class _DesktopHeader extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+                  style: Theme.of(context).textTheme.headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 if (subtitle != null) ...[
                   const SizedBox(height: 3),
@@ -354,9 +380,7 @@ class _DesktopHeader extends StatelessWidget {
             tooltip: isDark ? 'Switch to light mode' : 'Switch to dark mode',
             onPressed: onThemeToggle,
             icon: Icon(
-              isDark
-                  ? Icons.light_mode_outlined
-                  : Icons.dark_mode_outlined,
+              isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
             ),
           ),
           ...?actions,

@@ -3,15 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/storage/local_storage_service.dart';
 
-final themeModeProvider =
-    StateNotifierProvider<ThemeModeController, ThemeMode>((ref) {
-  return ThemeModeController(ref.watch(localStorageServiceProvider));
-});
+final themeModeProvider = StateNotifierProvider<ThemeModeController, ThemeMode>(
+  (ref) {
+    return ThemeModeController(ref.watch(localStorageServiceProvider));
+  },
+);
 
 class ThemeModeController extends StateNotifier<ThemeMode> {
   final LocalStorageService _storage;
 
-  ThemeModeController(this._storage) : super(ThemeMode.light) {
+  ThemeModeController(this._storage) : super(ThemeMode.dark) {
     _restore();
   }
 

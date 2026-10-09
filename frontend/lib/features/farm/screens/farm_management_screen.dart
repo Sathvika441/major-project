@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/farm/farm_model.dart';
 import '../../../repositories/farm/farm_repository.dart';
+import '../../../widgets/asset_glass_panel.dart';
 import '../../../widgets/app_navigation_scaffold.dart';
 import '../../auth/controllers/auth_controller.dart';
 import 'farm_details_screen.dart';
@@ -26,10 +27,7 @@ class FarmManagementScreen extends ConsumerWidget {
   }) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => FarmDetailsScreen(
-          farmId: farmId,
-          startNew: startNew,
-        ),
+        builder: (_) => FarmDetailsScreen(farmId: farmId, startNew: startNew),
       ),
     );
     ref.invalidate(farmsProvider);
@@ -73,8 +71,8 @@ class FarmManagementScreen extends ConsumerWidget {
               final columns = constraints.maxWidth >= 1200
                   ? 3
                   : constraints.maxWidth >= 720
-                      ? 2
-                      : 1;
+                  ? 2
+                  : 1;
               const gap = 18.0;
               final width = columns == 1
                   ? constraints.maxWidth
@@ -136,19 +134,9 @@ class _PortfolioHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            scheme.primary,
-            Color.lerp(scheme.primary, scheme.secondary, 0.45)!,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-      ),
+    return AssetGlassPanel(
+      imagePath: 'assets/images/25_Areca-nut-trees_Rao_s-plantation_Sharmila-V-768x512.jpg.jpeg',
+      borderRadius: BorderRadius.circular(24),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final compact = constraints.maxWidth < 620;
@@ -158,9 +146,9 @@ class _PortfolioHeader extends StatelessWidget {
               Text(
                 'Your farm portfolio',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: scheme.onPrimary,
-                      fontWeight: FontWeight.w800,
-                    ),
+                  color: scheme.onPrimary,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(height: 6),
               Text(
@@ -231,11 +219,7 @@ class _Stat extends StatelessWidget {
   final String label;
   final Color color;
 
-  const _Stat({
-    required this.value,
-    required this.label,
-    required this.color,
-  });
+  const _Stat({required this.value, required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -244,15 +228,10 @@ class _Stat extends StatelessWidget {
       children: [
         Text(
           value,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: color,
-                fontWeight: FontWeight.w800,
-              ),
+          style: Theme.of(context).textTheme.headlineSmall
+              ?.copyWith(color: color, fontWeight: FontWeight.w800),
         ),
-        Text(
-          label,
-          style: TextStyle(color: color.withValues(alpha: 0.78)),
-        ),
+        Text(label, style: TextStyle(color: color.withValues(alpha: 0.78))),
       ],
     );
   }
@@ -262,10 +241,7 @@ class _FarmCard extends StatelessWidget {
   final FarmModel farm;
   final VoidCallback onTap;
 
-  const _FarmCard({
-    required this.farm,
-    required this.onTap,
-  });
+  const _FarmCard({required this.farm, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -306,9 +282,8 @@ class _FarmCard extends StatelessWidget {
                       farm.name.isEmpty ? 'Unnamed farm' : farm.name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
+                      style: Theme.of(context).textTheme.titleLarge
+                          ?.copyWith(fontWeight: FontWeight.w800),
                     ),
                   ),
                   Icon(
@@ -402,11 +377,7 @@ class _InfoRow extends StatelessWidget {
         ),
         const SizedBox(width: 9),
         Expanded(
-          child: Text(
-            text,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
+          child: Text(text, maxLines: 2, overflow: TextOverflow.ellipsis),
         ),
       ],
     );
@@ -476,9 +447,8 @@ class _EmptyFarms extends StatelessWidget {
                   Text(
                     'Start with your first farm',
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                    style: Theme.of(context).textTheme.headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 8),
                   const Text(
@@ -505,10 +475,7 @@ class _FarmError extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
 
-  const _FarmError({
-    required this.message,
-    required this.onRetry,
-  });
+  const _FarmError({required this.message, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {

@@ -34,3 +34,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/Karnataka_Location_Master.json
+    - assets/images/
