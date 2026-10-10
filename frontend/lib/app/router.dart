@@ -98,6 +98,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (isAuthRoute ||
             isSplash ||
             location == '/otp-verification' ||
+            location == '/permission-setup' ||
             location == '/onboarding' ||
             location == '/farm-details') {
           return '/';
@@ -125,6 +126,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (isAuthRoute || isSplash ||
           location == '/otp-verification' ||
+          location == '/permission-setup' ||
           location == '/onboarding' ||
           location == '/farm-details') {
         return '/dashboard';
