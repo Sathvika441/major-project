@@ -378,6 +378,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
       final storage = ref.read(localStorageServiceProvider);
       await storage.setCompletedPhaseB(true);
       await storage.setOnboardingCompleted(true);
+      await storage.setOnboardingRequired(false);
       await storage.setPhaseBMigrated(true);
 
       if (mounted) {
