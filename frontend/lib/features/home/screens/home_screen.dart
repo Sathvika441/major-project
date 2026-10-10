@@ -203,7 +203,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(width: 8),
                     TextButton(
                       onPressed: () =>
-                          context.push(user == null ? '/login' : '/farms'),
+                          context.push(user == null ? '/signup' : '/farms'),
                       child: Text(user == null ? 'Get started' : 'Open farms'),
                     ),
                   ],
