@@ -152,7 +152,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 child: ListView(
                   padding: const EdgeInsets.all(20),
                   children: [
-                    Text('Farmer details', style: Theme.of(context).textTheme.headlineSmall),
+                    Text('Your farm location', style: Theme.of(context).textTheme.headlineSmall),
                     const SizedBox(height: 6),
                     const Text('Step 1 of 2 â€¢ Core farmer and location details'),
                     const SizedBox(height: 20),
