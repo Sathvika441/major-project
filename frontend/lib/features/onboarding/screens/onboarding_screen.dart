@@ -166,19 +166,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       ),
                       const SizedBox(height: 12),
                     ],
-                    TextFormField(
-                      controller: _name,
-                      decoration: const InputDecoration(labelText: 'Full name', prefixIcon: Icon(Icons.person_outline)),
-                      validator: AuthValidators.validateName,
-                    ),
-                    const SizedBox(height: 14),
-                    TextFormField(
-                      controller: _phone,
-                      keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(labelText: 'Phone number', prefixIcon: Icon(Icons.phone_outlined)),
-                      validator: AuthValidators.validatePhone,
-                    ),
-                    const SizedBox(height: 18),
+                    // Name and phone are collected at signup and reused here.
+                    // Phase A only asks for the farmer's location.
                     Text('Location', style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
