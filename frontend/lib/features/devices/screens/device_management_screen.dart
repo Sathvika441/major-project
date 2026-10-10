@@ -69,6 +69,20 @@ class DeviceManagementScreen extends ConsumerWidget {
                     online: online,
                     offline: offline,
                   ),
+                  const SizedBox(height: 12),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.info_outline_rounded, color: Theme.of(context).colorScheme.tertiary),
+                          const SizedBox(width: 10),
+                          const Expanded(child: Text('Hardware-ready setup: register the sensor ID and assign it to a farm now. A registered device stays “Not connected” until valid telemetry arrives. No live readings are fabricated and this page will not operate a pump without a compatible controller integration.')),
+                        ],
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 20),
                   if (items.isEmpty)
                     const _EmptyDeviceState()
@@ -252,8 +266,8 @@ class _DeviceSummary extends StatelessWidget {
               child: _SummaryMetric(
                 icon: Icons.sync_problem_outlined,
                 value: offline.toString(),
-                label: 'Offline',
-                color: offline == 0 ? scheme.primary : scheme.error,
+                label: 'Not connected',
+                color: offline == 0 ? scheme.primary : scheme.tertiary,
               ),
             ),
           ],
@@ -302,7 +316,8 @@ class _DeviceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reading = device.latestReading;
-    final online = device.connectionState == DeviceConnectionState.online;
+    final connection = device.connectionState;
+    final online = connection == DeviceConnectionState.online;
     final scheme = Theme.of(context).colorScheme;
 
     return Card(
@@ -341,7 +356,7 @@ class _DeviceCard extends StatelessWidget {
                         ),
                   ),
                 ),
-                _StatusPill(online: online),
+                _StatusPill(state: connection),
               ],
             ),
             const SizedBox(height: 16),
@@ -404,14 +419,25 @@ class _DeviceCard extends StatelessWidget {
 }
 
 class _StatusPill extends StatelessWidget {
-  final bool online;
+  final DeviceConnectionState state;
 
-  const _StatusPill({required this.online});
+  const _StatusPill({required this.state});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final color = online ? scheme.primary : scheme.error;
+    final color = switch (state) {
+      DeviceConnectionState.online => scheme.primary,
+      DeviceConnectionState.stale => scheme.tertiary,
+      DeviceConnectionState.offline => scheme.error,
+      DeviceConnectionState.unknown => scheme.tertiary,
+    };
+    final label = switch (state) {
+      DeviceConnectionState.online => 'ONLINE',
+      DeviceConnectionState.stale => 'STALE',
+      DeviceConnectionState.offline => 'OFFLINE',
+      DeviceConnectionState.unknown => 'NOT CONNECTED',
+    };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
       decoration: BoxDecoration(
@@ -419,7 +445,7 @@ class _StatusPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        online ? 'ONLINE' : 'OFFLINE',
+        label,
         style: TextStyle(
           color: color,
           fontSize: 10,
