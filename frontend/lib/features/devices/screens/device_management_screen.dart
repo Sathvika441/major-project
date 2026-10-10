@@ -384,7 +384,7 @@ class _DeviceCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Last seen ' + _ago(device.lastSeen),
+              reading == null ? 'Waiting for first telemetry packet' : 'Last seen ' + _ago(device.lastSeen),
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 18),
@@ -567,7 +567,7 @@ class _EmptyDeviceState extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'Soil moisture is simulated for now.',
+              'No sensor values are generated yet. Real readings will appear after a compatible device sends telemetry.',
               style: Theme.of(context).textTheme.bodySmall,
               textAlign: TextAlign.center,
             ),
