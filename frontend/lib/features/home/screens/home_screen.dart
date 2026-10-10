@@ -377,7 +377,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     Text(
                       weather == null
                           ? 'Getting local weather…'
-                          : '${weather.locality?.isNotEmpty == true ? weather.locality : (weather.district?.isNotEmpty == true ? weather.district : weather.locationName)} • today',
+                          : '${weather.locality?.isNotEmpty == true ? '${weather.locality}${weather.district?.isNotEmpty == true && weather.district != weather.locality ? ' • ${weather.district}' : ''}' : (weather.district?.isNotEmpty == true ? weather.district : weather.locationName)} • today',
                       style: TextStyle(
                         color: scheme.onPrimary.withValues(alpha: 0.8),
                         fontSize: 12,
