@@ -32,8 +32,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   void initState() {
     super.initState();
-    _name = TextEditingController();
-    _phone = TextEditingController();
+    final user = ref.read(authControllerProvider).user;
+    // Signup already collected these identity fields; only ask for them if
+    // an older account genuinely has no saved value.
+    _name = TextEditingController(text: user?.name ?? '');
+    _phone = TextEditingController(text: user?.phone ?? '');
     _village = TextEditingController();
     _loadMaster();
   }
