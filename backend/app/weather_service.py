@@ -61,8 +61,12 @@ class OpenMeteoWeatherService:
         try:
             payload = self._get_json(f"https://nominatim.openstreetmap.org/reverse?{query}")
             address = payload.get("address") or {}
-            locality = next((address.get(key) for key in ("village", "town", "city", "municipality", "suburb", "hamlet") if address.get(key)), "")
+            # Only village/hamlet belongs in the locality field. For a city/town
+            # without a village-level result, surface its district (or city fallback).
+            locality = next((address.get(key) for key in ("village", "hamlet") if address.get(key)), "")
             district = next((address.get(key) for key in ("state_district", "district", "county") if address.get(key)), "")
+            if not district:
+                district = next((address.get(key) for key in ("city", "town", "municipality", "suburb") if address.get(key)), "")
             return {"locality": str(locality), "district": str(district)}
         except (WeatherServiceError, AttributeError, TypeError):
             return {}
