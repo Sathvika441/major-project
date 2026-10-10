@@ -7,6 +7,7 @@ import '../../../widgets/asset_glass_panel.dart';
 import '../../../widgets/app_navigation_scaffold.dart';
 import '../../auth/controllers/auth_controller.dart';
 import 'farm_details_screen.dart';
+import 'farm_workspace_screen.dart';
 
 final selectedFarmProvider = StateProvider<String?>((ref) => null);
 
@@ -25,10 +26,20 @@ class FarmManagementScreen extends ConsumerWidget {
     String? farmId,
     bool startNew = false,
   }) async {
+    if (farmId != null && !startNew) {
+      final farms = await ref.read(farmsProvider.future);
+      final matches = farms.where((farm) => farm.id == farmId);
+      if (matches.isNotEmpty && context.mounted) {
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => FarmWorkspaceScreen(farm: matches.first)),
+        );
+        ref.invalidate(farmsProvider);
+        return;
+      }
+    }
+    if (!context.mounted) return;
     await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => FarmDetailsScreen(farmId: farmId, startNew: startNew),
-      ),
+      MaterialPageRoute(builder: (_) => FarmDetailsScreen(farmId: farmId, startNew: startNew)),
     );
     ref.invalidate(farmsProvider);
   }
