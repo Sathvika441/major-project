@@ -377,7 +377,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     Text(
                       weather == null
                           ? 'Getting local weather…'
-                          : '${weather.locality?.isNotEmpty == true ? '${weather.locality}${weather.district?.isNotEmpty == true && weather.district != weather.locality ? ' • ${weather.district}' : ''}' : (weather.district?.isNotEmpty == true ? weather.district : weather.locationName)} • today',
+                          : '${_weatherLocationLabel(weather)} • today',
                       style: TextStyle(
                         color: scheme.onPrimary.withValues(alpha: 0.8),
                         fontSize: 12,
@@ -418,6 +418,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
     );
+  }
+
+  String _weatherLocationLabel(WeatherData weather) {
+    final locality = weather.locality?.trim() ?? '';
+    final district = weather.district?.trim() ?? '';
+    if (locality.isNotEmpty && district.isNotEmpty && district.toLowerCase() != locality.toLowerCase()) {
+      return '$locality • $district';
+    }
+    if (locality.isNotEmpty) return locality;
+    if (district.isNotEmpty) return district;
+    return weather.locationName;
   }
 
   Widget _metric(ColorScheme scheme, String label, String value) {
