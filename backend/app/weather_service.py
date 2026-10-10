@@ -39,7 +39,7 @@ class OpenMeteoWeatherService:
         cached = self._cache.get(key)
         if cached and now-cached[0] < CACHE_TTL: return cached[1]
         if lat is not None and lon is not None:
-            reverse = self._reverse_geocode(float(lat), float(lon)) if not location.strip() else {}
+            reverse = self._reverse_geocode(float(lat), float(lon)) if location.strip().lower() in {"", "current location"} else {}
             resolved_name = location.strip() or reverse.get("locality") or "Current location"
             resolved={"name":resolved_name,"latitude":float(lat),"longitude":float(lon),"resolved_level":"coordinates","match_score":None}
             resolved_state = state
