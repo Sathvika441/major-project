@@ -65,7 +65,7 @@ class DeviceModel {
   });
 
   DeviceConnectionState get connectionState {
-    if (!isActive) return DeviceConnectionState.unknown;
+    if (!isActive || latestReading == null) return DeviceConnectionState.unknown;
     final age = DateTime.now().difference(lastSeen);
     if (age <= const Duration(minutes: 5)) return DeviceConnectionState.online;
     if (age <= const Duration(hours: 1)) return DeviceConnectionState.stale;
