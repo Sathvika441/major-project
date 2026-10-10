@@ -132,40 +132,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
             const SizedBox(height: 20),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                _action(
-                  context,
-                  Icons.wb_cloudy_rounded,
-                  'Weather',
-                  () => context.push('/weather'),
+            Card(
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () => showDialog<void>(
+                  context: context,
+                  builder: (_) => const _DiseaseDetectionDialog(),
                 ),
-                _action(
-                  context,
-                  Icons.biotech_rounded,
-                  'Detect disease',
-                  () => showDialog<void>(
-                    context: context,
-                    builder: (_) => const _DiseaseDetectionDialog(),
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 54,
+                        height: 54,
+                        decoration: BoxDecoration(
+                          color: scheme.tertiaryContainer,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Icon(Icons.biotech_rounded, color: scheme.tertiary, size: 30),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Check your arecanut leaves', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                            const SizedBox(height: 4),
+                            const Text('Upload a clear leaf photo to get an AI-assisted disease prediction and confidence score.'),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.arrow_forward_ios_rounded, size: 17, color: scheme.primary),
+                    ],
                   ),
                 ),
-                _action(
-                  context,
-                  Icons.agriculture_rounded,
-                  'My farms',
-                  () => context.push('/farms'),
-                ),
-                _action(
-                  context,
-                  user == null
-                      ? Icons.login_rounded
-                      : Icons.account_circle_rounded,
-                  user == null ? 'Sign in' : 'Profile',
-                  () => context.push(user == null ? '/login' : '/profile'),
-                ),
-              ],
+              ),
             ),
             const SizedBox(height: 20),
             Card(
@@ -192,8 +194,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           const SizedBox(height: 4),
                           Text(
                             user == null
-                                ? 'Sign in to save farms and get farm-specific weather.'
-                                : 'Open a farm to view its saved location weather and recommendations.',
+                                ? 'Create your free farm workspace to save field locations, get farm-specific weather, track irrigation and keep crop records in one place.'
+                                : 'Open a farm to view its saved location, irrigation plan, device readings and crop recommendations.',
                           ),
                         ],
                       ),
@@ -202,15 +204,122 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     TextButton(
                       onPressed: () =>
                           context.push(user == null ? '/login' : '/farms'),
-                      child: Text(user == null ? 'Sign in' : 'Open'),
+                      child: Text(user == null ? 'Get started' : 'Open farms'),
                     ),
                   ],
                 ),
               ),
+            const SizedBox(height: 26),
+            _blogSection(context),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _blogSection(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final articles = <Map<String, String>>[
+      {
+        'title': 'Arecanut plantation care',
+        'kn': 'ಅಡಿಕೆ ತೋಟದ ಆರೈಕೆ',
+        'summary': 'Canopy, drainage and regular field observation',
+        'knSummary': 'ನೆರಳು, ನೀರು ಹರಿವು ಮತ್ತು ನಿಯಮಿತ ತೋಟದ ಪರಿಶೀಲನೆ',
+        'image': 'assets/images/25_Areca-nut-trees_Rao_s-plantation_Sharmila-V-768x512.jpg.jpeg',
+        'body': 'Walk through the garden regularly and look for yellowing leaves, stem injury, waterlogging and unusual nut drop. Keep drainage channels clear, maintain suitable shade and record changes by farm so problems can be spotted early.',
+        'knBody': 'ತೋಟವನ್ನು ನಿಯಮಿತವಾಗಿ ಪರಿಶೀಲಿಸಿ. ಎಲೆ ಹಳದಿಯಾಗುವುದು, ಕಾಂಡದ ಗಾಯ, ನೀರು ನಿಲ್ಲುವುದು ಮತ್ತು ಅಡಿಕೆ ಉದುರುವುದನ್ನು ಗಮನಿಸಿ. ನೀರು ಹರಿಯುವ ಕಾಲುವೆಗಳನ್ನು ಸ್ವಚ್ಛವಾಗಿಡಿ, ಸೂಕ್ತ ನೆರಳನ್ನು ಕಾಪಾಡಿ ಮತ್ತು ಪ್ರತಿ ತೋಟದ ಬದಲಾವಣೆಗಳನ್ನು ದಾಖಲಿಸಿ.'
+      },
+      {
+        'title': 'Smarter irrigation',
+        'kn': 'ಸ್ಮಾರ್ಟ್ ನೀರಾವರಿ',
+        'summary': 'Use soil, crop stage and rainfall together',
+        'knSummary': 'ಮಣ್ಣು, ಬೆಳೆ ಹಂತ ಮತ್ತು ಮಳೆಯ ಮಾಹಿತಿಯನ್ನು ಒಟ್ಟಿಗೆ ಬಳಸಿ',
+        'image': 'assets/images/arecanut06jpg.jpeg',
+        'body': 'Before irrigating, check recent rainfall, soil moisture and the crop stage. Drip systems can help deliver water near the root zone. Weather-based suggestions are estimates; confirm field conditions before starting a pump or changing a schedule.',
+        'knBody': 'ನೀರಾವರಿಗೆ ಮೊದಲು ಇತ್ತೀಚಿನ ಮಳೆ, ಮಣ್ಣಿನ ತೇವಾಂಶ ಮತ್ತು ಬೆಳೆ ಹಂತವನ್ನು ಪರಿಶೀಲಿಸಿ. ಹನಿ ನೀರಾವರಿ ಬೇರುಗಳ ಬಳಿ ನೀರನ್ನು ತಲುಪಿಸಲು ಸಹಾಯ ಮಾಡುತ್ತದೆ. ಹವಾಮಾನ ಆಧಾರಿತ ಸಲಹೆಗಳು ಅಂದಾಜು ಮಾತ್ರ; ಪಂಪ್ ಆರಂಭಿಸುವ ಮೊದಲು ಹೊಲದ ಸ್ಥಿತಿಯನ್ನು ಪರಿಶೀಲಿಸಿ.'
+      },
+      {
+        'title': 'Prepare for heavy rain',
+        'kn': 'ಭಾರಿ ಮಳೆಗೆ ಸಿದ್ಧತೆ',
+        'summary': 'Drainage, harvested produce and safe spraying',
+        'knSummary': 'ನೀರು ಹರಿವು, ಕೊಯ್ಲಿನ ಉತ್ಪನ್ನ ಮತ್ತು ಸುರಕ್ಷಿತ ಸಿಂಪಡಣೆ',
+        'image': 'assets/images/images (2).jpeg',
+        'body': 'Keep harvested produce covered and dry, inspect drainage before rain, and avoid spraying when wind or rain can cause drift or wash-off. Follow the pesticide label and local agricultural guidance for safe application windows.',
+        'knBody': 'ಕೊಯ್ಲು ಮಾಡಿದ ಉತ್ಪನ್ನವನ್ನು ಮುಚ್ಚಿ ಒಣವಾಗಿಡಿ. ಮಳೆಯ ಮೊದಲು ನೀರು ಹರಿಯುವ ಮಾರ್ಗಗಳನ್ನು ಪರಿಶೀಲಿಸಿ. ಗಾಳಿ ಅಥವಾ ಮಳೆಯಿಂದ ಔಷಧಿ ಹರಿದುಹೋಗುವ ಸಾಧ್ಯತೆ ಇದ್ದರೆ ಸಿಂಪಡಣೆ ತಪ್ಪಿಸಿ. ಸುರಕ್ಷಿತ ಸಮಯಕ್ಕಾಗಿ ಔಷಧಿಯ ಲೇಬಲ್ ಮತ್ತು ಸ್ಥಳೀಯ ಕೃಷಿ ಸಲಹೆಗಳನ್ನು ಅನುಸರಿಸಿ.'
+      },
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Field guides • ಕೃಷಿ ಮಾರ್ಗದರ್ಶಿಗಳು', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+        const SizedBox(height: 5),
+        Text('Practical reads for arecanut growers / ಅಡಿಕೆ ಬೆಳೆಗಾರರಿಗೆ ಉಪಯುಕ್ತ ಮಾಹಿತಿ', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
+        const SizedBox(height: 14),
+        SizedBox(
+          height: 330,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: articles.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final article = articles[index];
+              return SizedBox(
+                width: 258,
+                child: Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: () => showDialog<void>(
+                      context: context,
+                      builder: (dialogContext) => AlertDialog(
+                        title: Text(article['title']!),
+                        content: SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.asset(article['image']!, height: 150, width: double.infinity, fit: BoxFit.cover)),
+                              const SizedBox(height: 14),
+                              Text(article['body']!),
+                              const SizedBox(height: 14),
+                              Text(article['kn']!, style: Theme.of(dialogContext).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                              const SizedBox(height: 6),
+                              Text(article['knBody']!),
+                            ],
+                          ),
+                        ),
+                        actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Close'))],
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Image.asset(article['image']!, height: 135, width: double.infinity, fit: BoxFit.cover, errorBuilder: (_, _, _) => Container(height: 135, color: scheme.surfaceContainerHighest, child: Icon(Icons.agriculture_rounded, size: 42, color: scheme.primary))),
+                        Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(article['title']!, maxLines: 2, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                              const SizedBox(height: 3),
+                              Text(article['kn']!, style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w700)),
+                              const SizedBox(height: 8),
+                              Text(article['summary']!, maxLines: 2, overflow: TextOverflow.ellipsis),
+                              const SizedBox(height: 3),
+                              Text(article['knSummary']!, maxLines: 2, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall),
+                              const SizedBox(height: 8),
+                              Row(children: [Text('Read guide', style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w800)), const SizedBox(width: 5), Icon(Icons.arrow_forward_rounded, size: 16, color: scheme.primary)]),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
