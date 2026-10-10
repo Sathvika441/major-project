@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../models/farm/farm_model.dart';
 import '../../../models/weather/weather_model.dart';
+import '../../../repositories/farm/farm_repository.dart';
 import '../../../services/backend/backend_api.dart';
 import '../../../widgets/app_navigation_scaffold.dart';
 import 'farm_details_screen.dart';
@@ -18,14 +19,15 @@ class _FarmWorkspaceScreenState extends ConsumerState<FarmWorkspaceScreen> {
   WeatherData? weather;
   String? error;
   bool loading = true;
+  late FarmModel _farm;
 
   @override
-  void initState() { super.initState(); _loadWeather(); }
+  void initState() { super.initState(); _farm = widget.farm; _loadWeather(); }
 
   Future<void> _loadWeather() async {
     setState(() { loading = true; error = null; });
     try {
-      final f = widget.farm;
+      final f = _farm;
       final result = await ref.read(backendApiProvider).getWeatherByPlace(
         district: f.district, taluk: f.taluk, village: f.village,
       );
@@ -36,13 +38,21 @@ class _FarmWorkspaceScreenState extends ConsumerState<FarmWorkspaceScreen> {
   }
 
   Future<void> _editFarm() async {
-    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => FarmDetailsScreen(farmId: widget.farm.id)));
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => FarmDetailsScreen(farmId: _farm.id)));
+    if (!mounted) return;
+    try {
+      final farms = await ref.read(farmRepositoryProvider).getFarms(_farm.userId);
+      final updated = farms.where((farm) => farm.id == _farm.id);
+      if (updated.isNotEmpty && mounted) setState(() => _farm = updated.first);
+    } catch (_) {
+      // Keep the current saved farm visible if a refresh temporarily fails.
+    }
     if (mounted) _loadWeather();
   }
 
   @override
   Widget build(BuildContext context) {
-    final f = widget.farm;
+    final f = _farm;
     final scheme = Theme.of(context).colorScheme;
     final place = weather?.locality?.isNotEmpty == true ? weather!.locality! :
       weather?.district?.isNotEmpty == true ? weather!.district! :
