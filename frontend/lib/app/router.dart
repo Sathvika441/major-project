@@ -98,7 +98,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (isAuthRoute ||
             isSplash ||
             location == '/otp-verification' ||
-            location == '/permission-setup' ||
             location == '/onboarding' ||
             location == '/farm-details') {
           return '/';
@@ -108,14 +107,9 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Task 12: old users that already finished the original onboarding are
       // migrated in AuthController before authenticated state is published.
-      final permissionsDone = storage.hasRequestedPermissions();
       final phaseADone = storage.hasCompletedPhaseA();
       final phaseBDone = storage.hasCompletedPhaseB();
       final migrationNeeded = legacyFarmDetailsMissing();
-
-      if (!permissionsDone) {
-        return location == '/permission-setup' ? null : '/permission-setup';
-      }
 
       if (migrationNeeded) {
         return location == '/farm-details' ? null : '/farm-details';
@@ -131,7 +125,6 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (isAuthRoute || isSplash ||
           location == '/otp-verification' ||
-          location == '/permission-setup' ||
           location == '/onboarding' ||
           location == '/farm-details') {
         return '/dashboard';
