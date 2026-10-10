@@ -446,9 +446,9 @@ class _StatusPill extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final color = switch (state) {
       DeviceConnectionState.online => scheme.primary,
-      DeviceConnectionState.stale => scheme.tertiary,
+      DeviceConnectionState.stale => scheme.onTertiaryContainer,
       DeviceConnectionState.offline => scheme.error,
-      DeviceConnectionState.unknown => scheme.tertiary,
+      DeviceConnectionState.unknown => scheme.onTertiaryContainer,
     };
     final label = switch (state) {
       DeviceConnectionState.online => 'ONLINE',
