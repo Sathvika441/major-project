@@ -24,5 +24,29 @@ class GuidanceTests(unittest.TestCase):
         g=OpenMeteoWeatherService._guidance(80,5,8,70,61,10)
         self.assertEqual(g["irrigation"],"Not required")
 
+    def test_reverse_geocode_prefers_village_and_reports_district(self):
+        service = OpenMeteoWeatherService()
+        with unittest.mock.patch.object(
+            OpenMeteoWeatherService,
+            "_get_json",
+            return_value={"address": {"village": "Example Village", "state_district": "Mysuru"}},
+        ):
+            self.assertEqual(
+                service._reverse_geocode(12.3, 76.6),
+                {"locality": "Example Village", "district": "Mysuru"},
+            )
+
+    def test_reverse_geocode_falls_back_to_city_when_district_missing(self):
+        service = OpenMeteoWeatherService()
+        with unittest.mock.patch.object(
+            OpenMeteoWeatherService,
+            "_get_json",
+            return_value={"address": {"city": "Mysuru"}},
+        ):
+            self.assertEqual(
+                service._reverse_geocode(12.3, 76.6),
+                {"locality": "", "district": "Mysuru"},
+            )
+
 if __name__=="__main__":
     unittest.main()
