@@ -141,7 +141,15 @@ class DeviceManagementScreen extends ConsumerWidget {
                       final candidate = value?.trim() ?? '';
                       if (candidate.isEmpty) return 'Enter the device ID';
                       if (candidate.length < 3 || candidate.length > 50) return 'Use 3–50 characters';
-                      if (!RegExp(r'^[A-Za-z0-9_-]+
+                      if (!RegExp(r'^[A-Za-z0-9_-]+$').hasMatch(candidate)) {
+                        return 'Use letters, numbers, hyphens or underscores only';
+                      }
+                      if (existingDevices.any((device) =>
+                          device.deviceId.trim().toLowerCase() == candidate.toLowerCase())) {
+                        return 'This device ID is already registered';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
