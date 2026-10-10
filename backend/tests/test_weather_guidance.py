@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 from backend.app.weather_service import OpenMeteoWeatherService
 
 class GuidanceTests(unittest.TestCase):
@@ -26,7 +27,7 @@ class GuidanceTests(unittest.TestCase):
 
     def test_reverse_geocode_prefers_village_and_reports_district(self):
         service = OpenMeteoWeatherService()
-        with unittest.mock.patch.object(
+        with patch.object(
             OpenMeteoWeatherService,
             "_get_json",
             return_value={"address": {"village": "Example Village", "state_district": "Mysuru"}},
