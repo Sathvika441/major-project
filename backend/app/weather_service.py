@@ -39,8 +39,12 @@ class OpenMeteoWeatherService:
         cached = self._cache.get(key)
         if cached and now-cached[0] < CACHE_TTL: return cached[1]
         if lat is not None and lon is not None:
-            resolved={"name":location.strip() or "Current location","latitude":float(lat),"longitude":float(lon),"resolved_level":"coordinates","match_score":None}
-            resolved_state,resolved_district,resolved_locality=state,district,location.strip()
+            reverse = self._reverse_geocode(float(lat), float(lon)) if not location.strip() else {}
+            resolved_name = location.strip() or reverse.get("locality") or "Current location"
+            resolved={"name":resolved_name,"latitude":float(lat),"longitude":float(lon),"resolved_level":"coordinates","match_score":None}
+            resolved_state = state
+            resolved_district = district or reverse.get("district", "")
+            resolved_locality = reverse.get("locality") or location.strip() or resolved_name
         else:
             if not district and not taluk and not village and not location: district="Shivamogga"
             resolved=self._resolve_location(state=state,district=district,taluk=taluk,village=village,location=location)
@@ -49,6 +53,19 @@ class OpenMeteoWeatherService:
         result=self._normalize(forecast=forecast,location=resolved,state=resolved_state,district=resolved_district,taluk=taluk,village=village,locality=resolved_locality)
         self._cache[key]=(now,result)
         return result
+
+
+    def _reverse_geocode(self, latitude, longitude):
+        """Resolve GPS coordinates to a readable locality without blocking weather on geocoder failures."""
+        query = urlencode({"lat": latitude, "lon": longitude, "format": "jsonv2", "zoom": 10, "addressdetails": 1})
+        try:
+            payload = self._get_json(f"https://nominatim.openstreetmap.org/reverse?{query}")
+            address = payload.get("address") or {}
+            locality = next((address.get(key) for key in ("village", "town", "city", "municipality", "suburb", "hamlet") if address.get(key)), "")
+            district = next((address.get(key) for key in ("state_district", "district", "county") if address.get(key)), "")
+            return {"locality": str(locality), "district": str(district)}
+        except (WeatherServiceError, AttributeError, TypeError):
+            return {}
 
     @staticmethod
     def _location_key(state,district,taluk,village,location,lat,lon):
