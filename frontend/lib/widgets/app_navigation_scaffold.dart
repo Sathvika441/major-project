@@ -70,6 +70,7 @@ class AppNavigationScaffold extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
+    final signedInUser = ref.watch(authControllerProvider).user;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -128,6 +129,34 @@ class AppNavigationScaffold extends ConsumerWidget {
             ),
             actions: [
               ...?actions,
+              if (signedInUser != null)
+                PopupMenuButton<String>(
+                  tooltip: 'Account options',
+                  onSelected: (value) async {
+                    if (value != 'sign_out') return;
+                    final shouldSignOut = await showDialog<bool>(
+                      context: context,
+                      builder: (dialogContext) => AlertDialog(
+                        title: const Text('Sign out?'),
+                        content: const Text('Your saved farms and crop records will remain in your account.'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
+                          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Sign out')),
+                        ],
+                      ),
+                    );
+                    if (shouldSignOut != true || !context.mounted) return;
+                    await ref.read(authControllerProvider.notifier).logout();
+                    if (context.mounted) context.go('/login');
+                  },
+                  itemBuilder: (context) => const [
+                    PopupMenuItem<String>(
+                      value: 'sign_out',
+                      child: Row(children: [Icon(Icons.logout_rounded), SizedBox(width: 10), Text('Sign out')]),
+                    ),
+                  ],
+                  icon: const Icon(Icons.more_vert_rounded),
+                ),
               IconButton(
                 tooltip: themeMode == ThemeMode.dark
                     ? 'Switch to light mode'
