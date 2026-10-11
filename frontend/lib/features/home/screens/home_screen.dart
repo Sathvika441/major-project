@@ -1,5 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -558,6 +560,13 @@ class _DiseaseDetectionDialogState
   String? _error;
   bool _predicting = false;
   bool _pickingImage = false;
+  double? _lowConfidence;
+
+  double? _normalizedConfidence(dynamic value) {
+    if (value is! num) return null;
+    final score = value.toDouble();
+    return score > 1 ? score / 100 : score;
+  }
 
   Future<void> _pickImage() async {
     if (_pickingImage || _predicting) return;
@@ -599,6 +608,7 @@ class _DiseaseDetectionDialogState
       setState(() {
         _image = file;
         _result = null;
+        _lowConfidence = null;
         _error = null;
       });
     } catch (_) {
@@ -629,8 +639,16 @@ class _DiseaseDetectionDialogState
           .read(backendApiProvider)
           .predictImage(bytes, filename: file.name);
       if (!mounted) return;
+      final score = _normalizedConfidence(result['confidence']);
       setState(() {
-        _result = result;
+        if (score != null && score < 0.50) {
+          _result = null;
+          _lowConfidence = score;
+          _error = null;
+        } else {
+          _result = result;
+          _lowConfidence = null;
+        }
         _predicting = false;
       });
     } on BackendApiException catch (e) {
@@ -651,7 +669,7 @@ class _DiseaseDetectionDialogState
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final confidence = (_result?['confidence'] as num?)?.toDouble();
+    final confidence = _normalizedConfidence(_result?['confidence']);
     final guidance = Map<String, dynamic>.from(_result?['guidance'] as Map? ?? const {});
     final actions = (guidance['actions'] as List? ?? const []).map((item) => item.toString()).toList();
     final predictedAt = _result?['predicted_at']?.toString();
@@ -687,6 +705,51 @@ class _DiseaseDetectionDialogState
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 Text(_error!, style: TextStyle(color: scheme.error)),
+              ],
+              if (_lowConfidence != null) ...[
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: scheme.errorContainer,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.warning_amber_rounded, color: scheme.onErrorContainer),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Low-confidence prediction (${(_lowConfidence! * 100).toStringAsFixed(1)}%)',
+                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: scheme.onErrorContainer,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'We could not identify the disease confidently. Please upload a suitable image and try again. Use a clear, close-up photo of a single arecanut leaf, in good lighting, with the affected area visible and the leaf in focus.',
+                        style: TextStyle(color: scheme.onErrorContainer),
+                      ),
+                      const SizedBox(height: 10),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: FilledButton.icon(
+                          onPressed: _pickingImage || _predicting ? null : _pickImage,
+                          icon: const Icon(Icons.add_photo_alternate_outlined),
+                          label: const Text('Upload a suitable image'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
               if (_result != null) ...[
                 const Divider(height: 28),
@@ -757,9 +820,9 @@ class _DiseaseDetectionDialogState
           ),
         if (_result != null)
           FilledButton.icon(
-            onPressed: () => _downloadReport(report, _image!.name),
-            icon: const Icon(Icons.download_outlined),
-            label: const Text('Download report'),
+            onPressed: () => _viewReport(report, _image!.name),
+            icon: const Icon(Icons.description_outlined),
+            label: const Text('View report'),
           ),
       ],
     );
@@ -790,12 +853,52 @@ class _DiseaseDetectionDialogState
     ].join('\n');
   }
 
-  Future<void> _downloadReport(String report, String imageName) async {
-    final filename = 'arecasmart_disease_report_${DateTime.now().millisecondsSinceEpoch}.txt';
-    await Clipboard.setData(ClipboardData(text: report));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Report copied to clipboard. Save it as $filename.')),
+  Future<void> _viewReport(String report, String imageName) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Disease assessment report'),
+        content: SizedBox(
+          width: 520,
+          child: SingleChildScrollView(
+            child: SelectableText(report),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Close'),
+          ),
+          FilledButton.icon(
+            onPressed: () => _downloadReport(report),
+            icon: const Icon(Icons.download_outlined),
+            label: const Text('Download PDF'),
+          ),
+        ],
+      ),
     );
+  }
+
+  Future<void> _downloadReport(String report) async {
+    final filename = 'arecasmart_disease_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
+    final document = pw.Document();
+    document.addPage(
+      pw.MultiPage(
+        build: (pdfContext) => [
+          pw.Text(
+            'ARECASMART — ARECANUT DISEASE ASSESSMENT',
+            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 12),
+          ...report.split('\\n').map(
+            (line) => pw.Padding(
+              padding: const pw.EdgeInsets.only(bottom: 5),
+              child: pw.Text(line.isEmpty ? ' ' : line, style: const pw.TextStyle(fontSize: 10)),
+            ),
+          ),
+        ],
+      ),
+    );
+    await Printing.sharePdf(bytes: await document.save(), filename: filename);
   }
 }
