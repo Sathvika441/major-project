@@ -780,4 +780,5 @@ class _DiseaseDetectionDialogState
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Report copied to clipboard for saving as $filename (image: $safeName).')),
     );
-  }}
+  }
+}
