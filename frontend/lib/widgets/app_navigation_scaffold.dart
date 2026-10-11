@@ -129,44 +129,69 @@ class AppNavigationScaffold extends ConsumerWidget {
             ),
             actions: [
               ...?actions,
-              if (signedInUser != null)
-                PopupMenuButton<String>(
-                  tooltip: 'Account options',
-                  onSelected: (value) async {
-                    if (value != 'sign_out') return;
-                    final shouldSignOut = await showDialog<bool>(
-                      context: context,
-                      builder: (dialogContext) => AlertDialog(
-                        title: const Text('Sign out?'),
-                        content: const Text('Your saved farms and crop records will remain in your account.'),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
-                          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Sign out')),
+              PopupMenuButton<String>(
+                tooltip: 'More options',
+                onSelected: (value) async {
+                  if (value == 'toggle_theme') {
+                    ref.read(themeModeProvider.notifier).toggle();
+                    return;
+                  }
+                  if (value != 'sign_out' || signedInUser == null) return;
+                  final shouldSignOut = await showDialog<bool>(
+                    context: context,
+                    builder: (dialogContext) => AlertDialog(
+                      title: const Text('Sign out?'),
+                      content: const Text(
+                        'Your saved farms and crop records will remain in your account.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dialogContext, false),
+                          child: const Text('Cancel'),
+                        ),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(dialogContext, true),
+                          child: const Text('Sign out'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (shouldSignOut != true || !context.mounted) return;
+                  await ref.read(authControllerProvider.notifier).logout();
+                  if (context.mounted) context.go('/login');
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem<String>(
+                    value: 'toggle_theme',
+                    child: Row(
+                      children: [
+                        Icon(
+                          themeMode == ThemeMode.dark
+                              ? Icons.light_mode_outlined
+                              : Icons.dark_mode_outlined,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          themeMode == ThemeMode.dark
+                              ? 'Switch to light mode'
+                              : 'Switch to dark mode',
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (signedInUser != null)
+                    const PopupMenuItem<String>(
+                      value: 'sign_out',
+                      child: Row(
+                        children: [
+                          Icon(Icons.logout_rounded),
+                          SizedBox(width: 10),
+                          Text('Sign out'),
                         ],
                       ),
-                    );
-                    if (shouldSignOut != true || !context.mounted) return;
-                    await ref.read(authControllerProvider.notifier).logout();
-                    if (context.mounted) context.go('/login');
-                  },
-                  itemBuilder: (context) => const [
-                    PopupMenuItem<String>(
-                      value: 'sign_out',
-                      child: Row(children: [Icon(Icons.logout_rounded), SizedBox(width: 10), Text('Sign out')]),
                     ),
-                  ],
-                  icon: const Icon(Icons.more_vert_rounded),
-                ),
-              IconButton(
-                tooltip: themeMode == ThemeMode.dark
-                    ? 'Switch to light mode'
-                    : 'Switch to dark mode',
-                onPressed: () => ref.read(themeModeProvider.notifier).toggle(),
-                icon: Icon(
-                  themeMode == ThemeMode.dark
-                      ? Icons.light_mode_outlined
-                      : Icons.dark_mode_outlined,
-                ),
+                ],
+                icon: const Icon(Icons.more_vert_rounded),
               ),
             ],
           ),
