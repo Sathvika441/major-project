@@ -811,7 +811,7 @@ class _DiseaseDetectionDialogState
                 : (_image == null ? 'Upload image' : 'Change image'),
           ),
         ),
-        if (_image != null && _result == null)
+        if (_image != null && _result == null && _lowConfidence == null)
           FilledButton.icon(
             onPressed: _predicting ? null : _predict,
             icon: _predicting
