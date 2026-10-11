@@ -541,13 +541,20 @@ class _DiseaseDetectionDialogState
     try {
       final picked = await FilePicker.platform.pickFiles(
         type: FileType.image,
-        allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
         allowMultiple: false,
         withData: true,
       );
       if (!mounted) return;
       if (picked == null || picked.files.isEmpty) return;
       final file = picked.files.single;
+      final extension = file.extension?.toLowerCase() ?? '';
+      if (!['jpg', 'jpeg', 'png', 'webp'].contains(extension)) {
+        setState(() {
+          _error = 'Choose a JPG, PNG or WEBP image.';
+          _result = null;
+        });
+        return;
+      }
       if (file.bytes == null || file.bytes!.isEmpty) {
         setState(() {
           _error = 'Unable to read the selected image. Please choose another.';
