@@ -21,6 +21,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   WeatherData? _weather;
   String? _error;
   bool _loading = true;
+  String _blogLanguage = 'en';
 
   @override
   void initState() {
@@ -234,6 +235,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _blogSection(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final isKannada = _blogLanguage == 'kn';
     final articles = <Map<String, String>>[
       {
         'title': 'Arecanut plantation care',
@@ -266,16 +268,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Field guides • ಕೃಷಿ ಮಾರ್ಗದರ್ಶಿಗಳು',
-          style: Theme.of(context).textTheme.titleLarge
-              ?.copyWith(fontWeight: FontWeight.w800),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          'Practical reads for arecanut growers / ಅಡಿಕೆ ಬೆಳೆಗಾರರಿಗೆ ಉಪಯುಕ್ತ ಮಾಹಿತಿ',
-          style: Theme.of(context).textTheme.bodySmall
-              ?.copyWith(color: scheme.onSurfaceVariant),
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(isKannada ? 'ಕೃಷಿ ಮಾರ್ಗದರ್ಶಿಗಳು' : 'Field guides',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 4),
+                  Text(isKannada ? 'ಅಡಿಕೆ ಬೆಳೆಗಾರರಿಗೆ ಉಪಯುಕ್ತ ಮಾಹಿತಿ' : 'Practical reads for arecanut growers',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
+                ],
+              ),
+            ),
+            SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(value: 'en', label: Text('English')),
+                ButtonSegment(value: 'kn', label: Text('ಕನ್ನಡ')),
+              ],
+              selected: {_blogLanguage},
+              onSelectionChanged: (value) => setState(() => _blogLanguage = value.first),
+            ),
+          ],
         ),
         const SizedBox(height: 14),
         SizedBox(
@@ -286,6 +301,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             separatorBuilder: (_, _) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final article = articles[index];
+              final title = isKannada ? article['kn']! : article['title']!;
+              final summary = isKannada ? article['knSummary']! : article['summary']!;
+              final body = isKannada ? article['knBody']! : article['body']!;
               return SizedBox(
                 width: 258,
                 child: Card(
@@ -294,7 +312,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     onTap: () => showDialog<void>(
                       context: context,
                       builder: (dialogContext) => AlertDialog(
-                        title: Text(article['title']!),
+                        title: Text(title),
                         content: SizedBox(
                           width: 420,
                           child: SingleChildScrollView(
@@ -304,106 +322,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
-                                  child: Image.asset(
-                                    article['image']!,
-                                    height: 150,
-                                    width: 420,
-                                    fit: BoxFit.cover,
-                                  ),
+                                  child: Image.asset(article['image']!, height: 150, width: 420, fit: BoxFit.cover,
+                                    errorBuilder: (_, _, _) => const SizedBox(height: 100, child: Center(child: Icon(Icons.agriculture_rounded)))),
                                 ),
                                 const SizedBox(height: 14),
-                                Text(article['body']!),
-                                const SizedBox(height: 14),
-                                Text(
-                                  article['kn']!,
-                                  style: Theme.of(dialogContext)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.w800),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(article['knBody']!),
+                                Text(body),
                               ],
                             ),
                           ),
                         ),
                         actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(dialogContext),
-                            child: const Text('Close'),
-                          ),
+                          TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(isKannada ? 'ಮುಚ್ಚಿ' : 'Close')),
                         ],
                       ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Image.asset(
-                          article['image']!,
-                          height: 135,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => Container(
-                            height: 135,
-                            color: scheme.surfaceContainerHighest,
-                            child: Icon(
-                              Icons.agriculture_rounded,
-                              size: 42,
-                              color: scheme.primary,
-                            ),
-                          ),
-                        ),
+                        Image.asset(article['image']!, height: 135, width: double.infinity, fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => Container(height: 135, color: scheme.surfaceContainerHighest, child: Icon(Icons.agriculture_rounded, size: 42, color: scheme.primary))),
                         Padding(
                           padding: const EdgeInsets.all(14),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                article['title']!,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.w800),
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                article['kn']!,
-                                style: TextStyle(
-                                  color: scheme.primary,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
+                              Text(title, maxLines: 2, overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
                               const SizedBox(height: 8),
-                              Text(
-                                article['summary']!,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                article['knSummary']!,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Text(
-                                    'Read guide',
-                                    style: TextStyle(
-                                      color: scheme.primary,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 5),
-                                  Icon(
-                                    Icons.arrow_forward_rounded,
-                                    size: 16,
-                                    color: scheme.primary,
-                                  ),
-                                ],
-                              ),
+                              Text(summary, maxLines: 3, overflow: TextOverflow.ellipsis),
+                              const SizedBox(height: 10),
+                              Row(children: [
+                                Text(isKannada ? 'ಮಾರ್ಗದರ್ಶಿ ಓದಿ' : 'Read guide', style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w800)),
+                                const SizedBox(width: 5),
+                                Icon(Icons.arrow_forward_rounded, size: 16, color: scheme.primary),
+                              ]),
                             ],
                           ),
                         ),
@@ -700,11 +652,20 @@ class _DiseaseDetectionDialogState
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final confidence = (_result?['confidence'] as num?)?.toDouble();
+    final guidance = Map<String, dynamic>.from(_result?['guidance'] as Map? ?? const {});
+    final actions = (guidance['actions'] as List? ?? const []).map((item) => item.toString()).toList();
+    final predictedAt = _result?['predicted_at']?.toString();
+    final displayTimestamp = predictedAt == null
+        ? ''
+        : DateTime.tryParse(predictedAt)?.toLocal().toString() ?? predictedAt;
+    final report = _result == null || _image == null
+        ? ''
+        : _buildReport(_result!, _image!.name, confidence, guidance, displayTimestamp);
 
     return AlertDialog(
-      title: const Text('Detect disease'),
+      title: const Text('Arecanut disease assessment'),
       content: SizedBox(
-        width: 420,
+        width: 520,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -713,54 +674,64 @@ class _DiseaseDetectionDialogState
               if (_image?.bytes case final bytes?)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.memory(
-                    bytes,
-                    height: 240,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, _, _) => const SizedBox(
-                      height: 120,
-                      child: Center(
-                        child: Text('Unable to preview this image.'),
-                      ),
-                    ),
-                  ),
+                  child: Image.memory(bytes, height: 220, fit: BoxFit.contain,
+                    errorBuilder: (_, _, _) => const SizedBox(height: 100, child: Center(child: Text('Unable to preview this image.')))),
                 )
               else
                 const Text('Upload a JPG, PNG or WEBP image to get started.'),
               if (_image != null) ...[
                 const SizedBox(height: 8),
-                Text(
-                  _image!.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+                Text('Image reference: ${_image!.name}', maxLines: 2, overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall),
               ],
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 Text(_error!, style: TextStyle(color: scheme.error)),
               ],
               if (_result != null) ...[
-                const SizedBox(height: 16),
-                Text(
-                  _result!['prediction']?.toString() ?? 'Result received',
-                  style: Theme.of(context).textTheme.titleLarge
-                      ?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                if (confidence != null)
-                  Text(
-                    'Prediction score: ${(confidence * 100).toStringAsFixed(1)}%',
+                const Divider(height: 28),
+                Text('Prediction result', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                const SizedBox(height: 4),
+                Text(_result!['prediction']?.toString() ?? 'Result received',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+                if (confidence != null) Text('Prediction score: ${(confidence * 100).toStringAsFixed(1)}%'),
+                if (displayTimestamp.isNotEmpty) Text('Timestamp: $displayTimestamp'),
+                const SizedBox(height: 12),
+                Text(guidance['status']?.toString() ?? 'Management guidance',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                if (guidance['urgency'] != null)
+                  Padding(padding: const EdgeInsets.only(top: 4), child: Text('Follow-up: ${guidance['urgency']}')),
+                const SizedBox(height: 8),
+                ...actions.map((item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 7),
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Icon(Icons.check_circle_outline, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(item)),
+                  ]),
+                )),
+                const SizedBox(height: 6),
+                Text('Fertilizer guidance', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                const SizedBox(height: 4),
+                Text(guidance['fertilizer']?.toString() ?? 'Use soil-test-based, crop-stage-specific nutrition and seek local extension advice.'),
+                if (guidance['safety_note'] != null) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: scheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(12)),
+                    child: Text(guidance['safety_note'].toString(), style: Theme.of(context).textTheme.bodySmall),
                   ),
+                ],
+                const SizedBox(height: 8),
+                Text('The image is referenced by filename only; it is not uploaded to persistent storage by this feature.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
               ],
             ],
           ),
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: _predicting ? null : () => Navigator.of(context).pop(),
-          child: const Text('Close'),
-        ),
+        TextButton(onPressed: _predicting ? null : () => Navigator.of(context).pop(), child: const Text('Close')),
         OutlinedButton.icon(
           onPressed: _predicting || _pickingImage ? null : _pickImage,
           icon: _pickingImage
@@ -776,19 +747,55 @@ class _DiseaseDetectionDialogState
                 : (_image == null ? 'Upload image' : 'Change image'),
           ),
         ),
-        if (_image != null)
+        if (_image != null && _result == null)
           FilledButton.icon(
             onPressed: _predicting ? null : _predict,
             icon: _predicting
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.auto_awesome),
             label: Text(_predicting ? 'Predicting...' : 'Predict'),
           ),
+        if (_result != null)
+          FilledButton.icon(
+            onPressed: () => _downloadReport(report, _image!.name),
+            icon: const Icon(Icons.download_outlined),
+            label: const Text('Download report'),
+          ),
       ],
+    );
+  }
+
+  String _buildReport(Map<String, dynamic> result, String imageName, double? confidence,
+      Map<String, dynamic> guidance, String timestamp) {
+    final actions = (guidance['actions'] as List? ?? const []).map((e) => '- ${e.toString()}').join('\n');
+    return [
+      'ARECASMART — ARECANUT DISEASE ASSESSMENT',
+      'Prediction label: ${result['prediction'] ?? 'Unknown'}',
+      'Timestamp (local display): ${timestamp.isEmpty ? 'Not supplied' : timestamp}',
+      'Timestamp (UTC): ${result['predicted_at'] ?? 'Not supplied'}',
+      'Image reference: $imageName',
+      'Image stored persistently: No',
+      'Prediction score: ${confidence == null ? 'Not supplied' : '${(confidence * 100).toStringAsFixed(2)}%'}',
+      'Model: ${result['model'] ?? 'Unknown'}',
+      '',
+      'Assessment: ${guidance['status'] ?? 'No class-specific guidance'}',
+      'Recommended actions:',
+      actions.isEmpty ? '- Seek local horticulture/KVK advice before treatment.' : actions,
+      '',
+      'Fertilizer/nutrition note:',
+      '${guidance['fertilizer'] ?? 'Dose cannot be calculated from an image alone. Use a soil test and crop-stage-specific recommendations.'}',
+      '',
+      'Safety note:',
+      '${guidance['safety_note'] ?? 'AI screening only. Confirm with a qualified local horticulture expert before treatment.'}',
+    ].join('\n');
+  }
+
+  Future<void> _downloadReport(String report, String imageName) async {
+    final filename = 'arecasmart_disease_report_${DateTime.now().millisecondsSinceEpoch}.txt';
+    await Clipboard.setData(ClipboardData(text: report));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Report copied to clipboard. Save it as $filename.')),
     );
   }
 }
