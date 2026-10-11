@@ -984,12 +984,63 @@ class _DiseaseDetectionDialogState
     ].join('\n');
   }
 
-  Future<void> _downloadReport(String report, String imageName) async {
-    final filename = 'arecasmart_disease_report_${DateTime.now().millisecondsSinceEpoch}.txt';
-    await Clipboard.setData(ClipboardData(text: report));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Report copied to clipboard. Save it as $filename.')),
+  Future<void> _viewReport(String report) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Disease assessment report'),
+        content: SizedBox(
+          width: 520,
+          child: SingleChildScrollView(
+            child: SelectableText(report),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Close'),
+          ),
+          FilledButton.icon(
+            onPressed: () => _downloadReport(report),
+            icon: const Icon(Icons.download_outlined),
+            label: const Text('Download PDF'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _downloadReport(String report) async {
+    final filename =
+        'arecasmart_disease_report_${DateTime.now().millisecondsSinceEpoch}.pdf';
+    final document = pw.Document();
+    document.addPage(
+      pw.MultiPage(
+        build: (pdfContext) => [
+          pw.Text(
+            'ARECASMART — ARECANUT DISEASE ASSESSMENT',
+            style: pw.TextStyle(
+              fontSize: 18,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+          pw.SizedBox(height: 12),
+          ...report.split('\\n').map(
+                (line) => pw.Padding(
+                  padding: const pw.EdgeInsets.only(bottom: 5),
+                  child: pw.Text(
+                    line.isEmpty ? ' ' : line,
+                    style: const pw.TextStyle(fontSize: 10),
+                  ),
+                ),
+              ),
+        ],
+      ),
+    );
+
+    await Printing.sharePdf(
+      bytes: await document.save(),
+      filename: filename,
     );
   }
 }
