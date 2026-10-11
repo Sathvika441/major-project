@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -473,6 +474,9 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
                                     const TextInputType.numberWithOptions(
                                   decimal: true,
                                 ),
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(RegExp(r'^\\d*\\.?\\d{0,2}')),
+                                ],
                                 decoration: const InputDecoration(
                                   labelText: 'Farm size (acres)',
                                   hintText: 'Enter size in acres',
@@ -496,6 +500,10 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
                                 controller: _survey,
                                 textCapitalization:
                                     TextCapitalization.characters,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(RegExp(r'[0-9A-Za-z/]')),
+                                ],
+                                maxLength: 8,
                                 decoration: const InputDecoration(
                                   labelText: 'Land survey number',
                                   hintText: 'Example: 12/3A',
