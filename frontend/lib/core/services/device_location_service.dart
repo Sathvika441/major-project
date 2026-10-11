@@ -39,18 +39,19 @@ class DeviceLocationService {
   static const _key = 'arecasmart_last_device_location';
   static const _placeKey = 'arecasmart_last_weather_place';
 
-  Future<DeviceLocation?> resolveCurrentLocation() async {
+  Future<DeviceLocation?> resolveCurrentLocation({bool forceRefresh = false}) async {
     if (kIsWeb) {
-      return _resolve();
+      return _resolve(forceRefresh: forceRefresh);
     }
-    return _resolve();
+    return _resolve(forceRefresh: forceRefresh);
   }
 
-  Future<DeviceLocation?> _resolve() async {
+  Future<DeviceLocation?> _resolve({bool forceRefresh = false}) async {
     // Reuse a recent fix so opening another screen does not trigger location
     // permission prompts or a fresh GPS lookup on every navigation.
     final cached = await loadLastLocation();
-    if (cached != null &&
+    if (!forceRefresh &&
+        cached != null &&
         DateTime.now().difference(cached.savedAt).abs() <
             const Duration(hours: 6)) {
       return cached;
