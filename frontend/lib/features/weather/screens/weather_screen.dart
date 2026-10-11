@@ -22,7 +22,7 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
   @override
   void initState() {
     super.initState();
-    _load();
+    _load(refresh: true);
   }
 
   Future<void> _load({bool refresh = false}) async {
@@ -38,7 +38,7 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
     }
 
     try {
-      final location = await locationService.resolveCurrentLocation();
+      final location = await locationService.resolveCurrentLocation(forceRefresh: refresh);
       WeatherData weather;
 
       if (location != null) {
