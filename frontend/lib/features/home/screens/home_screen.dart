@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:html' as html;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
@@ -770,16 +772,23 @@ class _DiseaseDetectionDialogState
     final safeName = imageName.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
     final filename = 'arecasmart_disease_report_${DateTime.now().millisecondsSinceEpoch}.txt';
     if (kIsWeb) {
-      // Clipboard works in browser contexts even where direct file APIs differ.
-      Clipboard.setData(ClipboardData(text: report));
+      final blob = html.Blob([utf8.encode(report)], 'text/plain;charset=utf-8');
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      final anchor = html.AnchorElement(href: url)
+        ..download = filename
+        ..style.display = 'none';
+      html.document.body?.children.add(anchor);
+      anchor.click();
+      anchor.remove();
+      html.Url.revokeObjectUrl(url);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Report copied. Paste it into a document and save as a report.')),
+        SnackBar(content: Text('Report downloaded: $filename')),
       );
       return;
     }
     Clipboard.setData(ClipboardData(text: report));
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Report copied to clipboard for saving as $filename (image: $safeName).')),
+      SnackBar(content: Text('Report copied to clipboard. Save it as $filename (image: $safeName).')),
     );
   }
 }
