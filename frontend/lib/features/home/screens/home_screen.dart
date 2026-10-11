@@ -764,27 +764,12 @@ class _DiseaseDetectionDialogState
     ].join('\n');
   }
 
-  void _downloadReport(String report, String imageName) {
-    final safeName = imageName.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
+  Future<void> _downloadReport(String report, String imageName) async {
     final filename = 'arecasmart_disease_report_${DateTime.now().millisecondsSinceEpoch}.txt';
-    if (kIsWeb) {
-      final blob = html.Blob([utf8.encode(report)], 'text/plain;charset=utf-8');
-      final url = html.Url.createObjectUrlFromBlob(blob);
-      final anchor = html.AnchorElement(href: url)
-        ..download = filename
-        ..style.display = 'none';
-      html.document.body?.children.add(anchor);
-      anchor.click();
-      anchor.remove();
-      html.Url.revokeObjectUrl(url);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Report downloaded: $filename')),
-      );
-      return;
-    }
-    Clipboard.setData(ClipboardData(text: report));
+    await Clipboard.setData(ClipboardData(text: report));
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Report copied to clipboard. Save it as $filename (image: $safeName).')),
+      SnackBar(content: Text('Report copied to clipboard. Save it as $filename.')),
     );
   }
 }
