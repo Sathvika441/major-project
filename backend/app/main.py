@@ -1,5 +1,6 @@
 import logging
 import time
+from datetime import datetime, timezone
 from collections import defaultdict, deque
 from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -48,7 +49,7 @@ async def run_image_prediction(request:Request,file:UploadFile=File(...)):
     if len(image_bytes)>max_bytes: raise HTTPException(status_code=413,detail="Image is too large. Please upload an image smaller than 10 MB.")
     try:
         result = predict_image(image_bytes, filename)
-        result["predicted_at"] = __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat()
+        result["predicted_at"] = datetime.now(timezone.utc).isoformat()
         result["image_reference"] = {"filename": filename, "kind": "client_upload_reference", "stored": False}
         result["guidance"] = care_guidance(result["prediction"])
         return result
