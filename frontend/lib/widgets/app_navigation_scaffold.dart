@@ -62,9 +62,21 @@ class AppNavigationScaffold extends ConsumerWidget {
 
   void _navigate(BuildContext context, int index) {
     final route = _destinations[index].route;
-    if (GoRouterState.of(context).uri.path != route) {
-      context.go(route);
+    // Read the router's location directly. GoRouterState.of(context) can fail
+    // when this shared scaffold's context is outside a RouteBase builder.
+    final location = GoRouter.of(context).routeInformationProvider.value.uri;
+    final currentPath = location.path;
+    // Navigation destinations are top-level pages. Always leave nested farm
+    // workspaces through go(), rather than popping a nested Navigator route.
+    // This also ignores query parameters when deciding whether we're already
+    // on the requested destination.
+    if (index == 1) {
+      // A new key forces WeatherScreen to reload the device location and
+      // weather data whenever the Weather destination is tapped.
+      context.go('/weather?refresh=${DateTime.now().microsecondsSinceEpoch}');
+      return;
     }
+    if (currentPath != route) context.go(route);
   }
 
   @override

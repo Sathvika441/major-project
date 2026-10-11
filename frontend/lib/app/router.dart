@@ -46,7 +46,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
       GoRoute(
         path: '/weather',
-        builder: (context, state) => const WeatherScreen(),
+        builder: (context, state) => WeatherScreen(
+          key: ValueKey(state.uri.queryParameters['refresh']),
+        ),
       ),
       GoRoute(
         path: '/splash',
