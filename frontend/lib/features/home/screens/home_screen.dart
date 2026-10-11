@@ -273,21 +273,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       context: context,
                       builder: (dialogContext) => AlertDialog(
                         title: Text(article['title']!),
-                        content: SingleChildScrollView(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.asset(article['image']!, height: 150, width: double.infinity, fit: BoxFit.cover)),
-                              const SizedBox(height: 14),
-                              Text(article['body']!),
-                              const SizedBox(height: 14),
-                              Text(article['kn']!, style: Theme.of(dialogContext).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
-                              const SizedBox(height: 6),
-                              Text(article['knBody']!),
-                            ],
+                        content: SizedBox(
+                          width: 420,
+                          child: SingleChildScrollView(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.asset(
+                                    article['image']!,
+                                    height: 150,
+                                    width: 420,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                Text(article['body']!),
+                                const SizedBox(height: 14),
+                                Text(
+                                  article['kn']!,
+                                  style: Theme.of(dialogContext)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w800),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(article['knBody']!),
+                              ],
+                            ),
                           ),
                         ),
-                        actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Close'))],
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(dialogContext),
+                            child: const Text('Close'),
+                          ),
+                        ],
                       ),
                     ),
                     child: Column(
