@@ -38,7 +38,9 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
     }
 
     try {
-      final location = await locationService.resolveCurrentLocation(forceRefresh: refresh);
+      final location = await locationService.resolveCurrentLocation(
+        forceRefresh: refresh,
+      );
       WeatherData weather;
 
       if (location != null) {

@@ -39,7 +39,9 @@ class DeviceLocationService {
   static const _key = 'arecasmart_last_device_location';
   static const _placeKey = 'arecasmart_last_weather_place';
 
-  Future<DeviceLocation?> resolveCurrentLocation({bool forceRefresh = false}) async {
+  Future<DeviceLocation?> resolveCurrentLocation({
+    bool forceRefresh = false,
+  }) async {
     if (kIsWeb) {
       return _resolve(forceRefresh: forceRefresh);
     }
