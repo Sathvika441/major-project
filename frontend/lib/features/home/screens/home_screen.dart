@@ -529,21 +529,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-// A small, dependency-free browser download bridge. The web implementation
-// uses Blob + a temporary anchor; non-web builds keep the share/copy fallback.
-const _webReportDownload = '''
-<!doctype html><html><body><script>
-window.downloadArecaReport = function(text, filename) {
-  const blob = new Blob([text], {type: 'text/plain;charset=utf-8'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename; a.style.display = 'none';
-  document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(url);
-};
-</script></body></html>
-''';
-
 class _DiseaseDetectionDialog extends ConsumerStatefulWidget {
   const _DiseaseDetectionDialog();
 
