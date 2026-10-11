@@ -187,7 +187,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                     focusNode: _focusNode,
                     length: 6,
                     keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     onCompleted: (_) => _submitOtp(),
                     defaultPinTheme: PinTheme(
                       width: 48,

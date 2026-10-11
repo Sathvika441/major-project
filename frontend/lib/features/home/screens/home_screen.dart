@@ -150,20 +150,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           color: scheme.tertiaryContainer,
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: Icon(Icons.biotech_rounded, color: scheme.tertiary, size: 30),
+                        child: Icon(
+                          Icons.biotech_rounded,
+                          color: scheme.tertiary,
+                          size: 30,
+                        ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Check your arecanut leaves', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                            Text(
+                              'Check your arecanut leaves',
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w800),
+                            ),
                             const SizedBox(height: 4),
-                            const Text('Upload a clear leaf photo to get an AI-assisted disease prediction and confidence score.'),
+                            const Text(
+                              'Upload a clear leaf photo to get an AI-assisted disease prediction and confidence score.',
+                            ),
                           ],
                         ),
                       ),
-                      Icon(Icons.arrow_forward_ios_rounded, size: 17, color: scheme.primary),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 17,
+                        color: scheme.primary,
+                      ),
                     ],
                   ),
                 ),
@@ -228,7 +242,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         'knSummary': 'ನೆರಳು, ನೀರು ಹರಿವು ಮತ್ತು ನಿಯಮಿತ ತೋಟದ ಪರಿಶೀಲನೆ',
         'image': 'assets/images/25_Areca-nut-trees_Rao_s-plantation_Sharmila-V-768x512.jpg.jpeg',
         'body': 'Walk through the garden regularly and look for yellowing leaves, stem injury, waterlogging and unusual nut drop. Keep drainage channels clear, maintain suitable shade and record changes by farm so problems can be spotted early.',
-        'knBody': 'ತೋಟವನ್ನು ನಿಯಮಿತವಾಗಿ ಪರಿಶೀಲಿಸಿ. ಎಲೆ ಹಳದಿಯಾಗುವುದು, ಕಾಂಡದ ಗಾಯ, ನೀರು ನಿಲ್ಲುವುದು ಮತ್ತು ಅಡಿಕೆ ಉದುರುವುದನ್ನು ಗಮನಿಸಿ. ನೀರು ಹರಿಯುವ ಕಾಲುವೆಗಳನ್ನು ಸ್ವಚ್ಛವಾಗಿಡಿ, ಸೂಕ್ತ ನೆರಳನ್ನು ಕಾಪಾಡಿ ಮತ್ತು ಪ್ರತಿ ತೋಟದ ಬದಲಾವಣೆಗಳನ್ನು ದಾಖಲಿಸಿ.'
+        'knBody': 'ತೋಟವನ್ನು ನಿಯಮಿತವಾಗಿ ಪರಿಶೀಲಿಸಿ. ಎಲೆ ಹಳದಿಯಾಗುವುದು, ಕಾಂಡದ ಗಾಯ, ನೀರು ನಿಲ್ಲುವುದು ಮತ್ತು ಅಡಿಕೆ ಉದುರುವುದನ್ನು ಗಮನಿಸಿ. ನೀರು ಹರಿಯುವ ಕಾಲುವೆಗಳನ್ನು ಸ್ವಚ್ಛವಾಗಿಡಿ, ಸೂಕ್ತ ನೆರಳನ್ನು ಕಾಪಾಡಿ ಮತ್ತು ಪ್ರತಿ ತೋಟದ ಬದಲಾವಣೆಗಳನ್ನು ದಾಖಲಿಸಿ.',
       },
       {
         'title': 'Smarter irrigation',
@@ -237,7 +251,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         'knSummary': 'ಮಣ್ಣು, ಬೆಳೆ ಹಂತ ಮತ್ತು ಮಳೆಯ ಮಾಹಿತಿಯನ್ನು ಒಟ್ಟಿಗೆ ಬಳಸಿ',
         'image': 'assets/images/arecanut06jpg.jpeg',
         'body': 'Before irrigating, check recent rainfall, soil moisture and the crop stage. Drip systems can help deliver water near the root zone. Weather-based suggestions are estimates; confirm field conditions before starting a pump or changing a schedule.',
-        'knBody': 'ನೀರಾವರಿಗೆ ಮೊದಲು ಇತ್ತೀಚಿನ ಮಳೆ, ಮಣ್ಣಿನ ತೇವಾಂಶ ಮತ್ತು ಬೆಳೆ ಹಂತವನ್ನು ಪರಿಶೀಲಿಸಿ. ಹನಿ ನೀರಾವರಿ ಬೇರುಗಳ ಬಳಿ ನೀರನ್ನು ತಲುಪಿಸಲು ಸಹಾಯ ಮಾಡುತ್ತದೆ. ಹವಾಮಾನ ಆಧಾರಿತ ಸಲಹೆಗಳು ಅಂದಾಜು ಮಾತ್ರ; ಪಂಪ್ ಆರಂಭಿಸುವ ಮೊದಲು ಹೊಲದ ಸ್ಥಿತಿಯನ್ನು ಪರಿಶೀಲಿಸಿ.'
+        'knBody': 'ನೀರಾವರಿಗೆ ಮೊದಲು ಇತ್ತೀಚಿನ ಮಳೆ, ಮಣ್ಣಿನ ತೇವಾಂಶ ಮತ್ತು ಬೆಳೆ ಹಂತವನ್ನು ಪರಿಶೀಲಿಸಿ. ಹನಿ ನೀರಾವರಿ ಬೇರುಗಳ ಬಳಿ ನೀರನ್ನು ತಲುಪಿಸಲು ಸಹಾಯ ಮಾಡುತ್ತದೆ. ಹವಾಮಾನ ಆಧಾರಿತ ಸಲಹೆಗಳು ಅಂದಾಜು ಮಾತ್ರ; ಪಂಪ್ ಆರಂಭಿಸುವ ಮೊದಲು ಹೊಲದ ಸ್ಥಿತಿಯನ್ನು ಪರಿಶೀಲಿಸಿ.',
       },
       {
         'title': 'Prepare for heavy rain',
@@ -246,15 +260,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         'knSummary': 'ನೀರು ಹರಿವು, ಕೊಯ್ಲಿನ ಉತ್ಪನ್ನ ಮತ್ತು ಸುರಕ್ಷಿತ ಸಿಂಪಡಣೆ',
         'image': 'assets/images/images (2).jpeg',
         'body': 'Keep harvested produce covered and dry, inspect drainage before rain, and avoid spraying when wind or rain can cause drift or wash-off. Follow the pesticide label and local agricultural guidance for safe application windows.',
-        'knBody': 'ಕೊಯ್ಲು ಮಾಡಿದ ಉತ್ಪನ್ನವನ್ನು ಮುಚ್ಚಿ ಒಣವಾಗಿಡಿ. ಮಳೆಯ ಮೊದಲು ನೀರು ಹರಿಯುವ ಮಾರ್ಗಗಳನ್ನು ಪರಿಶೀಲಿಸಿ. ಗಾಳಿ ಅಥವಾ ಮಳೆಯಿಂದ ಔಷಧಿ ಹರಿದುಹೋಗುವ ಸಾಧ್ಯತೆ ಇದ್ದರೆ ಸಿಂಪಡಣೆ ತಪ್ಪಿಸಿ. ಸುರಕ್ಷಿತ ಸಮಯಕ್ಕಾಗಿ ಔಷಧಿಯ ಲೇಬಲ್ ಮತ್ತು ಸ್ಥಳೀಯ ಕೃಷಿ ಸಲಹೆಗಳನ್ನು ಅನುಸರಿಸಿ.'
+        'knBody': 'ಕೊಯ್ಲು ಮಾಡಿದ ಉತ್ಪನ್ನವನ್ನು ಮುಚ್ಚಿ ಒಣವಾಗಿಡಿ. ಮಳೆಯ ಮೊದಲು ನೀರು ಹರಿಯುವ ಮಾರ್ಗಗಳನ್ನು ಪರಿಶೀಲಿಸಿ. ಗಾಳಿ ಅಥವಾ ಮಳೆಯಿಂದ ಔಷಧಿ ಹರಿದುಹೋಗುವ ಸಾಧ್ಯತೆ ಇದ್ದರೆ ಸಿಂಪಡಣೆ ತಪ್ಪಿಸಿ. ಸುರಕ್ಷಿತ ಸಮಯಕ್ಕಾಗಿ ಔಷಧಿಯ ಲೇಬಲ್ ಮತ್ತು ಸ್ಥಳೀಯ ಕೃಷಿ ಸಲಹೆಗಳನ್ನು ಅನುಸರಿಸಿ.',
       },
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Field guides • ಕೃಷಿ ಮಾರ್ಗದರ್ಶಿಗಳು', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+        Text(
+          'Field guides • ಕೃಷಿ ಮಾರ್ಗದರ್ಶಿಗಳು',
+          style: Theme.of(context).textTheme.titleLarge
+              ?.copyWith(fontWeight: FontWeight.w800),
+        ),
         const SizedBox(height: 5),
-        Text('Practical reads for arecanut growers / ಅಡಿಕೆ ಬೆಳೆಗಾರರಿಗೆ ಉಪಯುಕ್ತ ಮಾಹಿತಿ', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
+        Text(
+          'Practical reads for arecanut growers / ಅಡಿಕೆ ಬೆಳೆಗಾರರಿಗೆ ಉಪಯುಕ್ತ ಮಾಹಿತಿ',
+          style: Theme.of(context).textTheme.bodySmall
+              ?.copyWith(color: scheme.onSurfaceVariant),
+        ),
         const SizedBox(height: 14),
         SizedBox(
           height: 330,
@@ -316,21 +338,72 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Image.asset(article['image']!, height: 135, width: double.infinity, fit: BoxFit.cover, errorBuilder: (_, _, _) => Container(height: 135, color: scheme.surfaceContainerHighest, child: Icon(Icons.agriculture_rounded, size: 42, color: scheme.primary))),
+                        Image.asset(
+                          article['image']!,
+                          height: 135,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => Container(
+                            height: 135,
+                            color: scheme.surfaceContainerHighest,
+                            child: Icon(
+                              Icons.agriculture_rounded,
+                              size: 42,
+                              color: scheme.primary,
+                            ),
+                          ),
+                        ),
                         Padding(
                           padding: const EdgeInsets.all(14),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(article['title']!, maxLines: 2, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                              Text(
+                                article['title']!,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.w800),
+                              ),
                               const SizedBox(height: 3),
-                              Text(article['kn']!, style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w700)),
+                              Text(
+                                article['kn']!,
+                                style: TextStyle(
+                                  color: scheme.primary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                               const SizedBox(height: 8),
-                              Text(article['summary']!, maxLines: 2, overflow: TextOverflow.ellipsis),
+                              Text(
+                                article['summary']!,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                               const SizedBox(height: 3),
-                              Text(article['knSummary']!, maxLines: 2, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodySmall),
+                              Text(
+                                article['knSummary']!,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
                               const SizedBox(height: 8),
-                              Row(children: [Text('Read guide', style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w800)), const SizedBox(width: 5), Icon(Icons.arrow_forward_rounded, size: 16, color: scheme.primary)]),
+                              Row(
+                                children: [
+                                  Text(
+                                    'Read guide',
+                                    style: TextStyle(
+                                      color: scheme.primary,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 16,
+                                    color: scheme.primary,
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         ),
@@ -446,7 +519,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _weatherLocationLabel(WeatherData weather) {
     final locality = weather.locality?.trim() ?? '';
     final district = weather.district?.trim() ?? '';
-    if (locality.isNotEmpty && district.isNotEmpty && district.toLowerCase() != locality.toLowerCase()) {
+    if (locality.isNotEmpty &&
+        district.isNotEmpty &&
+        district.toLowerCase() != locality.toLowerCase()) {
       return '$locality • $district';
     }
     if (locality.isNotEmpty) return locality;
@@ -576,7 +651,9 @@ class _DiseaseDetectionDialogState
       });
     } catch (_) {
       if (!mounted) return;
-      setState(() => _error = 'Could not open the image picker. Please try again.');
+      setState(
+        () => _error = 'Could not open the image picker. Please try again.',
+      );
     } finally {
       if (mounted) setState(() => _pickingImage = false);
     }
@@ -687,9 +764,17 @@ class _DiseaseDetectionDialogState
         OutlinedButton.icon(
           onPressed: _predicting || _pickingImage ? null : _pickImage,
           icon: _pickingImage
-              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
               : const Icon(Icons.upload_file_outlined),
-          label: Text(_pickingImage ? 'Opening picker...' : (_image == null ? 'Upload image' : 'Change image')),
+          label: Text(
+            _pickingImage
+                ? 'Opening picker...'
+                : (_image == null ? 'Upload image' : 'Change image'),
+          ),
         ),
         if (_image != null)
           FilledButton.icon(
