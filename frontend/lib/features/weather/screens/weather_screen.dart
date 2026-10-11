@@ -241,7 +241,7 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
   Widget _hero(BuildContext context, WeatherData? weather) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
       decoration: BoxDecoration(
         color: scheme.primary.withValues(alpha: 0.34),
         borderRadius: BorderRadius.circular(26),
@@ -338,15 +338,7 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 5),
-          Text(
-            weather?.guidance.statusLine ?? 'Getting local weather',
-            style: TextStyle(
-              color: scheme.onPrimary.withValues(alpha: 0.85),
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 8),
           Row(
             children: [
               _metric(
@@ -373,15 +365,6 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          if (weather != null)
-            Text(
-              'Updated ${TimeOfDay.fromDateTime(weather.updatedAt).format(context)}',
-              style: TextStyle(
-                color: scheme.onPrimary.withValues(alpha: 0.7),
-                fontSize: 10,
-              ),
-            ),
         ],
       ),
     );
