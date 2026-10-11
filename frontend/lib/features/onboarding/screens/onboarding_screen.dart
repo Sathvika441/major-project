@@ -294,7 +294,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                   final village = values[index];
                                   return ListTile(
                                     title: Text(village.name),
-                                    subtitle: Text(village.code),
                                     onTap: () => onSelected(village),
                                   );
                                 },

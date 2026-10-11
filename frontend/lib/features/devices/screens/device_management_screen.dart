@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/device/device_model.dart';
@@ -148,6 +149,7 @@ class DeviceManagementScreen extends ConsumerWidget {
                     ),
                     maxLength: 50,
                     textCapitalization: TextCapitalization.characters,
+                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9_-]'))],
                     validator: (value) {
                       final candidate = value?.trim() ?? '';
                       if (candidate.isEmpty) return 'Enter the device ID';
@@ -175,6 +177,7 @@ class DeviceManagementScreen extends ConsumerWidget {
                     ),
                     maxLength: 60,
                     textCapitalization: TextCapitalization.words,
+                    inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'[<>]'))],
                     validator: (value) {
                       final candidate = value?.trim() ?? '';
                       if (candidate.isEmpty) return 'Enter a device name';

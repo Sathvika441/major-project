@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class AppTextField extends StatefulWidget {
   final TextEditingController? controller;
@@ -44,6 +45,10 @@ class _AppTextFieldState extends State<AppTextField> {
           controller: widget.controller,
           obscureText: widget.isPassword ? _obscureText : false,
           keyboardType: widget.keyboardType,
+          inputFormatters: [
+            if (widget.keyboardType == TextInputType.phone)
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9+\-\s]')),
+          ],
           validator: widget.validator,
           onChanged: widget.onChanged,
           enabled: widget.enabled,

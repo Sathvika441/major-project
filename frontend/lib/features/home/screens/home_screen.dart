@@ -530,36 +530,56 @@ class _DiseaseDetectionDialogState
   Map<String, dynamic>? _result;
   String? _error;
   bool _predicting = false;
+  bool _pickingImage = false;
 
   Future<void> _pickImage() async {
-    final picked = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
-      withData: true,
-    );
-    if (picked == null || !mounted) return;
-
-    final file = picked.files.single;
-    if (file.bytes == null || file.bytes!.isEmpty) {
-      setState(() {
-        _error = 'Unable to read the selected image. Please choose another.';
-        _result = null;
-      });
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      setState(() {
-        _error = 'Please select an image smaller than 10 MB.';
-        _result = null;
-      });
-      return;
-    }
-
+    if (_pickingImage || _predicting) return;
     setState(() {
-      _image = file;
-      _result = null;
+      _pickingImage = true;
       _error = null;
     });
+    try {
+      final picked = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+        withData: true,
+      );
+      if (!mounted) return;
+      if (picked == null || picked.files.isEmpty) return;
+      final file = picked.files.single;
+      final extension = file.extension?.toLowerCase() ?? '';
+      if (!['jpg', 'jpeg', 'png', 'webp'].contains(extension)) {
+        setState(() {
+          _error = 'Choose a JPG, PNG or WEBP image.';
+          _result = null;
+        });
+        return;
+      }
+      if (file.bytes == null || file.bytes!.isEmpty) {
+        setState(() {
+          _error = 'Unable to read the selected image. Please choose another.';
+          _result = null;
+        });
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        setState(() {
+          _error = 'Please select an image smaller than 10 MB.';
+          _result = null;
+        });
+        return;
+      }
+      setState(() {
+        _image = file;
+        _result = null;
+        _error = null;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _error = 'Could not open the image picker. Please try again.');
+    } finally {
+      if (mounted) setState(() => _pickingImage = false);
+    }
   }
 
   Future<void> _predict() async {
@@ -665,9 +685,11 @@ class _DiseaseDetectionDialogState
           child: const Text('Close'),
         ),
         OutlinedButton.icon(
-          onPressed: _predicting ? null : _pickImage,
-          icon: const Icon(Icons.upload_file_outlined),
-          label: Text(_image == null ? 'Upload image' : 'Change image'),
+          onPressed: _predicting || _pickingImage ? null : _pickImage,
+          icon: _pickingImage
+              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              : const Icon(Icons.upload_file_outlined),
+          label: Text(_pickingImage ? 'Opening picker...' : (_image == null ? 'Upload image' : 'Change image')),
         ),
         if (_image != null)
           FilledButton.icon(
