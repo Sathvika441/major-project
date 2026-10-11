@@ -1,5 +1,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -616,6 +618,13 @@ class _DiseaseDetectionDialogState
   String? _error;
   bool _predicting = false;
   bool _pickingImage = false;
+  double? _lowConfidence;
+
+  double? _normalizedConfidence(dynamic value) {
+    if (value is! num) return null;
+    final score = value.toDouble();
+    return score > 1 ? score / 100 : score;
+  }
 
   Future<void> _pickImage() async {
     if (_pickingImage || _predicting) return;
@@ -657,6 +666,7 @@ class _DiseaseDetectionDialogState
       setState(() {
         _image = file;
         _result = null;
+        _lowConfidence = null;
         _error = null;
       });
     } catch (_) {
@@ -680,6 +690,7 @@ class _DiseaseDetectionDialogState
     setState(() {
       _predicting = true;
       _result = null;
+      _lowConfidence = null;
       _error = null;
     });
     try {
@@ -687,8 +698,16 @@ class _DiseaseDetectionDialogState
           .read(backendApiProvider)
           .predictImage(bytes, filename: file.name);
       if (!mounted) return;
+      final score = _normalizedConfidence(result['confidence']);
       setState(() {
-        _result = result;
+        if (score != null && score < 0.50) {
+          _result = null;
+          _lowConfidence = score;
+          _error = null;
+        } else {
+          _result = result;
+          _lowConfidence = null;
+        }
         _predicting = false;
       });
     } on BackendApiException catch (e) {
@@ -710,12 +729,8 @@ class _DiseaseDetectionDialogState
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final confidence = (_result?['confidence'] as num?)?.toDouble();
-    final guidance = Map<String, dynamic>.from(
-      _result?['guidance'] as Map? ?? const {},
-    );
-    final actions = (guidance['actions'] as List? ?? const [])
-        .map((item) => item.toString())
-        .toList();
+    final guidance = Map<String, dynamic>.from(_result?['guidance'] as Map? ?? const {});
+    final actions = (guidance['actions'] as List? ?? const []).map((item) => item.toString()).toList();
     final predictedAt = _result?['predicted_at']?.toString();
     final displayTimestamp = predictedAt == null
         ? ''
@@ -768,6 +783,51 @@ class _DiseaseDetectionDialogState
               if (_error != null) ...[
                 const SizedBox(height: 12),
                 Text(_error!, style: TextStyle(color: scheme.error)),
+              ],
+              if (_lowConfidence != null) ...[
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: scheme.errorContainer,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.warning_amber_rounded, color: scheme.onErrorContainer),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Low-confidence prediction (${(_lowConfidence! * 100).toStringAsFixed(1)}%)',
+                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: scheme.onErrorContainer,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'We could not identify the disease confidently. Please upload a suitable image and try again. Use a clear, close-up photo of a single arecanut leaf, in good lighting, with the affected area visible and the leaf in focus.',
+                        style: TextStyle(color: scheme.onErrorContainer),
+                      ),
+                      const SizedBox(height: 10),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: FilledButton.icon(
+                          onPressed: _pickingImage || _predicting ? null : _pickImage,
+                          icon: const Icon(Icons.add_photo_alternate_outlined),
+                          label: const Text('Upload a suitable image'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
               if (_result != null) ...[
                 const Divider(height: 28),
@@ -868,7 +928,7 @@ class _DiseaseDetectionDialogState
                 : (_image == null ? 'Upload image' : 'Change image'),
           ),
         ),
-        if (_image != null && _result == null)
+        if (_image != null && _result == null && _lowConfidence == null)
           FilledButton.icon(
             onPressed: _predicting ? null : _predict,
             icon: _predicting
@@ -882,9 +942,9 @@ class _DiseaseDetectionDialogState
           ),
         if (_result != null)
           FilledButton.icon(
-            onPressed: () => _downloadReport(report, _image!.name),
-            icon: const Icon(Icons.download_outlined),
-            label: const Text('Download report'),
+            onPressed: () => _viewReport(report),
+            icon: const Icon(Icons.description_outlined),
+            label: const Text('View report'),
           ),
       ],
     );
@@ -925,14 +985,11 @@ class _DiseaseDetectionDialogState
   }
 
   Future<void> _downloadReport(String report, String imageName) async {
-    final filename =
-        'arecasmart_disease_report_${DateTime.now().millisecondsSinceEpoch}.txt';
+    final filename = 'arecasmart_disease_report_${DateTime.now().millisecondsSinceEpoch}.txt';
     await Clipboard.setData(ClipboardData(text: report));
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Report copied to clipboard. Save it as $filename.'),
-      ),
+      SnackBar(content: Text('Report copied to clipboard. Save it as $filename.')),
     );
   }
 }
