@@ -332,7 +332,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                                   ),
                                   keyboardType: TextInputType.phone,
                                   inputFormatters: [
-                                    FilteringTextInputFormatter.allow(RegExp(r'[0-9+\\-\\s]')),
+                                    FilteringTextInputFormatter.allow(RegExp(r'[0-9+\-\s]')),
                                   ],
                                   maxLength: 16,
                                   onChanged: (_) => setState(() {}),
