@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/karnataka_locations.dart';
@@ -164,6 +165,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             TextField(
               controller: _otp,
               keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               maxLength: 6,
               decoration: const InputDecoration(labelText: 'OTP'),
             ),
@@ -329,6 +331,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                                     prefixIcon: Icon(Icons.phone_outlined),
                                   ),
                                   keyboardType: TextInputType.phone,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.allow(RegExp(r'[0-9+\\-\\s]')),
+                                  ],
+                                  maxLength: 16,
                                   onChanged: (_) => setState(() {}),
                                   validator: AuthValidators.validatePhone,
                                 ),
