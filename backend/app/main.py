@@ -1,9 +1,11 @@
 import logging
 import time
+from datetime import datetime, timezone
 from collections import defaultdict, deque
 from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from .ml_service import ModelNotLoadedError, load_artifacts, predict_image
+from .disease_guidance import care_guidance
 from .weather_service import OpenMeteoWeatherService, WeatherServiceError
 
 logger=logging.getLogger(__name__)
@@ -45,7 +47,12 @@ async def run_image_prediction(request:Request,file:UploadFile=File(...)):
     max_bytes=10*1024*1024; image_bytes=await file.read(max_bytes+1)
     if not image_bytes: raise HTTPException(status_code=400,detail="The uploaded image is empty.")
     if len(image_bytes)>max_bytes: raise HTTPException(status_code=413,detail="Image is too large. Please upload an image smaller than 10 MB.")
-    try: return predict_image(image_bytes,filename)
+    try:
+        result = predict_image(image_bytes, filename)
+        result["predicted_at"] = datetime.now(timezone.utc).isoformat()
+        result["image_reference"] = {"filename": filename, "kind": "client_upload_reference", "stored": False}
+        result["guidance"] = care_guidance(result["prediction"])
+        return result
     except ModelNotLoadedError as exc: raise HTTPException(status_code=503,detail=str(exc)) from exc
     except ValueError as exc: raise HTTPException(status_code=400,detail=str(exc)) from exc
     except RuntimeError as exc: logger.exception("ML prediction failed for %s",filename); raise HTTPException(status_code=500,detail=str(exc)) from exc
