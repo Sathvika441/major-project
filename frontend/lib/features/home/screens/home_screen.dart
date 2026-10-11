@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
@@ -643,7 +642,9 @@ class _DiseaseDetectionDialogState
     final displayTimestamp = predictedAt == null
         ? ''
         : DateTime.tryParse(predictedAt)?.toLocal().toString() ?? predictedAt;
-    final report = _buildReport(_result!, _image!.name, confidence, guidance, displayTimestamp);
+    final report = _result == null || _image == null
+        ? ''
+        : _buildReport(_result!, _image!.name, confidence, guidance, displayTimestamp);
 
     return AlertDialog(
       title: const Text('Arecanut disease assessment'),
