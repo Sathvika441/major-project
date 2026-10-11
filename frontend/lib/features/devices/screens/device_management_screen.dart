@@ -149,7 +149,11 @@ class DeviceManagementScreen extends ConsumerWidget {
                     ),
                     maxLength: 50,
                     textCapitalization: TextCapitalization.characters,
-                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9_-]'))],
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r'[A-Za-z0-9_-]'),
+                      ),
+                    ],
                     validator: (value) {
                       final candidate = value?.trim() ?? '';
                       if (candidate.isEmpty) return 'Enter the device ID';
@@ -177,7 +181,9 @@ class DeviceManagementScreen extends ConsumerWidget {
                     ),
                     maxLength: 60,
                     textCapitalization: TextCapitalization.words,
-                    inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'[<>]'))],
+                    inputFormatters: [
+                      FilteringTextInputFormatter.deny(RegExp(r'[<>]')),
+                    ],
                     validator: (value) {
                       final candidate = value?.trim() ?? '';
                       if (candidate.isEmpty) return 'Enter a device name';

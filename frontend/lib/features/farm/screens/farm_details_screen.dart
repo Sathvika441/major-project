@@ -506,7 +506,9 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
                                 textCapitalization:
                                     TextCapitalization.characters,
                                 inputFormatters: [
-                                  FilteringTextInputFormatter.allow(RegExp(r'[0-9A-Za-z/]')),
+                                  FilteringTextInputFormatter.allow(
+                                    RegExp(r'[0-9A-Za-z/]'),
+                                  ),
                                 ],
                                 maxLength: 8,
                                 decoration: const InputDecoration(
