@@ -47,7 +47,7 @@ class _AppTextFieldState extends State<AppTextField> {
           keyboardType: widget.keyboardType,
           inputFormatters: [
             if (widget.keyboardType == TextInputType.phone)
-              FilteringTextInputFormatter.allow(RegExp(r'[0-9+\\-\\s]')),
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9+\-\s]')),
           ],
           validator: widget.validator,
           onChanged: widget.onChanged,
