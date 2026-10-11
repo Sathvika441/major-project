@@ -10,7 +10,11 @@ void main() {
 
   test('rejects invalid survey numbers', () {
     for (final value in ['abc', '12//3', '123456789']) {
-      expect(AuthValidators.validateSurveyNumber(value), isNotNull, reason: value);
+      expect(
+        AuthValidators.validateSurveyNumber(value),
+        isNotNull,
+        reason: value,
+      );
     }
   });
 }

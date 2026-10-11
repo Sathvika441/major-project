@@ -3,7 +3,13 @@ import 'package:flutter/foundation.dart';
 enum LogLevel { debug, info, warning, error }
 
 class AppLogger {
-  static void log(String message, {String tag = 'App', LogLevel level = LogLevel.info, Object? error, StackTrace? stackTrace}) {
+  static void log(
+    String message, {
+    String tag = 'App',
+    LogLevel level = LogLevel.info,
+    Object? error,
+    StackTrace? stackTrace,
+  }) {
     if (!kDebugMode && level == LogLevel.debug) return;
 
     final timestamp = DateTime.now().toIso8601String().substring(11, 19);
@@ -28,8 +34,18 @@ class AppLogger {
   static void warning(String message, {String tag = 'Warning'}) =>
       log(message, tag: tag, level: LogLevel.warning);
 
-  static void error(String message, {String tag = 'Error', Object? error, StackTrace? stackTrace}) =>
-      log(message, tag: tag, level: LogLevel.error, error: error, stackTrace: stackTrace);
+  static void error(
+    String message, {
+    String tag = 'Error',
+    Object? error,
+    StackTrace? stackTrace,
+  }) => log(
+    message,
+    tag: tag,
+    level: LogLevel.error,
+    error: error,
+    stackTrace: stackTrace,
+  );
 
   static String _getEmoji(LogLevel level) {
     switch (level) {

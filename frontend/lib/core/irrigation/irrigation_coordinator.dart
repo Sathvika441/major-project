@@ -8,22 +8,35 @@ class IrrigationCoordinator {
   final IrrigationAuditLog audit;
   final SafePumpController? pump;
 
-  const IrrigationCoordinator({required this.engine, required this.audit, this.pump});
+  const IrrigationCoordinator({
+    required this.engine,
+    required this.audit,
+    this.pump,
+  });
 
-  Future<IrrigationDecision> evaluate(IrrigationInput input, IrrigationMode mode) async {
+  Future<IrrigationDecision> evaluate(
+    IrrigationInput input,
+    IrrigationMode mode,
+  ) async {
     final decision = engine.decide(input: input, mode: mode);
-    await audit.record(IrrigationAuditRecord(
-      id: 'recommendation_' + decision.decisionId,
-      type: IrrigationAuditType.recommendation,
-      decisionId: decision.decisionId,
-      action: 'recommendation',
-      status: decision.irrigationRecommended ? 'recommended' : 'not_recommended',
-      reason: decision.reason,
-      timestamp: decision.createdAt,
-      details: decision.toMap(),
-    ));
+    await audit.record(
+      IrrigationAuditRecord(
+        id: 'recommendation_' + decision.decisionId,
+        type: IrrigationAuditType.recommendation,
+        decisionId: decision.decisionId,
+        action: 'recommendation',
+        status: decision.irrigationRecommended
+            ? 'recommended'
+            : 'not_recommended',
+        reason: decision.reason,
+        timestamp: decision.createdAt,
+        details: decision.toMap(),
+      ),
+    );
 
-    if (mode == IrrigationMode.automatic && decision.irrigationRecommended && pump != null) {
+    if (mode == IrrigationMode.automatic &&
+        decision.irrigationRecommended &&
+        pump != null) {
       await pump!.start(
         commandId: 'auto_' + decision.decisionId,
         duration: decision.suggestedDuration,

@@ -4,7 +4,9 @@ class AuthValidators {
   );
 
   static final RegExp _phoneRegExp = RegExp(r'^\+?[0-9]{7,15}$');
-  static final RegExp _surveyNumberRegExp = RegExp(r'^[0-9]+(?:/[0-9]+)*[A-Za-z]?$');
+  static final RegExp _surveyNumberRegExp = RegExp(
+    r'^[0-9]+(?:/[0-9]+)*[A-Za-z]?$',
+  );
 
   static String? validateEmail(String? value) {
     if (value == null || value.trim().isEmpty) {

@@ -7,7 +7,8 @@ import '../../../core/services/location_master_service.dart';
 Future<void> showManualLocationPicker(
   BuildContext context,
   WidgetRef ref, {
-  required Future<void> Function(String district, String taluk, String village) onSelected,
+  required Future<void> Function(String district, String taluk, String village)
+  onSelected,
 }) async {
   final master = ref.read(locationMasterServiceProvider);
   String? district;
@@ -19,18 +20,28 @@ Future<void> showManualLocationPicker(
     isScrollControlled: true,
     builder: (sheetContext) => StatefulBuilder(
       builder: (context, setState) {
-        final taluks = district == null ? const <String>[] : master.taluksFor(district!);
-        final villages = taluk == null ? const <VillageEntry>[] : master.villagesFor(taluk!);
+        final taluks = district == null
+            ? const <String>[]
+            : master.taluksFor(district!);
+        final villages = taluk == null
+            ? const <VillageEntry>[]
+            : master.villagesFor(taluk!);
 
         return Padding(
-          padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+          padding: EdgeInsets.fromLTRB(
+            20,
+            20,
+            20,
+            MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Choose your location',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                style: Theme.of(context).textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 6),
               const Text('Used only to load local weather on this device.'),
@@ -39,7 +50,12 @@ Future<void> showManualLocationPicker(
                 initialValue: district,
                 decoration: const InputDecoration(labelText: 'District'),
                 items: master.districts
-                    .map((item) => DropdownMenuItem<String>(value: item, child: Text(item)))
+                    .map(
+                      (item) => DropdownMenuItem<String>(
+                        value: item,
+                        child: Text(item),
+                      ),
+                    )
                     .toList(),
                 onChanged: (value) => setState(() {
                   district = value;
@@ -52,40 +68,60 @@ Future<void> showManualLocationPicker(
                 initialValue: taluk,
                 decoration: const InputDecoration(labelText: 'Taluk'),
                 items: taluks
-                    .map((item) => DropdownMenuItem<String>(value: item, child: Text(item)))
+                    .map(
+                      (item) => DropdownMenuItem<String>(
+                        value: item,
+                        child: Text(item),
+                      ),
+                    )
                     .toList(),
                 onChanged: district == null
                     ? null
                     : (value) => setState(() {
-                          taluk = value;
-                          village = null;
-                        }),
+                        taluk = value;
+                        village = null;
+                      }),
               ),
               const SizedBox(height: 10),
               DropdownButtonFormField<VillageEntry>(
                 initialValue: village,
                 decoration: const InputDecoration(labelText: 'Village'),
                 items: villages
-                    .map((item) => DropdownMenuItem<VillageEntry>(value: item, child: Text(item.name)))
+                    .map(
+                      (item) => DropdownMenuItem<VillageEntry>(
+                        value: item,
+                        child: Text(item.name),
+                      ),
+                    )
                     .toList(),
-                onChanged: taluk == null ? null : (value) => setState(() => village = value),
+                onChanged: taluk == null
+                    ? null
+                    : (value) => setState(() => village = value),
               ),
               const SizedBox(height: 18),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: district != null && taluk != null && village != null
+                  onPressed:
+                      district != null && taluk != null && village != null
                       ? () async {
                           final selectedDistrict = district!;
                           final selectedTaluk = taluk!;
                           final selectedVillage = village!;
-                          await ref.read(deviceLocationServiceProvider).saveLastWeatherPlace(
+                          await ref
+                              .read(deviceLocationServiceProvider)
+                              .saveLastWeatherPlace(
                                 district: selectedDistrict,
                                 taluk: selectedTaluk,
                                 village: selectedVillage.name,
                               );
-                          if (sheetContext.mounted) Navigator.of(sheetContext).pop();
-                          await onSelected(selectedDistrict, selectedTaluk, selectedVillage.name);
+                          if (sheetContext.mounted)
+                            Navigator.of(sheetContext).pop();
+                          await onSelected(
+                            selectedDistrict,
+                            selectedTaluk,
+                            selectedVillage.name,
+                          );
                         }
                       : null,
                   child: const Text('Use this location'),

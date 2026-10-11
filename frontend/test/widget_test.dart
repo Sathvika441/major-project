@@ -37,9 +37,7 @@ void main() {
         overrides: [
           localStorageServiceProvider.overrideWithValue(localStorage),
         ],
-        child: const MaterialApp(
-          home: LoginScreen(),
-        ),
+        child: const MaterialApp(home: LoginScreen()),
       ),
     );
 
@@ -64,9 +62,7 @@ void main() {
         overrides: [
           localStorageServiceProvider.overrideWithValue(localStorage),
         ],
-        child: const MaterialApp(
-          home: LoginScreen(),
-        ),
+        child: const MaterialApp(home: LoginScreen()),
       ),
     );
 

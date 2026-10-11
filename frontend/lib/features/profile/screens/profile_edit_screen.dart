@@ -74,7 +74,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     final existing = await ref.read(profileRepositoryProvider).load(user.uid);
     final farms = await ref.read(farmRepositoryProvider).getFarms(user.uid);
     for (final farm in farms) {
-      _farmPlots[farm.id] = await ref.read(farmRepositoryProvider).getPlots(user.uid, farm.id);
+      _farmPlots[farm.id] = await ref
+          .read(farmRepositoryProvider)
+          .getPlots(user.uid, farm.id);
     }
     if (!mounted) return;
 
@@ -140,11 +142,14 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     final phone = _phone.text.trim();
     final error = AuthValidators.validatePhone(phone);
     if (error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error)));
       return;
     }
 
-    final code = await ref.read(authControllerProvider.notifier).sendPhoneChangeOtp(phone);
+    final code = await ref
+        .read(authControllerProvider.notifier)
+        .sendPhoneChangeOtp(phone);
     if (!mounted || code == null) return;
 
     setState(() => _pendingPhone = phone);
@@ -200,7 +205,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     if (user == null) return;
     if (_villageCode.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a village from the master list.')),
+        const SnackBar(
+          content: Text('Please select a village from the master list.'),
+        ),
       );
       return;
     }
@@ -209,10 +216,14 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     final newPhone = _phone.text.trim();
     final oldPhone = (original?.phone ?? user.phone).trim();
     if (newPhone != oldPhone) {
-      if (_pendingPhone != newPhone || !ref.read(authControllerProvider).user!.isPhoneVerified) {
+      if (_pendingPhone != newPhone ||
+          !ref.read(authControllerProvider).user!.isPhoneVerified) {
         await _requestPhoneOtp();
         final refreshed = ref.read(authControllerProvider).user;
-        if (!mounted || refreshed == null || refreshed.phone.trim() != newPhone || !refreshed.isPhoneVerified) {
+        if (!mounted ||
+            refreshed == null ||
+            refreshed.phone.trim() != newPhone ||
+            !refreshed.isPhoneVerified) {
           return;
         }
       }
@@ -243,7 +254,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       crop: original?.crop ?? 'Arecanut',
       plantingDate: original?.plantingDate ?? DateTime.now(),
       landSurveyNumber: original?.landSurveyNumber ?? '',
-
     );
 
     try {
@@ -264,7 +274,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       );
       Navigator.of(context).pop(true);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to save: $e')));
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Failed to save: $e')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -273,9 +285,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final themeMode = ref.watch(themeModeProvider);
@@ -367,11 +377,14 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                                 const SizedBox(height: 14),
                                 DropdownButtonFormField<String>(
                                   isExpanded: true,
-                                  initialValue:
-                                      _district.isEmpty ? null : _district,
+                                  initialValue: _district.isEmpty
+                                      ? null
+                                      : _district,
                                   decoration: const InputDecoration(
                                     labelText: 'District',
-                                    prefixIcon: Icon(Icons.location_city_outlined),
+                                    prefixIcon: Icon(
+                                      Icons.location_city_outlined,
+                                    ),
                                   ),
                                   items: _districts
                                       .map(
@@ -423,11 +436,15 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                                 ),
                                 const SizedBox(height: 14),
                                 Autocomplete<VillageEntry>(
-                                  initialValue:
-                                      TextEditingValue(text: _village.text),
-                                  displayStringForOption: (option) => option.name,
+                                  initialValue: TextEditingValue(
+                                    text: _village.text,
+                                  ),
+                                  displayStringForOption: (option) =>
+                                      option.name,
                                   optionsBuilder: (value) {
-                                    final query = value.text.trim().toLowerCase();
+                                    final query = value.text
+                                        .trim()
+                                        .toLowerCase();
                                     final options = _villages;
                                     return query.isEmpty
                                         ? options
@@ -441,26 +458,28 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                                     _village.text = value.name;
                                     _villageCode = value.code;
                                   }),
-                                  fieldViewBuilder: (
-                                    context,
-                                    controller,
-                                    focusNode,
-                                    onFieldSubmitted,
-                                  ) =>
-                                      TextFormField(
-                                    controller: controller,
-                                    focusNode: focusNode,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Village',
-                                      hintText: 'Search village',
-                                      prefixIcon:
-                                          Icon(Icons.home_work_outlined),
-                                    ),
-                                    validator: (_) => _villageCode.isEmpty
-                                        ? 'Select a village from the list'
-                                        : null,
-                                    onChanged: (_) => setState(() => _villageCode = ''),
-                                  ),
+                                  fieldViewBuilder:
+                                      (
+                                        context,
+                                        controller,
+                                        focusNode,
+                                        onFieldSubmitted,
+                                      ) => TextFormField(
+                                        controller: controller,
+                                        focusNode: focusNode,
+                                        decoration: const InputDecoration(
+                                          labelText: 'Village',
+                                          hintText: 'Search village',
+                                          prefixIcon: Icon(
+                                            Icons.home_work_outlined,
+                                          ),
+                                        ),
+                                        validator: (_) => _villageCode.isEmpty
+                                            ? 'Select a village from the list'
+                                            : null,
+                                        onChanged: (_) =>
+                                            setState(() => _villageCode = ''),
+                                      ),
                                 ),
                               ],
                             ),
@@ -496,14 +515,15 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                                 else
                                   ..._farms.map(
                                     (farm) => Padding(
-                                      padding:
-                                          const EdgeInsets.only(bottom: 10),
+                                      padding: const EdgeInsets.only(
+                                        bottom: 10,
+                                      ),
                                       child: ListTile(
                                         contentPadding:
                                             const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 5,
-                                        ),
+                                              horizontal: 12,
+                                              vertical: 5,
+                                            ),
                                         leading: CircleAvatar(
                                           backgroundColor: Theme.of(context)
                                               .colorScheme
@@ -526,19 +546,20 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                                         subtitle: Text(
                                           farm.location +
                                               '\n' +
-                                              farm.sizeAcres
-                                                  .toStringAsFixed(1) +
+                                              farm.sizeAcres.toStringAsFixed(
+                                                1,
+                                              ) +
                                               ' acres • ' +
                                               farm.irrigationMethod,
                                         ),
                                         isThreeLine: true,
-                                        trailing:
-                                            const Icon(Icons.chevron_right),
+                                        trailing: const Icon(
+                                          Icons.chevron_right,
+                                        ),
                                         onTap: () async {
                                           await Navigator.of(context).push(
                                             MaterialPageRoute(
-                                              builder: (_) =>
-                                                  FarmDetailsScreen(
+                                              builder: (_) => FarmDetailsScreen(
                                                 farmId: farm.id,
                                               ),
                                             ),
@@ -577,9 +598,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                                 onChanged: (value) => ref
                                     .read(themeModeProvider.notifier)
                                     .setMode(
-                                      value
-                                          ? ThemeMode.dark
-                                          : ThemeMode.light,
+                                      value ? ThemeMode.dark : ThemeMode.light,
                                     ),
                                 title: const Text(
                                   'Dark mode',
@@ -601,15 +620,15 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                           const SizedBox(height: 18),
                           FilledButton.icon(
                             onPressed: _saving ? null : _save,
-                          icon: _saving
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.check_rounded),
+                            icon: _saving
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.check_rounded),
                             label: Text(
                               _saving ? 'Saving profile...' : 'Save changes',
                             ),
@@ -661,9 +680,9 @@ class _ProfileHero extends StatelessWidget {
             child: Text(
               initial,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: scheme.primary,
-                    fontWeight: FontWeight.w800,
-                  ),
+                color: scheme.primary,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
           const SizedBox(width: 16),
@@ -681,9 +700,9 @@ class _ProfileHero extends StatelessWidget {
                 Text(
                   displayName,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: scheme.onPrimary,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    color: scheme.onPrimary,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ],
             ),
@@ -727,9 +746,8 @@ class _SectionTitle extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                style: Theme.of(context).textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 2),
               Text(subtitle),

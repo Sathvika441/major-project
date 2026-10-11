@@ -64,15 +64,13 @@ class _PermissionSetupScreenState extends ConsumerState<PermissionSetupScreen> {
             _PurposeCard(
               icon: Icons.photo_library_outlined,
               title: 'Gallery access',
-              text:
-                  'Required to upload farm and crop photos for records and diagnostics',
+              text: 'Required to upload farm and crop photos for records and diagnostics',
             ),
             const SizedBox(height: 12),
             _PurposeCard(
               icon: Icons.camera_alt_outlined,
               title: 'Camera access',
-              text:
-                  'Required to scan documents and capture live farm/crop images',
+              text: 'Required to scan documents and capture live farm/crop images',
             ),
             const SizedBox(height: 24),
             if (_completed && _permanentlyDenied) ...[

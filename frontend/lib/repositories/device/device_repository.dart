@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../models/device/device_model.dart';
 
 abstract class DeviceRepository {
@@ -8,8 +9,9 @@ abstract class DeviceRepository {
   Future<DeviceModel> register(DeviceModel device);
 }
 
-final deviceRepositoryProvider = Provider<DeviceRepository>((ref) =>
-    FirestoreDeviceRepository(FirebaseFirestore.instance));
+final deviceRepositoryProvider = Provider<DeviceRepository>(
+  (ref) => FirestoreDeviceRepository(FirebaseFirestore.instance),
+);
 
 class FirestoreDeviceRepository implements DeviceRepository {
   final FirebaseFirestore db;
@@ -33,9 +35,11 @@ class FirestoreDeviceRepository implements DeviceRepository {
     return _devices(userId)
         .where('isActive', isEqualTo: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((d) => DeviceModel.fromMap({...d.data(), 'id': d.id}))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((d) => DeviceModel.fromMap({...d.data(), 'id': d.id}))
+              .toList(),
+        );
   }
 
   @override

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -74,7 +74,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
-  LocationMasterService get _locations => ref.read(locationMasterServiceProvider);
+  LocationMasterService get _locations =>
+      ref.read(locationMasterServiceProvider);
 
   List<String> get _districts => _locations.districts.isNotEmpty
       ? _locations.districts
@@ -152,35 +153,61 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 child: ListView(
                   padding: const EdgeInsets.all(20),
                   children: [
-                    Text('Your farm location', style: Theme.of(context).textTheme.headlineSmall),
+                    Text(
+                      'Your farm location',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
                     const SizedBox(height: 6),
-                    const Text('Step 1 of 2 â€¢ Core farmer and location details'),
+                    const Text(
+                      'Step 1 of 2 â€¢ Core farmer and location details',
+                    ),
                     const SizedBox(height: 20),
                     if (_loadError != null) ...[
                       Card(
                         child: ListTile(
                           leading: const Icon(Icons.error_outline),
                           title: Text(_loadError!),
-                          trailing: TextButton(onPressed: _loadMaster, child: const Text('Retry')),
+                          trailing: TextButton(
+                            onPressed: _loadMaster,
+                            child: const Text('Retry'),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 12),
                     ],
                     // Name and phone are collected at signup and reused here.
                     // Phase A only asks for the farmer's location.
-                    Text('Location', style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'Location',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
                       initialValue: _state,
-                      decoration: const InputDecoration(labelText: 'State', prefixIcon: Icon(Icons.map_outlined)),
-                      items: const [DropdownMenuItem(value: 'Karnataka', child: Text('Karnataka'))],
+                      decoration: const InputDecoration(
+                        labelText: 'State',
+                        prefixIcon: Icon(Icons.map_outlined),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'Karnataka',
+                          child: Text('Karnataka'),
+                        ),
+                      ],
                       onChanged: null,
                     ),
                     const SizedBox(height: 14),
                     DropdownButtonFormField<String>(
                       initialValue: _district.isEmpty ? null : _district,
-                      decoration: const InputDecoration(labelText: 'District', prefixIcon: Icon(Icons.location_city_outlined)),
-                      items: _districts.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
+                      decoration: const InputDecoration(
+                        labelText: 'District',
+                        prefixIcon: Icon(Icons.location_city_outlined),
+                      ),
+                      items: _districts
+                          .map(
+                            (d) => DropdownMenuItem(value: d, child: Text(d)),
+                          )
+                          .toList(),
                       onChanged: (value) {
                         if (value == null) return;
                         final taluks = _locations.taluksFor(value);
@@ -191,13 +218,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           _villageCode = '';
                         });
                       },
-                      validator: (value) => value == null || value.isEmpty ? 'Select a district' : null,
+                      validator: (value) => value == null || value.isEmpty
+                          ? 'Select a district'
+                          : null,
                     ),
                     const SizedBox(height: 14),
                     DropdownButtonFormField<String>(
                       initialValue: _taluk.isEmpty ? null : _taluk,
-                      decoration: const InputDecoration(labelText: 'Taluk', prefixIcon: Icon(Icons.place_outlined)),
-                      items: _taluks.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                      decoration: const InputDecoration(
+                        labelText: 'Taluk',
+                        prefixIcon: Icon(Icons.place_outlined),
+                      ),
+                      items: _taluks
+                          .map(
+                            (t) => DropdownMenuItem(value: t, child: Text(t)),
+                          )
+                          .toList(),
                       onChanged: (value) {
                         if (value == null) return;
                         setState(() {
@@ -206,7 +242,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           _villageCode = '';
                         });
                       },
-                      validator: (value) => value == null || value.isEmpty ? 'Select a taluk' : null,
+                      validator: (value) => value == null || value.isEmpty
+                          ? 'Select a taluk'
+                          : null,
                     ),
                     const SizedBox(height: 14),
                     Autocomplete<VillageEntry>(
@@ -214,19 +252,31 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       optionsBuilder: (value) {
                         final query = value.text.trim().toLowerCase();
                         final options = _villages;
-                        return query.isEmpty ? options : options.where((v) => v.name.toLowerCase().contains(query));
+                        return query.isEmpty
+                            ? options
+                            : options.where(
+                                (v) => v.name.toLowerCase().contains(query),
+                              );
                       },
                       onSelected: (village) => setState(() {
                         _village.text = village.name;
                         _villageCode = village.code;
                       }),
-                      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) => TextFormField(
-                        controller: controller,
-                        focusNode: focusNode,
-                        decoration: const InputDecoration(labelText: 'Village', hintText: 'Search village', prefixIcon: Icon(Icons.home_work_outlined)),
-                        validator: (_) => _villageCode.isEmpty ? 'Select a village from the list' : null,
-                        onChanged: (_) => _villageCode = '',
-                      ),
+                      fieldViewBuilder:
+                          (context, controller, focusNode, onFieldSubmitted) =>
+                              TextFormField(
+                                controller: controller,
+                                focusNode: focusNode,
+                                decoration: const InputDecoration(
+                                  labelText: 'Village',
+                                  hintText: 'Search village',
+                                  prefixIcon: Icon(Icons.home_work_outlined),
+                                ),
+                                validator: (_) => _villageCode.isEmpty
+                                    ? 'Select a village from the list'
+                                    : null,
+                                onChanged: (_) => _villageCode = '',
+                              ),
                       optionsViewBuilder: (context, onSelected, options) {
                         final values = options.toList();
                         return Align(
@@ -257,8 +307,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     const SizedBox(height: 28),
                     FilledButton.icon(
                       onPressed: _saving ? null : _save,
-                      icon: _saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.arrow_forward),
-                      label: Text(_saving ? 'Saving...' : 'Continue to Farm Details'),
+                      icon: _saving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.arrow_forward),
+                      label: Text(
+                        _saving ? 'Saving...' : 'Continue to Farm Details',
+                      ),
                     ),
                   ],
                 ),
@@ -267,4 +325,3 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 }
-

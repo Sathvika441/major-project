@@ -31,7 +31,9 @@ class FarmManagementScreen extends ConsumerWidget {
       final matches = farms.where((farm) => farm.id == farmId);
       if (matches.isNotEmpty && context.mounted) {
         await Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => FarmWorkspaceScreen(farm: matches.first)),
+          MaterialPageRoute(
+            builder: (_) => FarmWorkspaceScreen(farm: matches.first),
+          ),
         );
         ref.invalidate(farmsProvider);
         return;
@@ -39,7 +41,9 @@ class FarmManagementScreen extends ConsumerWidget {
     }
     if (!context.mounted) return;
     await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => FarmDetailsScreen(farmId: farmId, startNew: startNew)),
+      MaterialPageRoute(
+        builder: (_) => FarmDetailsScreen(farmId: farmId, startNew: startNew),
+      ),
     );
     ref.invalidate(farmsProvider);
   }

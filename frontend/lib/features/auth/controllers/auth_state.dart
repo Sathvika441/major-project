@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+
 import '../../../models/user/user_model.dart';
 
 enum AuthStatus {
@@ -41,13 +42,12 @@ class AuthState {
     required UserModel user,
     required String phone,
     String forPurpose = 'login',
-  }) =>
-      AuthState(
-        status: AuthStatus.otpVerificationPending,
-        user: user,
-        pendingOtpPhone: phone,
-        pendingOtpFor: forPurpose,
-      );
+  }) => AuthState(
+    status: AuthStatus.otpVerificationPending,
+    user: user,
+    pendingOtpPhone: phone,
+    pendingOtpFor: forPurpose,
+  );
   factory AuthState.error(String message) =>
       AuthState(status: AuthStatus.error, errorMessage: message);
 

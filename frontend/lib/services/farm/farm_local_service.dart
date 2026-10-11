@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FarmLocalService {
@@ -20,7 +21,9 @@ class FarmLocalService {
       prefs.setString(key, jsonEncode(items));
 
   Future<List<Map<String, dynamic>>> farmsForUser(String userId) async =>
-      _list(farmsKey).where((e) => e['userId'] == userId && e['isActive'] != false).toList();
+      _list(farmsKey)
+          .where((e) => e['userId'] == userId && e['isActive'] != false)
+          .toList();
 
   Future<void> saveFarm(Map<String, dynamic> farm) async {
     final items = _list(farmsKey);
@@ -30,7 +33,9 @@ class FarmLocalService {
   }
 
   Future<List<Map<String, dynamic>>> plotsForFarm(String farmId) async =>
-      _list(plotsKey).where((e) => e['farmId'] == farmId && e['isActive'] != false).toList();
+      _list(plotsKey)
+          .where((e) => e['farmId'] == farmId && e['isActive'] != false)
+          .toList();
 
   Future<void> savePlot(Map<String, dynamic> plot) async {
     final items = _list(plotsKey);

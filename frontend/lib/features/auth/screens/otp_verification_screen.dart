@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pinput/pinput.dart';
@@ -10,7 +11,8 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
   const OtpVerificationScreen({super.key});
 
   @override
-  ConsumerState<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
+  ConsumerState<OtpVerificationScreen> createState() =>
+      _OtpVerificationScreenState();
 }
 
 class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
@@ -58,14 +60,20 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     final lock = ctrl.remainingLockout();
     if (lock != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Too many failed attempts. Try again in ${lock.inMinutes} min.')),
+        SnackBar(
+          content: Text(
+            'Too many failed attempts. Try again in ${lock.inMinutes} min.',
+          ),
+        ),
       );
       return;
     }
     final cooldown = ctrl.canResendOtp();
     if (cooldown != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please wait ${cooldown.inSeconds}s before resending.')),
+        SnackBar(
+          content: Text('Please wait ${cooldown.inSeconds}s before resending.'),
+        ),
       );
       return;
     }
@@ -93,7 +101,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     }
 
     setState(() => _verifying = true);
-    final ok = await ref.read(authControllerProvider.notifier).verifyOtpAndLogin(code);
+    final ok = await ref
+        .read(authControllerProvider.notifier)
+        .verifyOtpAndLogin(code);
     if (!mounted) return;
     setState(() => _verifying = false);
     if (!ok) return;
@@ -129,14 +139,27 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                 Center(
                   child: CircleAvatar(
                     radius: 32,
-                    backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
-                    child: Icon(Icons.verified_user_rounded, size: 44, color: theme.colorScheme.primary),
+                    backgroundColor: theme.colorScheme.primary.withValues(
+                      alpha: 0.1,
+                    ),
+                    child: Icon(
+                      Icons.verified_user_rounded,
+                      size: 44,
+                      color: theme.colorScheme.primary,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
-                Text('Enter the 6-digit code', textAlign: TextAlign.center, style: theme.textTheme.headlineSmall),
+                Text(
+                  'Enter the 6-digit code',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.headlineSmall,
+                ),
                 const SizedBox(height: 8),
-                Text('We sent a verification code to $displayTarget to complete your $purpose.', textAlign: TextAlign.center),
+                Text(
+                  'We sent a verification code to $displayTarget to complete your $purpose.',
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 24),
                 if (authState.errorMessage != null)
                   Card(
@@ -150,7 +173,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                   Card(
                     child: ListTile(
                       leading: const Icon(Icons.lock_outline),
-                      title: Text('Locked for ${lock.inMinutes}m ${lock.inSeconds.remainder(60)}s'),
+                      title: Text(
+                        'Locked for ${lock.inMinutes}m ${lock.inSeconds.remainder(60)}s',
+                      ),
                     ),
                   ),
                 ],
@@ -165,7 +190,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                     defaultPinTheme: PinTheme(
                       width: 48,
                       height: 56,
-                      textStyle: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      textStyle: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
                       decoration: BoxDecoration(
                         border: Border.all(color: theme.dividerColor),
                         borderRadius: BorderRadius.circular(12),
@@ -186,19 +214,29 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                   children: [
                     const Text("Didn't receive the code?  "),
                     if (_resendSeconds > 0)
-                      Text('Resend in ${_resendSeconds}s', style: const TextStyle(fontWeight: FontWeight.w600))
+                      Text(
+                        'Resend in ${_resendSeconds}s',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      )
                     else
                       GestureDetector(
                         onTap: _resendOtp,
                         child: Text(
                           _resentOnce ? 'Resend code again' : 'Resend code',
-                          style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                Text('OTP expires in 15 minutes. Maximum 5 attempts before a 5-minute lockout.', textAlign: TextAlign.center, style: theme.textTheme.bodySmall),
+                Text(
+                  'OTP expires in 15 minutes. Maximum 5 attempts before a 5-minute lockout.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall,
+                ),
               ],
             ),
           ),
@@ -207,4 +245,3 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     );
   }
 }
-

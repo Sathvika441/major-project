@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../errors/failures.dart';
 
 class LocalStorageKeys {
@@ -43,11 +44,14 @@ class LocalStorageService {
     }
   }
 
-  String? getSessionUserId() => _prefs.getString(LocalStorageKeys.sessionUserId);
+  String? getSessionUserId() =>
+      _prefs.getString(LocalStorageKeys.sessionUserId);
 
-  String? getSessionUserJson() => _prefs.getString(LocalStorageKeys.sessionUserJson);
+  String? getSessionUserJson() =>
+      _prefs.getString(LocalStorageKeys.sessionUserJson);
 
-  bool isAuthenticated() => _prefs.getBool(LocalStorageKeys.isAuthenticated) ?? false;
+  bool isAuthenticated() =>
+      _prefs.getBool(LocalStorageKeys.isAuthenticated) ?? false;
 
   Future<void> clearSession() async {
     try {
@@ -68,7 +72,8 @@ class LocalStorageService {
   }
 
   /// Remember Email
-  String? getRememberedEmail() => _prefs.getString(LocalStorageKeys.rememberedEmail);
+  String? getRememberedEmail() =>
+      _prefs.getString(LocalStorageKeys.rememberedEmail);
 
   Future<void> setRememberedEmail(String email) async {
     await _prefs.setString(LocalStorageKeys.rememberedEmail, email);

@@ -15,11 +15,15 @@ class AuthFailure extends StateError {
 
   AuthFailure._(this.code, String message) : super(message);
 
-  factory AuthFailure.weakPassword() =>
-      AuthFailure._('weak-password', 'The password must contain at least 8 characters.');
+  factory AuthFailure.weakPassword() => AuthFailure._(
+    'weak-password',
+    'The password must contain at least 8 characters.',
+  );
 
-  factory AuthFailure.emailAlreadyInUse() =>
-      AuthFailure._('email-already-in-use', 'An account already exists for this email.');
+  factory AuthFailure.emailAlreadyInUse() => AuthFailure._(
+    'email-already-in-use',
+    'An account already exists for this email.',
+  );
 
   factory AuthFailure.userNotFound() =>
       AuthFailure._('user-not-found', 'No account was found for this email.');
@@ -204,7 +208,6 @@ class FirebaseAuthService implements AuthService {
     await _storage.clearSession();
   }
 }
-
 
 /// In-memory/local implementation used by isolated unit tests.
 ///

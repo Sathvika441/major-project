@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../widgets/app_button.dart';
 import '../../../widgets/app_card.dart';
 import '../controllers/auth_controller.dart';
@@ -9,10 +10,12 @@ class EmailVerificationScreen extends ConsumerStatefulWidget {
   const EmailVerificationScreen({super.key});
 
   @override
-  ConsumerState<EmailVerificationScreen> createState() => _EmailVerificationScreenState();
+  ConsumerState<EmailVerificationScreen> createState() =>
+      _EmailVerificationScreenState();
 }
 
-class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScreen> {
+class _EmailVerificationScreenState
+    extends ConsumerState<EmailVerificationScreen> {
   bool _isResending = false;
 
   Future<void> _resendEmail() async {
@@ -36,9 +39,7 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
     final email = authState.user?.email ?? 'your email address';
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Verify Email'),
-      ),
+      appBar: AppBar(title: const Text('Verify Email')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
@@ -87,7 +88,10 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
                   child: Text(
                     authState.successMessage!,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Color(0xFF14532D), fontSize: 13),
+                    style: const TextStyle(
+                      color: Color(0xFF14532D),
+                      fontSize: 13,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),

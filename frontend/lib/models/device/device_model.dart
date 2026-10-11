@@ -25,20 +25,20 @@ class SensorReading {
       value == null || (value >= min && value <= max);
 
   Map<String, dynamic> toMap() => {
-        'soilMoisture': soilMoisture,
-        'temperature': temperature,
-        'humidity': humidity,
-        'rainfall': rainfall,
-        'timestamp': timestamp.toIso8601String(),
-      };
+    'soilMoisture': soilMoisture,
+    'temperature': temperature,
+    'humidity': humidity,
+    'rainfall': rainfall,
+    'timestamp': timestamp.toIso8601String(),
+  };
 
   factory SensorReading.fromMap(Map<String, dynamic> map) => SensorReading(
-        soilMoisture: (map['soilMoisture'] as num?)?.toDouble(),
-        temperature: (map['temperature'] as num?)?.toDouble(),
-        humidity: (map['humidity'] as num?)?.toDouble(),
-        rainfall: (map['rainfall'] as num?)?.toDouble(),
-        timestamp: DateTime.parse(map['timestamp'] as String),
-      );
+    soilMoisture: (map['soilMoisture'] as num?)?.toDouble(),
+    temperature: (map['temperature'] as num?)?.toDouble(),
+    humidity: (map['humidity'] as num?)?.toDouble(),
+    rainfall: (map['rainfall'] as num?)?.toDouble(),
+    timestamp: DateTime.parse(map['timestamp'] as String),
+  );
 }
 
 class DeviceModel {
@@ -65,7 +65,8 @@ class DeviceModel {
   });
 
   DeviceConnectionState get connectionState {
-    if (!isActive || latestReading == null) return DeviceConnectionState.unknown;
+    if (!isActive || latestReading == null)
+      return DeviceConnectionState.unknown;
     final age = DateTime.now().difference(lastSeen);
     if (age <= const Duration(minutes: 5)) return DeviceConnectionState.online;
     if (age <= const Duration(hours: 1)) return DeviceConnectionState.stale;
@@ -80,40 +81,42 @@ class DeviceModel {
     SensorReading? latestReading,
     bool? isActive,
   }) => DeviceModel(
-        id: id,
-        userId: userId,
-        farmId: farmId ?? this.farmId,
-        plotId: plotId ?? this.plotId,
-        deviceId: deviceId,
-        name: name ?? this.name,
-        lastSeen: lastSeen ?? this.lastSeen,
-        latestReading: latestReading ?? this.latestReading,
-        isActive: isActive ?? this.isActive,
-      );
+    id: id,
+    userId: userId,
+    farmId: farmId ?? this.farmId,
+    plotId: plotId ?? this.plotId,
+    deviceId: deviceId,
+    name: name ?? this.name,
+    lastSeen: lastSeen ?? this.lastSeen,
+    latestReading: latestReading ?? this.latestReading,
+    isActive: isActive ?? this.isActive,
+  );
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'userId': userId,
-        'farmId': farmId,
-        'plotId': plotId,
-        'deviceId': deviceId,
-        'name': name,
-        'lastSeen': lastSeen.toIso8601String(),
-        'latestReading': latestReading?.toMap(),
-        'isActive': isActive,
-      };
+    'id': id,
+    'userId': userId,
+    'farmId': farmId,
+    'plotId': plotId,
+    'deviceId': deviceId,
+    'name': name,
+    'lastSeen': lastSeen.toIso8601String(),
+    'latestReading': latestReading?.toMap(),
+    'isActive': isActive,
+  };
 
   factory DeviceModel.fromMap(Map<String, dynamic> map) => DeviceModel(
-        id: map['id'] as String,
-        userId: map['userId'] as String,
-        farmId: map['farmId'] as String,
-        plotId: map['plotId'] as String,
-        deviceId: map['deviceId'] as String,
-        name: map['name'] as String,
-        lastSeen: DateTime.parse(map['lastSeen'] as String),
-        latestReading: map['latestReading'] != null
-            ? SensorReading.fromMap(Map<String, dynamic>.from(map['latestReading'] as Map))
-            : null,
-        isActive: map['isActive'] as bool? ?? true,
-      );
+    id: map['id'] as String,
+    userId: map['userId'] as String,
+    farmId: map['farmId'] as String,
+    plotId: map['plotId'] as String,
+    deviceId: map['deviceId'] as String,
+    name: map['name'] as String,
+    lastSeen: DateTime.parse(map['lastSeen'] as String),
+    latestReading: map['latestReading'] != null
+        ? SensorReading.fromMap(
+            Map<String, dynamic>.from(map['latestReading'] as Map),
+          )
+        : null,
+    isActive: map['isActive'] as bool? ?? true,
+  );
 }

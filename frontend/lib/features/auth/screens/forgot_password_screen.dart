@@ -84,10 +84,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   Text(
                     'Reset your password',
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                          fontSize: 29,
-                          fontWeight: FontWeight.w800,
-                        ),
+                    style: Theme.of(context).textTheme.displayMedium
+                        ?.copyWith(fontSize: 29, fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 8),
                   const Text(
@@ -128,8 +126,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                             const SizedBox(height: 18),
                             AppButton(
                               text: 'Send reset link',
-                              isLoading:
-                                  authState.status == AuthStatus.loading,
+                              isLoading: authState.status == AuthStatus.loading,
                               onPressed: _submitReset,
                               icon: Icons.send_rounded,
                             ),
@@ -141,9 +138,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   const SizedBox(height: 14),
                   TextButton.icon(
                     onPressed: () {
-                      ref
-                          .read(authControllerProvider.notifier)
-                          .clearMessages();
+                      ref.read(authControllerProvider.notifier).clearMessages();
                       context.go('/login');
                     },
                     icon: const Icon(Icons.arrow_back_rounded, size: 18),
@@ -163,10 +158,7 @@ class _ResetMessage extends StatelessWidget {
   final String text;
   final bool success;
 
-  const _ResetMessage({
-    required this.text,
-    required this.success,
-  });
+  const _ResetMessage({required this.text, required this.success});
 
   @override
   Widget build(BuildContext context) {

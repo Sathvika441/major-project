@@ -9,7 +9,8 @@ abstract class IrrigationAuditLog {
 class InMemoryIrrigationAuditLog implements IrrigationAuditLog {
   final List<IrrigationAuditRecord> records = [];
   @override
-  Future<void> record(IrrigationAuditRecord record) async => records.add(record);
+  Future<void> record(IrrigationAuditRecord record) async =>
+      records.add(record);
 }
 
 class FirestoreIrrigationAuditLog implements IrrigationAuditLog {

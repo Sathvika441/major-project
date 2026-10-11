@@ -10,8 +10,7 @@ class PermissionResult {
 
   const PermissionResult({required this.camera, required this.gallery});
 
-  bool get allGranted =>
-      _isGranted(camera) && _isGranted(gallery);
+  bool get allGranted => _isGranted(camera) && _isGranted(gallery);
 
   bool get anyPermanentlyDenied =>
       camera.isPermanentlyDenied || gallery.isPermanentlyDenied;

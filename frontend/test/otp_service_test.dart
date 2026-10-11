@@ -49,7 +49,9 @@ void main() {
     await service.generateOtp(phone);
     await storage.raw.setInt(
       'otp_${phone}_generated_at',
-      DateTime.now().subtract(const Duration(minutes: 16)).millisecondsSinceEpoch,
+      DateTime.now()
+          .subtract(const Duration(minutes: 16))
+          .millisecondsSinceEpoch,
     );
     await expectLater(
       service.verifyOtp(phone, '000000'),
@@ -57,4 +59,3 @@ void main() {
     );
   });
 }
-

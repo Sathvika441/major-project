@@ -81,5 +81,6 @@ class CropGrowthStageService {
     calculate(plantingDate: plantingDate, asOf: asOf);
   }
 
-  DateTime _dateOnly(DateTime value) => DateTime(value.year, value.month, value.day);
+  DateTime _dateOnly(DateTime value) =>
+      DateTime(value.year, value.month, value.day);
 }

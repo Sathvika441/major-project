@@ -10,11 +10,13 @@ import '../../../services/auth/auth_service.dart';
 import '../../../services/otp/otp_service.dart';
 import 'auth_state.dart';
 
-final authServiceProvider = Provider<AuthService>((ref) =>
-    FirebaseAuthService(ref.watch(localStorageServiceProvider)));
+final authServiceProvider = Provider<AuthService>(
+  (ref) => FirebaseAuthService(ref.watch(localStorageServiceProvider)),
+);
 
-final authRepositoryProvider = Provider<AuthRepository>((ref) =>
-    AuthRepositoryImpl(ref.watch(authServiceProvider)));
+final authRepositoryProvider = Provider<AuthRepository>(
+  (ref) => AuthRepositoryImpl(ref.watch(authServiceProvider)),
+);
 
 final authControllerProvider = StateNotifierProvider<AuthController, AuthState>(
   (ref) => AuthController(
@@ -36,8 +38,7 @@ class AuthController extends StateNotifier<AuthState> {
     this._otpService,
     this._storage,
     this._farmRepository,
-  )
-      : super(AuthState.initial()) {
+  ) : super(AuthState.initial()) {
     checkSession();
   }
 
@@ -56,7 +57,8 @@ class AuthController extends StateNotifier<AuthState> {
 
     try {
       final profile = FarmProfileModel.fromJson(raw);
-      final phaseBComplete = profile.landSurveyNumber.trim().isNotEmpty &&
+      final phaseBComplete =
+          profile.landSurveyNumber.trim().isNotEmpty &&
           profile.arecanutCultivationType.trim().isNotEmpty &&
           profile.soilType.trim().isNotEmpty;
 
@@ -108,16 +110,30 @@ class AuthController extends StateNotifier<AuthState> {
     }
   }
 
-  Future<bool> signUp({required String name, required String email, required String phone, required String password}) async {
+  Future<bool> signUp({
+    required String name,
+    required String email,
+    required String phone,
+    required String password,
+  }) async {
     state = AuthState.loading();
     try {
-      final user = await _repository.signUp(name: name, email: email, phone: phone, password: password);
+      final user = await _repository.signUp(
+        name: name,
+        email: email,
+        phone: phone,
+        password: password,
+      );
       // A signup is the only flow that should enter onboarding.
       await _storage.setOnboardingRequired(true);
       await _storage.setOtpVerified(false);
       final otpKey = _otpKeyForUser(user);
       await _otpService.generateOtp(otpKey);
-      state = AuthState.otpVerificationPending(user: user, phone: otpKey, forPurpose: 'signup');
+      state = AuthState.otpVerificationPending(
+        user: user,
+        phone: otpKey,
+        forPurpose: 'signup',
+      );
       return true;
     } on Failure catch (f) {
       state = AuthState.error(f.message);
@@ -137,7 +153,11 @@ class AuthController extends StateNotifier<AuthState> {
       await _storage.setOtpVerified(false);
       final otpKey = _otpKeyForUser(user);
       await _otpService.generateOtp(otpKey);
-      state = AuthState.otpVerificationPending(user: user, phone: otpKey, forPurpose: 'login');
+      state = AuthState.otpVerificationPending(
+        user: user,
+        phone: otpKey,
+        forPurpose: 'login',
+      );
       return true;
     } on Failure catch (f) {
       state = AuthState.error(f.message);
@@ -159,7 +179,11 @@ class AuthController extends StateNotifier<AuthState> {
         await _storage.setOtpVerified(false);
         final otpKey = _otpKeyForUser(user);
         await _otpService.generateOtp(otpKey);
-        state = AuthState.otpVerificationPending(user: user, phone: otpKey, forPurpose: 'login');
+        state = AuthState.otpVerificationPending(
+          user: user,
+          phone: otpKey,
+          forPurpose: 'login',
+        );
       } else {
         await _storage.setOtpVerified(true);
         await _migrateLegacyOnboarding(user.uid);
@@ -177,7 +201,8 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   Future<String?> sendLoginOtp({String? overridePhone}) async {
-    final phone = overridePhone ??
+    final phone =
+        overridePhone ??
         state.pendingOtpPhone ??
         (state.user == null ? '' : _otpKeyForUser(state.user!));
     if (phone.isEmpty) {
@@ -186,7 +211,10 @@ class AuthController extends StateNotifier<AuthState> {
     }
     try {
       final code = await _otpService.generateOtp(phone);
-      state = state.copyWith(successMessage: 'OTP sent to $phone.', errorMessage: null);
+      state = state.copyWith(
+        successMessage: 'OTP sent to $phone.',
+        errorMessage: null,
+      );
       return code;
     } on OtpFailure catch (f) {
       state = state.copyWith(errorMessage: f.message, successMessage: null);
@@ -195,7 +223,8 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   Future<bool> verifyOtpAndLogin(String code, {String? overridePhone}) async {
-    final phone = overridePhone ??
+    final phone =
+        overridePhone ??
         state.pendingOtpPhone ??
         (state.user == null ? '' : _otpKeyForUser(state.user!));
     final user = state.user;
@@ -260,19 +289,22 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   Duration? canResendOtp() {
-    final phone = state.pendingOtpPhone ??
+    final phone =
+        state.pendingOtpPhone ??
         (state.user == null ? '' : _otpKeyForUser(state.user!));
     return phone.isEmpty ? null : _otpService.canResend(phone);
   }
 
   bool isOtpLocked() {
-    final phone = state.pendingOtpPhone ??
+    final phone =
+        state.pendingOtpPhone ??
         (state.user == null ? '' : _otpKeyForUser(state.user!));
     return phone.isNotEmpty && _otpService.isLocked(phone);
   }
 
   Duration? remainingLockout() {
-    final phone = state.pendingOtpPhone ??
+    final phone =
+        state.pendingOtpPhone ??
         (state.user == null ? '' : _otpKeyForUser(state.user!));
     return phone.isEmpty ? null : _otpService.remainingLockout(phone);
   }
@@ -282,8 +314,11 @@ class AuthController extends StateNotifier<AuthState> {
     try {
       await _repository.sendPasswordResetEmail(email);
       state = state.copyWith(
-        status: state.user != null ? AuthStatus.authenticated : AuthStatus.unauthenticated,
-        successMessage: 'Password reset link sent to $email. Please check your inbox.',
+        status: state.user != null
+            ? AuthStatus.authenticated
+            : AuthStatus.unauthenticated,
+        successMessage:
+            'Password reset link sent to $email. Please check your inbox.',
       );
       return true;
     } on Failure catch (f) {
@@ -295,9 +330,13 @@ class AuthController extends StateNotifier<AuthState> {
   Future<void> resendVerificationEmail() async {
     try {
       await _repository.sendEmailVerification();
-      state = state.copyWith(successMessage: 'Verification email resent successfully.');
+      state = state.copyWith(
+        successMessage: 'Verification email resent successfully.',
+      );
     } catch (_) {
-      state = state.copyWith(errorMessage: 'Failed to resend verification email.');
+      state = state.copyWith(
+        errorMessage: 'Failed to resend verification email.',
+      );
     }
   }
 
@@ -314,5 +353,6 @@ class AuthController extends StateNotifier<AuthState> {
     state = AuthState.unauthenticated();
   }
 
-  void clearMessages() => state = state.copyWith(errorMessage: null, successMessage: null);
+  void clearMessages() =>
+      state = state.copyWith(errorMessage: null, successMessage: null);
 }

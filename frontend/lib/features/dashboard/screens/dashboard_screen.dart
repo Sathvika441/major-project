@@ -1,8 +1,9 @@
-﻿import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
+
 import '../../../models/device/device_model.dart';
 import '../../../models/farm/farm_model.dart';
 import '../../../models/weather/weather_model.dart';
@@ -22,10 +23,7 @@ import '../../../widgets/app_navigation_scaffold.dart';
 class DashboardScreen extends ConsumerStatefulWidget {
   final String? initialFarmId;
 
-  const DashboardScreen({
-    super.key,
-    this.initialFarmId,
-  });
+  const DashboardScreen({super.key, this.initialFarmId});
 
   @override
   ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
@@ -93,7 +91,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     FarmModel farm, {
     bool forceRefresh = false,
   }) async {
-    final key = '${farm.id}|${farm.state}|${farm.district}|${farm.taluk}|${farm.village}|${farm.location}';
+    final key =
+        '${farm.id}|${farm.state}|${farm.district}|${farm.taluk}|${farm.village}|${farm.location}';
     if (!forceRefresh &&
         _weatherFarmKey == key &&
         (_weatherLoading || _weather != null || _weatherError != null)) {
@@ -130,7 +129,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     }
   }
 
-  Widget _buildFarmPortfolio(BuildContext context, List<FarmModel> farms, String farmerName) {
+  Widget _buildFarmPortfolio(
+    BuildContext context,
+    List<FarmModel> farms,
+    String farmerName,
+  ) {
     final scheme = Theme.of(context).colorScheme;
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
@@ -161,7 +164,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   const SizedBox(height: 8),
                   Text(
                     'Select a farm to open its smart agriculture workspace.',
-                    style: TextStyle(color: scheme.onPrimary.withValues(alpha: 0.9)),
+                    style: TextStyle(
+                      color: scheme.onPrimary.withValues(alpha: 0.9),
+                    ),
                   ),
                 ],
               );
@@ -175,8 +180,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 label: const Text('Add farm'),
               );
               return compact
-                  ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [title, const SizedBox(height: 18), action])
-                  : Row(children: [Expanded(child: title), const SizedBox(width: 20), action]);
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [title, const SizedBox(height: 18), action],
+                    )
+                  : Row(
+                      children: [
+                        Expanded(child: title),
+                        const SizedBox(width: 20),
+                        action,
+                      ],
+                    );
             },
           ),
         ),
@@ -186,7 +200,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             Expanded(
               child: Text(
                 'Your farms',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                style: Theme.of(context).textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w800),
               ),
             ),
             Text(
@@ -202,16 +217,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         LayoutBuilder(
           builder: (context, constraints) {
             final width = constraints.maxWidth;
-            final columns = width >= 1100 ? 3 : width >= 700 ? 2 : 1;
+            final columns = width >= 1100
+                ? 3
+                : width >= 700
+                ? 2
+                : 1;
             const gap = 16.0;
-            final cardWidth = columns == 1 ? width : (width - gap * (columns - 1)) / columns;
+            final cardWidth = columns == 1
+                ? width
+                : (width - gap * (columns - 1)) / columns;
             return Wrap(
               spacing: gap,
               runSpacing: gap,
-              children: farms.map((farm) => SizedBox(
-                width: cardWidth,
-                child: _buildFarmCard(context, farm),
-              )).toList(),
+              children: farms
+                  .map(
+                    (farm) => SizedBox(
+                      width: cardWidth,
+                      child: _buildFarmCard(context, farm),
+                    ),
+                  )
+                  .toList(),
             );
           },
         ),
@@ -221,9 +246,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildFarmCard(BuildContext context, FarmModel farm) {
     final scheme = Theme.of(context).colorScheme;
-    final location = [farm.village, farm.taluk, farm.district]
-        .where((e) => e.trim().isNotEmpty)
-        .join(', ');
+    final location = [
+      farm.village,
+      farm.taluk,
+      farm.district,
+    ].where((e) => e.trim().isNotEmpty).join(', ');
     return Card(
       elevation: 0,
       clipBehavior: Clip.antiAlias,
@@ -243,7 +270,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       color: scheme.primaryContainer,
                       borderRadius: BorderRadius.circular(15),
                     ),
-                    child: Icon(Icons.agriculture_rounded, color: scheme.primary),
+                    child: Icon(
+                      Icons.agriculture_rounded,
+                      color: scheme.primary,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -251,17 +281,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       farm.name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                      style: Theme.of(context).textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w800),
                     ),
                   ),
-                  Icon(Icons.arrow_forward_ios_rounded, size: 16, color: scheme.onSurfaceVariant),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 16,
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.location_on_outlined, size: 18, color: scheme.onSurfaceVariant),
+                  Icon(
+                    Icons.location_on_outlined,
+                    size: 18,
+                    color: scheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -277,14 +316,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  Chip(avatar: const Icon(Icons.square_foot_outlined, size: 16), label: Text('${farm.sizeAcres.toStringAsFixed(1)} acres')),
-                  Chip(avatar: const Icon(Icons.eco_outlined, size: 16), label: Text(farm.crop)),
-                  Chip(avatar: const Icon(Icons.water_outlined, size: 16), label: Text(farm.irrigationMethod)),
+                  Chip(
+                    avatar: const Icon(Icons.square_foot_outlined, size: 16),
+                    label: Text('${farm.sizeAcres.toStringAsFixed(1)} acres'),
+                  ),
+                  Chip(
+                    avatar: const Icon(Icons.eco_outlined, size: 16),
+                    label: Text(farm.crop),
+                  ),
+                  Chip(
+                    avatar: const Icon(Icons.water_outlined, size: 16),
+                    label: Text(farm.irrigationMethod),
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: scheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(12),
@@ -293,7 +344,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   children: [
                     Icon(Icons.dashboard_customize_outlined, size: 18),
                     SizedBox(width: 8),
-                    Expanded(child: Text('Open farm workspace', style: TextStyle(fontWeight: FontWeight.w700))),
+                    Expanded(
+                      child: Text(
+                        'Open farm workspace',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
                     Icon(Icons.chevron_right_rounded),
                   ],
                 ),
@@ -305,7 +361,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildAppDrawer(BuildContext context, String farmerName, String? farmId) {
+  Widget _buildAppDrawer(
+    BuildContext context,
+    String farmerName,
+    String? farmId,
+  ) {
     return _buildAppDrawerForRoute(
       context,
       farmerName,
@@ -314,11 +374,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _drawerItem(BuildContext context, IconData icon, String label, VoidCallback onTap, {bool selected = false}) {
+  Widget _drawerItem(
+    BuildContext context,
+    IconData icon,
+    String label,
+    VoidCallback onTap, {
+    bool selected = false,
+  }) {
     final scheme = Theme.of(context).colorScheme;
     return ListTile(
-      leading: Icon(icon, color: selected ? scheme.primary : scheme.onSurfaceVariant),
-      title: Text(label, style: TextStyle(fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
+      leading: Icon(
+        icon,
+        color: selected ? scheme.primary : scheme.onSurfaceVariant,
+      ),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+        ),
+      ),
       selected: selected,
       onTap: () {
         Navigator.of(context).pop();
@@ -372,10 +446,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     });
 
     try {
-      final result = await ref.read(backendApiProvider).predictImage(
-        bytes,
-        filename: file.name,
-      );
+      final result = await ref
+          .read(backendApiProvider)
+          .predictImage(bytes, filename: file.name);
       if (!mounted) return;
 
       setState(() {
@@ -413,8 +486,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       if (!mounted) return;
       setState(() {
         _mlUploading = false;
-        _mlError =
-            'Unexpected error while contacting the ML service. Please try again.';
+        _mlError = 'Unexpected error while contacting the ML service. Please try again.';
       });
     }
   }
@@ -466,9 +538,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     children: [
                       Text(
                         'Arecanut disease detection',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
+                        style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       const SizedBox(height: 3),
@@ -510,9 +580,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ],
             if (!hasImage)
               FilledButton.icon(
-                onPressed: _mlUploading
-                    ? null
-                    : () => _pickMlImage(context),
+                onPressed: _mlUploading ? null : () => _pickMlImage(context),
                 icon: const Icon(Icons.upload_file),
                 label: const Text('Upload image'),
               )
@@ -531,9 +599,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.auto_awesome),
-                      label: Text(
-                        _mlUploading ? 'Predicting...' : 'Predict',
-                      ),
+                      label: Text(_mlUploading ? 'Predicting...' : 'Predict'),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -563,10 +629,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.error_outline,
-                      color: scheme.onErrorContainer,
-                    ),
+                    Icon(Icons.error_outline, color: scheme.onErrorContainer),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -606,9 +669,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       prediction ?? 'Unknown',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
+                      style: Theme.of(context).textTheme.titleLarge
                           ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 12),
@@ -621,9 +682,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       confidence is num
                           ? '${(confidence.toDouble() * 100).toStringAsFixed(2)}%'
                           : '—',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
+                      style: Theme.of(context).textTheme.titleLarge
                           ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                   ],
@@ -680,9 +739,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       });
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(
-            result['detail']?.toString() ?? 'Backend response received.',
-          )),
+          SnackBar(
+            content: Text(
+              result['detail']?.toString() ?? 'Backend response received.',
+            ),
+          ),
         );
       }
     } catch (e) {
@@ -704,7 +765,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     return AppNavigationScaffold(
       title: isFarmWorkspace ? 'Farm workspace' : 'My farms',
-      subtitle: isFarmWorkspace ? 'Monitor crop, weather and irrigation signals' : 'Your smart agriculture workspace',
+      subtitle: isFarmWorkspace
+          ? 'Monitor crop, weather and irrigation signals'
+          : 'Your smart agriculture workspace',
       selectedIndex: 0,
       actions: [
         if (isFarmWorkspace)
@@ -752,7 +815,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 }
 
                 if (!isFarmWorkspace) {
-                  return _buildFarmPortfolio(context, farms, user?.name ?? 'Farmer');
+                  return _buildFarmPortfolio(
+                    context,
+                    farms,
+                    user?.name ?? 'Farmer',
+                  );
                 }
 
                 final selectedId = widget.initialFarmId ?? _selectedFarmId;
@@ -793,9 +860,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   builder: (context, deviceSnapshot) {
                     if (deviceSnapshot.connectionState ==
                         ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
+                      return const Center(child: CircularProgressIndicator());
                     }
                     if (deviceSnapshot.hasError) {
                       return _syncError(
@@ -807,8 +872,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     }
 
                     final devices = deviceSnapshot.data ?? [];
-                    final farmDevices =
-                        devices.where((d) => d.farmId == farm.id).toList();
+                    final farmDevices = devices
+                        .where((d) => d.farmId == farm.id)
+                        .toList();
                     final alerts = _generateAlertsForFarm(
                       farmDevices,
                       _demoReading,
@@ -819,15 +885,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         : _aggregateReading(_demoReading!);
                     final agg = _ReadingSummary(
                       soilMoisture: sensorAgg.soilMoisture,
-                      temperature: _weather?.temperature ?? sensorAgg.temperature,
+                      temperature:
+                          _weather?.temperature ?? sensorAgg.temperature,
                       humidity: _weather?.humidity ?? sensorAgg.humidity,
-                      rainfall: _weather?.rainMm ??
+                      rainfall:
+                          _weather?.rainMm ??
                           _weather?.precipitationMm ??
                           sensorAgg.rainfall,
                       count: sensorAgg.count,
                     );
-                    final irrigationDecision =
-                        _buildIrrigationDecision(farm, agg, _weather);
+                    final irrigationDecision = _buildIrrigationDecision(
+                      farm,
+                      agg,
+                      _weather,
+                    );
                     if (irrigationDecision != null) {
                       final auditKey = _decisionKey(
                         farm,
@@ -856,7 +927,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               gradient: LinearGradient(
                                 colors: [
                                   Theme.of(context).colorScheme.primary,
-                                  Theme.of(context).colorScheme.primaryContainer,
+                                  Theme.of(context)
+                                      .colorScheme
+                                      .primaryContainer,
                                 ],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
@@ -881,9 +954,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 const SizedBox(height: 8),
                                 Text(
                                   farm.name,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
+                                  style: Theme.of(context).textTheme.titleMedium
                                       ?.copyWith(
                                         color: Theme.of(context)
                                             .colorScheme
@@ -921,7 +992,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 FilledButton.tonalIcon(
                                   style: FilledButton.styleFrom(
                                     backgroundColor: Colors.white,
-                                    foregroundColor: Theme.of(context).colorScheme.primary,
+                                    foregroundColor: Theme.of(context)
+                                        .colorScheme
+                                        .primary,
                                   ),
                                   onPressed: () => Navigator.push(
                                     context,
@@ -961,134 +1034,174 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 const SizedBox(height: 8),
                                 Text(
                                   'Viewing ' +
-                                  (farm.name.isEmpty ? 'Unnamed farm' : farm.name) +
-                                  ' • Farm ' +
-                                  '${farms.indexOf(farm) + 1} of ${farms.length}',
+                                      (farm.name.isEmpty
+                                          ? 'Unnamed farm'
+                                          : farm.name) +
+                                      ' • Farm ' +
+                                      '${farms.indexOf(farm) + 1} of ${farms.length}',
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               ],
                             ),
                           const SizedBox(height: 14),
                           Container(
-                             padding: const EdgeInsets.all(16),
-                             decoration: BoxDecoration(
-                               color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                               borderRadius: BorderRadius.circular(20),
-                               border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-                             ),
-                             child: Column(
-                               crossAxisAlignment: CrossAxisAlignment.start,
-                               children: [
-                                 Row(
-                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                   children: [
-                                     CircleAvatar(
-                                       radius: 24,
-                                       backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-                                       child: Icon(Icons.water_drop_outlined, color: Theme.of(context).colorScheme.onSecondaryContainer),
-                                     ),
-                                     const SizedBox(width: 12),
-                                     Expanded(
-                                       child: Column(
-                                         crossAxisAlignment: CrossAxisAlignment.start,
-                                         children: [
-                                           Text(
-                                             'Demo soil moisture sensor',
-                                             style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-                                           ),
-                                           const SizedBox(height: 4),
-                                           Text(
-                                             'Only soil moisture is simulated. Temperature, humidity and rainfall come from the weather API.',
-                                             style: Theme.of(context).textTheme.bodySmall,
-                                           ),
-                                         ],
-                                       ),
-                                     ),
-                                   ],
-                                 ),
-                                 const SizedBox(height: 10),
-                                 Wrap(
-                                   spacing: 12,
-                                   runSpacing: 8,
-                                   crossAxisAlignment: WrapCrossAlignment.center,
-                                   children: [
-                                     const Text('Soil condition', style: TextStyle(fontWeight: FontWeight.w600)),
-                                     DropdownButtonHideUnderline(
-                                       child: DropdownButton<String>(
-                                         value: _demoPreset,
-                                         isDense: true,
-                                         items: const [
-                                           DropdownMenuItem(value: 'Normal', child: Text('Normal')),
-                                           DropdownMenuItem(value: 'Dry soil', child: Text('Dry soil')),
-                                           DropdownMenuItem(value: 'Wet soil', child: Text('Wet soil')),
-                                         ],
-                                         onChanged: (value) {
-                                           if (value != null) setState(() => _demoPreset = value);
-                                         },
-                                       ),
-                                     ),
-                                   ],
-                                 ),
-                                 const SizedBox(height: 10),
-                                 Wrap(
-                                   spacing: 8,
-                                   runSpacing: 8,
-                                   children: [
-                                     FilledButton(
-                                       onPressed: _generateDemoReading,
-                                       child: const Text('Generate soil data'),
-                                     ),
-                                     OutlinedButton(
-                                       onPressed: () => _testDemoBackend(context, ref),
-                                       child: const Text('Test API'),
-                                     ),
-                                   ],
-                                 ),
-                               ],
-                             ),
-                           ),
-                           const SizedBox(height: 10),
-                           _buildSyncBanner(context, farmDevices),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .outlineVariant,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 24,
+                                      backgroundColor: Theme.of(context)
+                                          .colorScheme
+                                          .secondaryContainer,
+                                      child: Icon(
+                                        Icons.water_drop_outlined,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSecondaryContainer,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Demo soil moisture sensor',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleSmall
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Only soil moisture is simulated. Temperature, humidity and rainfall come from the weather API.',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                Wrap(
+                                  spacing: 12,
+                                  runSpacing: 8,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: [
+                                    const Text(
+                                      'Soil condition',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    DropdownButtonHideUnderline(
+                                      child: DropdownButton<String>(
+                                        value: _demoPreset,
+                                        isDense: true,
+                                        items: const [
+                                          DropdownMenuItem(
+                                            value: 'Normal',
+                                            child: Text('Normal'),
+                                          ),
+                                          DropdownMenuItem(
+                                            value: 'Dry soil',
+                                            child: Text('Dry soil'),
+                                          ),
+                                          DropdownMenuItem(
+                                            value: 'Wet soil',
+                                            child: Text('Wet soil'),
+                                          ),
+                                        ],
+                                        onChanged: (value) {
+                                          if (value != null)
+                                            setState(() => _demoPreset = value);
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    FilledButton(
+                                      onPressed: _generateDemoReading,
+                                      child: const Text('Generate soil data'),
+                                    ),
+                                    OutlinedButton(
+                                      onPressed: () =>
+                                          _testDemoBackend(context, ref),
+                                      child: const Text('Test API'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          _buildSyncBanner(context, farmDevices),
                           const SizedBox(height: 12),
                           LayoutBuilder(
-                             builder: (context, constraints) {
-                               final tileWidth = constraints.maxWidth < 520
-                                   ? (constraints.maxWidth - 10) / 2
-                                   : (constraints.maxWidth - 20) / 3;
-                               return Wrap(
-                                 spacing: 10,
-                                 runSpacing: 10,
-                                 children: [
-                                   SizedBox(
-                                     width: tileWidth,
-                                     child: _OverviewTile(
-                                       icon: Icons.square_foot_outlined,
-                                       label: 'Farm size',
-                                       value: '${farm.sizeAcres.toStringAsFixed(1)} acres',
-                                     ),
-                                   ),
-                                   SizedBox(
-                                     width: tileWidth,
-                                     child: _OverviewTile(
-                                       icon: Icons.water_drop_outlined,
-                                       label: 'Water',
-                                       value: farm.waterSource,
-                                     ),
-                                   ),
-                                   SizedBox(
-                                     width: tileWidth,
-                                     child: _OverviewTile(
-                                       icon: Icons.water_outlined,
-                                       label: 'Irrigation',
-                                       value: farm.irrigationMethod,
-                                     ),
-                                   ),
-                                 ],
-                               );
-                             },
-                           ),
-                           const SizedBox(height: 12),
-                           Card(
+                            builder: (context, constraints) {
+                              final tileWidth = constraints.maxWidth < 520
+                                  ? (constraints.maxWidth - 10) / 2
+                                  : (constraints.maxWidth - 20) / 3;
+                              return Wrap(
+                                spacing: 10,
+                                runSpacing: 10,
+                                children: [
+                                  SizedBox(
+                                    width: tileWidth,
+                                    child: _OverviewTile(
+                                      icon: Icons.square_foot_outlined,
+                                      label: 'Farm size',
+                                      value:
+                                          '${farm.sizeAcres.toStringAsFixed(1)} acres',
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: tileWidth,
+                                    child: _OverviewTile(
+                                      icon: Icons.water_drop_outlined,
+                                      label: 'Water',
+                                      value: farm.waterSource,
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: tileWidth,
+                                    child: _OverviewTile(
+                                      icon: Icons.water_outlined,
+                                      label: 'Irrigation',
+                                      value: farm.irrigationMethod,
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          Card(
                             child: ListTile(
                               leading: CircleAvatar(
                                 backgroundColor: Theme.of(context)
@@ -1108,15 +1221,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               subtitle: Text(
                                 farm.growthStageLabel == null
                                     ? 'Planting date not available'
-                                    : farm.growthStageLabel! + ' • ' +
-                                      farm.cropAgeDays.toString() + ' days (' +
-                                      farm.cropAgeYears!.toStringAsFixed(1) + ' years)',
+                                    : farm.growthStageLabel! +
+                                          ' • ' +
+                                          farm.cropAgeDays.toString() +
+                                          ' days (' +
+                                          farm.cropAgeYears!.toStringAsFixed(
+                                            1,
+                                          ) +
+                                          ' years)',
                               ),
                               trailing: const Icon(Icons.auto_graph_outlined),
                             ),
                           ),
                           const SizedBox(height: 10),
-                          _buildCropHealthSummary(context, farmDevices, agg, alerts, irrigationDecision),
+                          _buildCropHealthSummary(
+                            context,
+                            farmDevices,
+                            agg,
+                            alerts,
+                            irrigationDecision,
+                          ),
                           const SizedBox(height: 10),
                           _buildWeatherCard(context, farm),
                           const SizedBox(height: 10),
@@ -1125,15 +1249,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           Card(
                             child: ListTile(
                               leading: CircleAvatar(
-                                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                backgroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest,
                                 child: const Icon(Icons.sensors_outlined),
                               ),
-                              title: const Text('Device status', style: TextStyle(fontWeight: FontWeight.w700)),
+                              title: const Text(
+                                'Device status',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
                               subtitle: Text(_deviceStatusSummary(farmDevices)),
                               trailing: _statusChip(context, farmDevices),
                               onTap: () => Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (_) => const DeviceManagementScreen()),
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      const DeviceManagementScreen(),
+                                ),
                               ),
                             ),
                           ),
@@ -1141,9 +1273,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             Card(
                               child: ExpansionTile(
                                 leading: CircleAvatar(
-                                  backgroundColor: irrigationDecision.irrigationRecommended
-                                      ? Theme.of(context).colorScheme.primaryContainer
-                                      : Theme.of(context).colorScheme.surfaceContainerHighest,
+                                  backgroundColor:
+                                      irrigationDecision.irrigationRecommended
+                                      ? Theme.of(context)
+                                            .colorScheme
+                                            .primaryContainer
+                                      : Theme.of(context)
+                                            .colorScheme
+                                            .surfaceContainerHighest,
                                   child: Icon(
                                     irrigationDecision.irrigationRecommended
                                         ? Icons.water_drop_outlined
@@ -1154,7 +1291,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   irrigationDecision.irrigationRecommended
                                       ? 'Irrigation recommended'
                                       : 'No irrigation recommended',
-                                  style: const TextStyle(fontWeight: FontWeight.w700),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                                 subtitle: Text(
                                   irrigationDecision.reason,
@@ -1175,20 +1314,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                     subtitle: Text(
                                       irrigationDecision.irrigationRecommended
                                           ? 'Suggested runtime: ' +
-                                              irrigationDecision.suggestedDuration
-                                                  .inMinutes
-                                                  .toString() +
-                                              ' minutes'
+                                                irrigationDecision
+                                                    .suggestedDuration
+                                                    .inMinutes
+                                                    .toString() +
+                                                ' minutes'
                                           : 'Suggested runtime: 0 minutes',
                                     ),
                                   ),
                                   Padding(
-                                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                                    padding: const EdgeInsets.fromLTRB(
+                                      20,
+                                      0,
+                                      20,
+                                      16,
+                                    ),
                                     child: Wrap(
                                       spacing: 8,
                                       runSpacing: 8,
                                       children: irrigationDecision.factors
-                                          .map((factor) => Chip(label: Text(factor)))
+                                          .map(
+                                            (factor) =>
+                                                Chip(label: Text(factor)),
+                                          )
                                           .toList(),
                                     ),
                                   ),
@@ -1208,9 +1356,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             children: [
                               Text(
                                 'Farm conditions',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleLarge
+                                style: Theme.of(context).textTheme.titleLarge
                                     ?.copyWith(fontWeight: FontWeight.w800),
                               ),
                               const Spacer(),
@@ -1236,7 +1382,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                     ? '-'
                                     : '${agg.soilMoisture!.toStringAsFixed(1)}%',
                                 unit: 'Moisture level',
-                                warn: agg.soilMoisture != null &&
+                                warn:
+                                    agg.soilMoisture != null &&
                                     (agg.soilMoisture! < 20 ||
                                         agg.soilMoisture! > 85),
                               ),
@@ -1247,7 +1394,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                     ? '-'
                                     : '${agg.temperature!.toStringAsFixed(1)} C',
                                 unit: 'Air temperature',
-                                warn: agg.temperature != null &&
+                                warn:
+                                    agg.temperature != null &&
                                     (agg.temperature! < 10 ||
                                         agg.temperature! > 42),
                               ),
@@ -1266,8 +1414,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                     ? '-'
                                     : '${agg.rainfall!.toStringAsFixed(1)} mm',
                                 unit: 'Current rainfall',
-                                warn: agg.rainfall != null &&
-                                    agg.rainfall! > 150,
+                                warn:
+                                    agg.rainfall != null && agg.rainfall! > 150,
                               ),
                             ],
                           ),
@@ -1331,22 +1479,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               leading: CircleAvatar(
                                 backgroundColor: alerts.isEmpty
                                     ? Theme.of(context)
-                                        .colorScheme
-                                        .surfaceContainerHighest
+                                          .colorScheme
+                                          .surfaceContainerHighest
                                     : Theme.of(context)
-                                        .colorScheme
-                                        .errorContainer,
+                                          .colorScheme
+                                          .errorContainer,
                                 child: Icon(
                                   alerts.isEmpty
                                       ? Icons.check_circle_outline
                                       : Icons.warning_amber_rounded,
                                   color: alerts.isEmpty
-                                      ? Theme.of(context)
-                                          .colorScheme
-                                          .primary
+                                      ? Theme.of(context).colorScheme.primary
                                       : Theme.of(context)
-                                          .colorScheme
-                                          .onErrorContainer,
+                                            .colorScheme
+                                            .onErrorContainer,
                                 ),
                               ),
                               title: Text(
@@ -1365,18 +1511,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               children: alerts.isEmpty
                                   ? const []
                                   : alerts
-                                      .map(
-                                        (a) => ListTile(
-                                          leading: Icon(
-                                            a.severity.icon,
-                                            color: a.severity.color,
+                                        .map(
+                                          (a) => ListTile(
+                                            leading: Icon(
+                                              a.severity.icon,
+                                              color: a.severity.color,
+                                            ),
+                                            title: Text(a.title),
+                                            subtitle: Text(a.message),
+                                            dense: true,
                                           ),
-                                          title: Text(a.title),
-                                          subtitle: Text(a.message),
-                                          dense: true,
-                                        ),
-                                      )
-                                      .toList(),
+                                        )
+                                        .toList(),
                             ),
                           ),
                           const SizedBox(height: 10),
@@ -1386,16 +1532,71 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Quick actions', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                                  Text(
+                                    'Quick actions',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w800),
+                                  ),
                                   const SizedBox(height: 10),
                                   Wrap(
                                     spacing: 8,
                                     runSpacing: 8,
                                     children: [
-                                      ActionChip(avatar: const Icon(Icons.refresh, size: 18), label: Text(_syncing ? 'Syncing...' : 'Sync now'), onPressed: _syncing ? null : () => _refreshDashboard(uid)),
-                                      ActionChip(avatar: const Icon(Icons.agriculture_outlined, size: 18), label: const Text('Manage farm'), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FarmManagementScreen()))),
-                                      ActionChip(avatar: const Icon(Icons.sensors_outlined, size: 18), label: const Text('Manage devices'), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DeviceManagementScreen()))),
-                                      ActionChip(avatar: const Icon(Icons.notifications_outlined, size: 18), label: const Text('View alerts'), onPressed: () => _showAlertsSheet(context, ref, uid, _selectedFarmId)),
+                                      ActionChip(
+                                        avatar: const Icon(
+                                          Icons.refresh,
+                                          size: 18,
+                                        ),
+                                        label: Text(
+                                          _syncing ? 'Syncing...' : 'Sync now',
+                                        ),
+                                        onPressed: _syncing
+                                            ? null
+                                            : () => _refreshDashboard(uid),
+                                      ),
+                                      ActionChip(
+                                        avatar: const Icon(
+                                          Icons.agriculture_outlined,
+                                          size: 18,
+                                        ),
+                                        label: const Text('Manage farm'),
+                                        onPressed: () => Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                const FarmManagementScreen(),
+                                          ),
+                                        ),
+                                      ),
+                                      ActionChip(
+                                        avatar: const Icon(
+                                          Icons.sensors_outlined,
+                                          size: 18,
+                                        ),
+                                        label: const Text('Manage devices'),
+                                        onPressed: () => Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                const DeviceManagementScreen(),
+                                          ),
+                                        ),
+                                      ),
+                                      ActionChip(
+                                        avatar: const Icon(
+                                          Icons.notifications_outlined,
+                                          size: 18,
+                                        ),
+                                        label: const Text('View alerts'),
+                                        onPressed: () => _showAlertsSheet(
+                                          context,
+                                          ref,
+                                          uid,
+                                          _selectedFarmId,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ],
@@ -1415,7 +1616,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 'Recent activity',
                                 style: TextStyle(fontWeight: FontWeight.w700),
                               ),
-                              subtitle: Text(_recentActivitySummary(farmDevices, irrigationDecision)),
+                              subtitle: Text(
+                                _recentActivitySummary(
+                                  farmDevices,
+                                  irrigationDecision,
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -1460,9 +1666,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   Text(
                     'ArecaSmart',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: scheme.onPrimary,
-                          fontWeight: FontWeight.w800,
-                        ),
+                      color: scheme.onPrimary,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const SizedBox(height: 3),
                   Text(
@@ -1551,7 +1757,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           padding: EdgeInsets.all(16),
           child: Row(
             children: [
-              SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
               SizedBox(width: 12),
               Expanded(child: Text('Loading weather for the selected farm...')),
             ],
@@ -1572,12 +1782,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Weather unavailable', style: TextStyle(fontWeight: FontWeight.w700)),
+                    const Text(
+                      'Weather unavailable',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
                     const SizedBox(height: 4),
                     Text(_weatherError!),
                     const SizedBox(height: 10),
                     OutlinedButton.icon(
-                      onPressed: () => _loadWeatherForFarm(farm, forceRefresh: true),
+                      onPressed: () =>
+                          _loadWeatherForFarm(farm, forceRefresh: true),
                       icon: const Icon(Icons.refresh),
                       label: const Text('Retry'),
                     ),
@@ -1610,7 +1824,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Weather & irrigation inputs', style: TextStyle(fontWeight: FontWeight.w800)),
+                      const Text(
+                        'Weather & irrigation inputs',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
                       const SizedBox(height: 2),
                       Text(
                         '${weather.locationName} • ${weather.weatherDescription}',
@@ -1623,7 +1840,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
                 IconButton(
                   tooltip: 'Refresh weather',
-                  onPressed: () => _loadWeatherForFarm(farm, forceRefresh: true),
+                  onPressed: () =>
+                      _loadWeatherForFarm(farm, forceRefresh: true),
                   icon: const Icon(Icons.refresh),
                 ),
               ],
@@ -1638,22 +1856,54 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   spacing: 10,
                   runSpacing: 10,
                   children: [
-                    _weatherMetric(context, width, Icons.thermostat, 'Temperature',
-                        weather.temperature == null ? '—' : '${weather.temperature!.toStringAsFixed(1)} °C'),
-                    _weatherMetric(context, width, Icons.water_drop_outlined, 'Humidity',
-                        weather.humidity == null ? '—' : '${weather.humidity!.toStringAsFixed(0)}%'),
-                    _weatherMetric(context, width, Icons.umbrella_outlined, 'Next 24h rain',
-                        '${weather.next24hPrecipitationMm.toStringAsFixed(1)} mm'),
-                    _weatherMetric(context, width, Icons.cloud_outlined, 'Rain probability',
-                        '${weather.next24hPrecipitationProbability.toStringAsFixed(0)}%'),
-                    _weatherMetric(context, width, Icons.wb_sunny_outlined, 'Next 24h ET₀',
-                        '${weather.next24hEt0Mm.toStringAsFixed(1)} mm'),
+                    _weatherMetric(
+                      context,
+                      width,
+                      Icons.thermostat,
+                      'Temperature',
+                      weather.temperature == null
+                          ? '—'
+                          : '${weather.temperature!.toStringAsFixed(1)} °C',
+                    ),
+                    _weatherMetric(
+                      context,
+                      width,
+                      Icons.water_drop_outlined,
+                      'Humidity',
+                      weather.humidity == null
+                          ? '—'
+                          : '${weather.humidity!.toStringAsFixed(0)}%',
+                    ),
+                    _weatherMetric(
+                      context,
+                      width,
+                      Icons.umbrella_outlined,
+                      'Next 24h rain',
+                      '${weather.next24hPrecipitationMm.toStringAsFixed(1)} mm',
+                    ),
+                    _weatherMetric(
+                      context,
+                      width,
+                      Icons.cloud_outlined,
+                      'Rain probability',
+                      '${weather.next24hPrecipitationProbability.toStringAsFixed(0)}%',
+                    ),
+                    _weatherMetric(
+                      context,
+                      width,
+                      Icons.wb_sunny_outlined,
+                      'Next 24h ET₀',
+                      '${weather.next24hEt0Mm.toStringAsFixed(1)} mm',
+                    ),
                   ],
                 );
               },
             ),
             const SizedBox(height: 14),
-            const Text('3-day forecast', style: TextStyle(fontWeight: FontWeight.w700)),
+            const Text(
+              '3-day forecast',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
             const SizedBox(height: 8),
             SizedBox(
               height: 118,
@@ -1674,13 +1924,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          day.date.length >= 10 ? day.date.substring(5) : day.date,
+                          day.date.length >= 10
+                              ? day.date.substring(5)
+                              : day.date,
                           style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 4),
-                        Text('${day.temperatureMin?.toStringAsFixed(0) ?? '—'}–${day.temperatureMax?.toStringAsFixed(0) ?? '—'} °C'),
-                        Text('${day.precipitationMm?.toStringAsFixed(1) ?? '—'} mm rain'),
-                        Text('${day.precipitationProbability?.toStringAsFixed(0) ?? '—'}% chance'),
+                        Text(
+                          '${day.temperatureMin?.toStringAsFixed(0) ?? '—'}–${day.temperatureMax?.toStringAsFixed(0) ?? '—'} °C',
+                        ),
+                        Text(
+                          '${day.precipitationMm?.toStringAsFixed(1) ?? '—'} mm rain',
+                        ),
+                        Text(
+                          '${day.precipitationProbability?.toStringAsFixed(0) ?? '—'}% chance',
+                        ),
                       ],
                     ),
                   );
@@ -1723,8 +1981,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(label, maxLines: 2, overflow: TextOverflow.ellipsis),
-                  Text(value, maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w800)),
+                  Text(
+                    value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
                 ],
               ),
             ),
@@ -1736,23 +1998,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildSyncBanner(BuildContext context, List<DeviceModel> devices) {
     final scheme = Theme.of(context).colorScheme;
-    final hasOffline = devices.any((d) =>
-        d.connectionState == DeviceConnectionState.offline ||
-        d.connectionState == DeviceConnectionState.stale);
+    final hasOffline = devices.any(
+      (d) =>
+          d.connectionState == DeviceConnectionState.offline ||
+          d.connectionState == DeviceConnectionState.stale,
+    );
     final latest = devices
         .map((d) => d.latestReading?.timestamp)
         .whereType<DateTime>()
-        .fold<DateTime?>(null, (current, value) =>
-            current == null || value.isAfter(current) ? value : current);
-    final stale = latest != null &&
+        .fold<DateTime?>(
+          null,
+          (current, value) =>
+              current == null || value.isAfter(current) ? value : current,
+        );
+    final stale =
+        latest != null &&
         DateTime.now().difference(latest) > const Duration(minutes: 10);
     final message = devices.isEmpty
         ? 'No sensor device is assigned to this farm.'
         : stale
-            ? 'Sensor readings are stale. Showing the last available values.'
-            : hasOffline
-                ? 'Some device data is offline or stale.'
-                : 'Dashboard is synchronized with the selected farm.';
+        ? 'Sensor readings are stale. Showing the last available values.'
+        : hasOffline
+        ? 'Some device data is offline or stale.'
+        : 'Dashboard is synchronized with the selected farm.';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
@@ -1763,13 +2031,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
       child: Row(
         children: [
-          Icon(devices.isEmpty || stale || hasOffline
-              ? Icons.sync_problem_outlined
-              : Icons.sync_outlined, size: 20),
+          Icon(
+            devices.isEmpty || stale || hasOffline
+                ? Icons.sync_problem_outlined
+                : Icons.sync_outlined,
+            size: 20,
+          ),
           const SizedBox(width: 8),
           Expanded(child: Text(message)),
           if (_lastSyncAt != null)
-            Text(_timeAgo(_lastSyncAt!), style: Theme.of(context).textTheme.bodySmall),
+            Text(
+              _timeAgo(_lastSyncAt!),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
         ],
       ),
     );
@@ -1782,42 +2056,61 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     List<_FarmAlert> alerts,
     IrrigationDecision? irrigationDecision,
   ) {
-    final critical = alerts.where((a) => a.severity == _AlertSeverity.critical).length;
-    final warning = alerts.where((a) => a.severity == _AlertSeverity.warning).length;
+    final critical = alerts
+        .where((a) => a.severity == _AlertSeverity.critical)
+        .length;
+    final warning = alerts
+        .where((a) => a.severity == _AlertSeverity.warning)
+        .length;
     final health = critical > 0
         ? 'Needs attention'
         : warning > 0
-            ? 'Watch closely'
-            : agg.hasReading
-                ? 'Stable'
-                : 'Waiting for sensor data';
+        ? 'Watch closely'
+        : agg.hasReading
+        ? 'Stable'
+        : 'Waiting for sensor data';
     final detail = critical > 0
         ? '${critical} critical alert${critical == 1 ? '' : 's'} need attention.'
         : warning > 0
-            ? '${warning} warning${warning == 1 ? '' : 's'} detected. Review the active alerts.'
-            : !agg.hasReading
-                ? 'No current sensor reading is available for this farm.'
-                : irrigationDecision?.irrigationRecommended == true
-                    ? 'Conditions are driving an irrigation recommendation.'
-                    : 'No major condition alert is active.';
+        ? '${warning} warning${warning == 1 ? '' : 's'} detected. Review the active alerts.'
+        : !agg.hasReading
+        ? 'No current sensor reading is available for this farm.'
+        : irrigationDecision?.irrigationRecommended == true
+        ? 'Conditions are driving an irrigation recommendation.'
+        : 'No major condition alert is active.';
     return Card(
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-          child: Icon(Icons.eco_outlined, color: Theme.of(context).colorScheme.onSecondaryContainer),
+          child: Icon(
+            Icons.eco_outlined,
+            color: Theme.of(context).colorScheme.onSecondaryContainer,
+          ),
         ),
-        title: const Text('Crop health summary', style: TextStyle(fontWeight: FontWeight.w700)),
+        title: const Text(
+          'Crop health summary',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
         subtitle: Text(detail),
-        trailing: Text(health, style: const TextStyle(fontWeight: FontWeight.w800)),
+        trailing: Text(
+          health,
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
       ),
     );
   }
 
   String _deviceStatusSummary(List<DeviceModel> devices) {
     if (devices.isEmpty) return 'No device assigned to this farm.';
-    final online = devices.where((d) => d.connectionState == DeviceConnectionState.online).length;
-    final stale = devices.where((d) => d.connectionState == DeviceConnectionState.stale).length;
-    final offline = devices.where((d) => d.connectionState == DeviceConnectionState.offline).length;
+    final online = devices
+        .where((d) => d.connectionState == DeviceConnectionState.online)
+        .length;
+    final stale = devices
+        .where((d) => d.connectionState == DeviceConnectionState.stale)
+        .length;
+    final offline = devices
+        .where((d) => d.connectionState == DeviceConnectionState.offline)
+        .length;
     return '${online} online • ${stale} stale • ${offline} offline';
   }
 
@@ -1828,18 +2121,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final latest = devices
         .map((d) => d.latestReading?.timestamp)
         .whereType<DateTime>()
-        .fold<DateTime?>(null, (current, value) =>
-            current == null || value.isAfter(current) ? value : current);
+        .fold<DateTime?>(
+          null,
+          (current, value) =>
+              current == null || value.isAfter(current) ? value : current,
+        );
     if (irrigationDecision != null) {
       return 'Latest irrigation assessment: ${irrigationDecision.irrigationRecommended ? 'irrigation recommended' : 'no irrigation recommended'} • ${_timeAgo(irrigationDecision.createdAt)}.';
     }
-    if (latest != null) return 'Latest sensor reading received ${_timeAgo(latest)}.';
+    if (latest != null)
+      return 'Latest sensor reading received ${_timeAgo(latest)}.';
     return 'No sensor activity has been recorded for this farm yet.';
   }
 
   Widget _statusChip(BuildContext context, List<DeviceModel> devices) {
-    final online = devices.where((d) =>
-        d.connectionState == DeviceConnectionState.online).length;
+    final online = devices
+        .where((d) => d.connectionState == DeviceConnectionState.online)
+        .length;
     final total = devices.length;
     final Color color;
     final String text;
@@ -1875,11 +2173,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   _ReadingSummary _aggregate(List<DeviceModel> devices) {
-    final readings =
-        devices.map((d) => d.latestReading).whereType<SensorReading>().toList();
+    final readings = devices
+        .map((d) => d.latestReading)
+        .whereType<SensorReading>()
+        .toList();
     if (readings.isEmpty) return const _ReadingSummary();
-    final soilValues =
-        readings.map((reading) => reading.soilMoisture).whereType<double>().toList();
+    final soilValues = readings
+        .map((reading) => reading.soilMoisture)
+        .whereType<double>()
+        .toList();
 
     return _ReadingSummary(
       soilMoisture: soilValues.isEmpty
@@ -1893,38 +2195,45 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final alerts = <_FarmAlert>[];
     for (final d in devices) {
       if (d.connectionState == DeviceConnectionState.offline) {
-        alerts.add(_FarmAlert(
-          severity: _AlertSeverity.warning,
-          title: '${d.name} is offline',
-          message:
-              'Last seen ${_timeAgo(d.lastSeen)}. Check device power and connectivity.',
-        ));
+        alerts.add(
+          _FarmAlert(
+            severity: _AlertSeverity.warning,
+            title: '${d.name} is offline',
+            message:
+                'Last seen ${_timeAgo(d.lastSeen)}. Check device power and connectivity.',
+          ),
+        );
       } else if (d.connectionState == DeviceConnectionState.stale) {
-        alerts.add(_FarmAlert(
-          severity: _AlertSeverity.info,
-          title: '${d.name} data is stale',
-          message: 'No data in last hour.',
-        ));
+        alerts.add(
+          _FarmAlert(
+            severity: _AlertSeverity.info,
+            title: '${d.name} data is stale',
+            message: 'No data in last hour.',
+          ),
+        );
       }
       final r = d.latestReading;
       if (r != null) {
         if (r.soilMoisture != null && r.soilMoisture! < 20) {
-          alerts.add(_FarmAlert(
-            severity: _AlertSeverity.critical,
-            title: 'Low soil moisture on ${d.name}',
-            message:
-                '${r.soilMoisture!.toStringAsFixed(1)}% - irrigation recommended.',
-          ));
+          alerts.add(
+            _FarmAlert(
+              severity: _AlertSeverity.critical,
+              title: 'Low soil moisture on ${d.name}',
+              message:
+                  '${r.soilMoisture!.toStringAsFixed(1)}% - irrigation recommended.',
+            ),
+          );
         }
         if (r.soilMoisture != null && r.soilMoisture! > 90) {
-          alerts.add(_FarmAlert(
-            severity: _AlertSeverity.warning,
-            title: 'High soil moisture on ${d.name}',
-            message:
-                '${r.soilMoisture!.toStringAsFixed(1)}% - risk of waterlogging.',
-          ));
+          alerts.add(
+            _FarmAlert(
+              severity: _AlertSeverity.warning,
+              title: 'High soil moisture on ${d.name}',
+              message:
+                  '${r.soilMoisture!.toStringAsFixed(1)}% - risk of waterlogging.',
+            ),
+          );
         }
-
       }
     }
     return alerts;
@@ -1939,15 +2248,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Future<void> _showAlertsSheet(
-      BuildContext context, WidgetRef ref, String? uid, String? selectedFarmId) async {
+    BuildContext context,
+    WidgetRef ref,
+    String? uid,
+    String? selectedFarmId,
+  ) async {
     if (uid == null) return;
     final farms = await ref.read(farmRepositoryProvider).getFarms(uid);
     final devices = await ref.read(deviceRepositoryProvider).getDevices(uid);
     final selectedFarmIdResolved = farms.isEmpty
         ? null
         : farms.any((farm) => farm.id == selectedFarmId)
-            ? selectedFarmId
-            : farms.first.id;
+        ? selectedFarmId
+        : farms.first.id;
     final farmDevices = selectedFarmIdResolved == null
         ? devices
         : devices.where((d) => d.farmId == selectedFarmIdResolved).toList();
@@ -1965,17 +2278,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
               child: Row(
                 children: [
-                  Text('Alerts',
-                      style: Theme.of(ctx).textTheme.titleLarge),
+                  Text('Alerts', style: Theme.of(ctx).textTheme.titleLarge),
                   const Spacer(),
                   Chip(
                     label: Text('${alerts.length}'),
                     backgroundColor: alerts.isEmpty
                         ? Colors.grey.withValues(alpha: 0.2)
-                        : (alerts.any((a) =>
-                                a.severity == _AlertSeverity.critical)
-                            ? Colors.red.withValues(alpha: 0.2)
-                            : Colors.orange.withValues(alpha: 0.2)),
+                        : (alerts.any(
+                                (a) => a.severity == _AlertSeverity.critical,
+                              )
+                              ? Colors.red.withValues(alpha: 0.2)
+                              : Colors.orange.withValues(alpha: 0.2)),
                   ),
                 ],
               ),
@@ -1989,8 +2302,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.check_circle_outline,
-                              size: 56, color: Colors.green),
+                          Icon(
+                            Icons.check_circle_outline,
+                            size: 56,
+                            color: Colors.green,
+                          ),
                           SizedBox(height: 12),
                           Text(
                             'All clear! No active alerts.',
@@ -2006,8 +2322,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       itemBuilder: (_, i) {
                         final a = alerts[i];
                         return ListTile(
-                          leading: Icon(a.severity.icon,
-                              color: a.severity.color),
+                          leading: Icon(
+                            a.severity.icon,
+                            color: a.severity.color,
+                          ),
                           title: Text(a.title),
                           subtitle: Text(a.message),
                           isThreeLine: a.message.length > 60,
@@ -2033,10 +2351,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final weatherContext = weather.next24hPrecipitationMm >= 8
         ? 'heavy rain forecast'
         : weather.next24hPrecipitationProbability >= 70
-            ? 'rain likely'
-            : weather.temperature != null && weather.temperature! >= 36
-                ? 'hot'
-                : 'normal';
+        ? 'rain likely'
+        : weather.temperature != null && weather.temperature! >= 36
+        ? 'hot'
+        : 'normal';
 
     return IrrigationDecisionEngine().decide(
       input: IrrigationInput(
@@ -2048,7 +2366,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         rainfall: weather.precipitationMm,
         weatherContext: weatherContext,
         forecastPrecipitation24h: weather.next24hPrecipitationMm,
-        forecastPrecipitationProbability24h: weather.next24hPrecipitationProbability,
+        forecastPrecipitationProbability24h:
+            weather.next24hPrecipitationProbability,
         forecastEt024h: weather.next24hEt0Mm,
         recentIrrigation: RecentIrrigation(),
         observedAt: DateTime.now(),
@@ -2121,9 +2440,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
                 child: Text(
                   'Switch farm',
-                  style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: Theme.of(sheetContext).textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w800),
                 ),
               ),
               ...farms.map(
@@ -2135,9 +2453,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           : Icons.agriculture_outlined,
                     ),
                   ),
-                  title: Text(
-                    item.name.isEmpty ? 'Unnamed farm' : item.name,
-                  ),
+                  title: Text(item.name.isEmpty ? 'Unnamed farm' : item.name),
                   subtitle: item.location.isEmpty ? null : Text(item.location),
                   trailing: item.id == currentFarmId
                       ? const Icon(Icons.check_circle)
@@ -2155,6 +2471,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       setState(() => _selectedFarmId = selected);
     }
   }
+
   String _demoRecommendation(SensorReading reading) {
     final moisture = reading.soilMoisture ?? 0;
     if (moisture < 20) {
@@ -2175,25 +2492,31 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       final alerts = <_FarmAlert>[];
       final moisture = demoReading.soilMoisture;
       if (moisture != null && moisture < 20) {
-        alerts.add(_FarmAlert(
-          title: 'Low soil moisture',
-          message: 'Simulated soil moisture is below 20%.',
-          severity: _AlertSeverity.warning,
-        ));
+        alerts.add(
+          _FarmAlert(
+            title: 'Low soil moisture',
+            message: 'Simulated soil moisture is below 20%.',
+            severity: _AlertSeverity.warning,
+          ),
+        );
       }
       if (weather?.temperature != null && weather!.temperature! > 40) {
-        alerts.add(_FarmAlert(
-          title: 'High temperature',
-          message: 'Current weather temperature is above 40 °C.',
-          severity: _AlertSeverity.warning,
-        ));
+        alerts.add(
+          _FarmAlert(
+            title: 'High temperature',
+            message: 'Current weather temperature is above 40 °C.',
+            severity: _AlertSeverity.warning,
+          ),
+        );
       }
       if (weather != null && weather.next24hPrecipitationMm > 25) {
-        alerts.add(_FarmAlert(
-          title: 'Heavy rain forecast',
-          message: 'More than 25 mm of precipitation is forecast in the next 24 hours.',
-          severity: _AlertSeverity.info,
-        ));
+        alerts.add(
+          _FarmAlert(
+            title: 'Heavy rain forecast',
+            message: 'More than 25 mm of precipitation is forecast in the next 24 hours.',
+            severity: _AlertSeverity.info,
+          ),
+        );
       }
       return alerts;
     }
@@ -2248,10 +2571,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           children: [
             const Icon(Icons.agriculture, size: 56),
             const SizedBox(height: 12),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text(title, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 6),
             Text(subtitle, textAlign: TextAlign.center),
             const SizedBox(height: 16),
@@ -2348,18 +2668,14 @@ class _OverviewTile extends StatelessWidget {
         children: [
           Icon(icon, size: 20, color: scheme.primary),
           const SizedBox(height: 10),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 3),
           Text(
             value,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+            style: Theme.of(context).textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.w800),
           ),
         ],
       ),
@@ -2395,7 +2711,9 @@ class _MetricCard extends StatelessWidget {
             : scheme.primaryContainer.withValues(alpha: 0.45),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: warn ? scheme.error.withValues(alpha: 0.25) : scheme.outlineVariant,
+          color: warn
+              ? scheme.error.withValues(alpha: 0.25)
+              : scheme.outlineVariant,
         ),
       ),
       child: Column(
@@ -2409,25 +2727,18 @@ class _MetricCard extends StatelessWidget {
           const Spacer(),
           Text(
             value,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: accent,
-                  fontWeight: FontWeight.w800,
-                ),
+            style: Theme.of(context).textTheme.headlineSmall
+                ?.copyWith(color: accent, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 2),
           Text(
             label,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(context).textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.w700),
           ),
-          Text(
-            unit,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+          Text(unit, style: Theme.of(context).textTheme.bodySmall),
         ],
       ),
     );
   }
 }
-

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../models/farm/farm_model.dart';
 import '../../core/services/crop_growth_stage_service.dart';
 
@@ -13,7 +14,9 @@ abstract class FarmRepository {
   Future<void> deactivatePlot(String userId, String farmId, String plotId);
 }
 
-final farmRepositoryProvider = Provider<FarmRepository>((ref) => FirestoreFarmRepository(FirebaseFirestore.instance));
+final farmRepositoryProvider = Provider<FarmRepository>(
+  (ref) => FirestoreFarmRepository(FirebaseFirestore.instance),
+);
 
 class FirestoreFarmRepository implements FarmRepository {
   final FirebaseFirestore db;
@@ -27,7 +30,9 @@ class FirestoreFarmRepository implements FarmRepository {
 
   @override
   Future<List<FarmModel>> getFarms(String userId) async {
-    final snapshot = await _farms(userId).where('isActive', isEqualTo: true).get();
+    final snapshot = await _farms(userId)
+        .where('isActive', isEqualTo: true)
+        .get();
     return snapshot.docs
         .map((d) => FarmModel.fromMap({...d.data(), 'id': d.id}))
         .toList();
@@ -38,9 +43,11 @@ class FirestoreFarmRepository implements FarmRepository {
     return _farms(userId)
         .where('isActive', isEqualTo: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((d) => FarmModel.fromMap({...d.data(), 'id': d.id}))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((d) => FarmModel.fromMap({...d.data(), 'id': d.id}))
+              .toList(),
+        );
   }
 
   @override
@@ -97,17 +104,16 @@ class FirestoreFarmRepository implements FarmRepository {
       a.year == b.year && a.month == b.month && a.day == b.day;
 
   @override
-  Future<void> deactivateFarm(String userId, String farmId) =>
-      _farms(userId).doc(farmId).update({
-        'isActive': false,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+  Future<void> deactivateFarm(String userId, String farmId) => _farms(userId)
+      .doc(farmId)
+      .update({'isActive': false, 'updatedAt': FieldValue.serverTimestamp()});
 
   @override
   Future<List<PlotModel>> getPlots(String userId, String farmId) async {
-    final snapshot = await _plots(userId, farmId)
-        .where('isActive', isEqualTo: true)
-        .get();
+    final snapshot = await _plots(
+      userId,
+      farmId,
+    ).where('isActive', isEqualTo: true).get();
     return snapshot.docs
         .map((d) => PlotModel.fromMap({...d.data(), 'id': d.id}))
         .toList();
@@ -115,7 +121,10 @@ class FirestoreFarmRepository implements FarmRepository {
 
   @override
   Future<PlotModel> savePlot(String userId, PlotModel plot) async {
-    await _plots(userId, plot.farmId).doc(plot.id).set(plot.toMap(), SetOptions(merge: true));
+    await _plots(
+      userId,
+      plot.farmId,
+    ).doc(plot.id).set(plot.toMap(), SetOptions(merge: true));
     return plot;
   }
 

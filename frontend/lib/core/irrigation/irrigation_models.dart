@@ -1,10 +1,6 @@
 import '../services/crop_growth_stage_service.dart';
 
-enum IrrigationMode {
-  recommendationOnly,
-  automatic,
-  manual,
-}
+enum IrrigationMode { recommendationOnly, automatic, manual }
 
 extension IrrigationModeX on IrrigationMode {
   String get label {
@@ -101,21 +97,18 @@ class IrrigationDecision {
   }
 
   Map<String, dynamic> toMap() => {
-        'decisionId': decisionId,
-        'mode': mode.name,
-        'irrigationRecommended': irrigationRecommended,
-        'confidence': confidence,
-        'reason': reason,
-        'suggestedDurationSeconds': suggestedDuration.inSeconds,
-        'factors': factors,
-        'createdAt': createdAt.toIso8601String(),
-      };
+    'decisionId': decisionId,
+    'mode': mode.name,
+    'irrigationRecommended': irrigationRecommended,
+    'confidence': confidence,
+    'reason': reason,
+    'suggestedDurationSeconds': suggestedDuration.inSeconds,
+    'factors': factors,
+    'createdAt': createdAt.toIso8601String(),
+  };
 }
 
-enum IrrigationAuditType {
-  recommendation,
-  pumpAction,
-}
+enum IrrigationAuditType { recommendation, pumpAction }
 
 class IrrigationAuditRecord {
   final String id;
@@ -141,14 +134,14 @@ class IrrigationAuditRecord {
   });
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'type': type.name,
-        'decisionId': decisionId,
-        'commandId': commandId,
-        'action': action,
-        'status': status,
-        'reason': reason,
-        'timestamp': timestamp.toIso8601String(),
-        'details': details,
-      };
+    'id': id,
+    'type': type.name,
+    'decisionId': decisionId,
+    'commandId': commandId,
+    'action': action,
+    'status': status,
+    'reason': reason,
+    'timestamp': timestamp.toIso8601String(),
+    'details': details,
+  };
 }

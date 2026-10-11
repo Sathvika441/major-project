@@ -19,8 +19,14 @@ void main() {
     });
 
     test('validateConfirmPassword checks match', () {
-      expect(AuthValidators.validateConfirmPassword('Pass123', 'Pass456'), isNotNull);
-      expect(AuthValidators.validateConfirmPassword('Pass123', 'Pass123'), isNull);
+      expect(
+        AuthValidators.validateConfirmPassword('Pass123', 'Pass456'),
+        isNotNull,
+      );
+      expect(
+        AuthValidators.validateConfirmPassword('Pass123', 'Pass123'),
+        isNull,
+      );
     });
 
     test('validateName checks required non-empty string', () {

@@ -44,46 +44,90 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/splash',
     routes: [
       GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
-      GoRoute(path: '/weather', builder: (context, state) => const WeatherScreen()),
-      GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
+      GoRoute(
+        path: '/weather',
+        builder: (context, state) => const WeatherScreen(),
+      ),
+      GoRoute(
+        path: '/splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-      GoRoute(path: '/signup', builder: (context, state) => const SignupScreen()),
-      GoRoute(path: '/forgot-password', builder: (context, state) => const ForgotPasswordScreen()),
-      GoRoute(path: '/verify-email', builder: (context, state) => const EmailVerificationScreen()),
-      GoRoute(path: '/otp-verification', builder: (context, state) => const OtpVerificationScreen()),
-      GoRoute(path: '/permission-setup', builder: (context, state) => const PermissionSetupScreen()),
-      GoRoute(path: '/onboarding', builder: (context, state) => const OnboardingScreen()),
-      GoRoute(path: '/farm-details', builder: (context, state) => const FarmDetailsScreen()),
+      GoRoute(
+        path: '/signup',
+        builder: (context, state) => const SignupScreen(),
+      ),
+      GoRoute(
+        path: '/forgot-password',
+        builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/verify-email',
+        builder: (context, state) => const EmailVerificationScreen(),
+      ),
+      GoRoute(
+        path: '/otp-verification',
+        builder: (context, state) => const OtpVerificationScreen(),
+      ),
+      GoRoute(
+        path: '/permission-setup',
+        builder: (context, state) => const PermissionSetupScreen(),
+      ),
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) => const OnboardingScreen(),
+      ),
+      GoRoute(
+        path: '/farm-details',
+        builder: (context, state) => const FarmDetailsScreen(),
+      ),
       GoRoute(
         path: '/dashboard',
         builder: (context, state) => const DashboardScreen(),
       ),
       GoRoute(
         path: '/farm/:farmId',
-        builder: (context, state) => DashboardScreen(
-          initialFarmId: state.pathParameters['farmId'],
-        ),
+        builder: (context, state) =>
+            DashboardScreen(initialFarmId: state.pathParameters['farmId']),
       ),
-      GoRoute(path: '/farms', builder: (context, state) => const FarmManagementScreen()),
-      GoRoute(path: '/devices', builder: (context, state) => const DeviceManagementScreen()),
-      GoRoute(path: '/profile', builder: (context, state) => const ProfileEditScreen()),
+      GoRoute(
+        path: '/farms',
+        builder: (context, state) => const FarmManagementScreen(),
+      ),
+      GoRoute(
+        path: '/devices',
+        builder: (context, state) => const DeviceManagementScreen(),
+      ),
+      GoRoute(
+        path: '/profile',
+        builder: (context, state) => const ProfileEditScreen(),
+      ),
     ],
     redirect: (context, state) {
       final location = state.matchedLocation;
       final isSplash = location == '/splash';
-      final isAuthRoute = location == '/login' ||
+      final isAuthRoute =
+          location == '/login' ||
           location == '/signup' ||
           location == '/forgot-password';
-      final isPublicRoute = isSplash || isAuthRoute || location == '/verify-email' || location == '/' || location == '/weather';
+      final isPublicRoute =
+          isSplash ||
+          isAuthRoute ||
+          location == '/verify-email' ||
+          location == '/' ||
+          location == '/weather';
 
-      if (authState.status == AuthStatus.initial || authState.status == AuthStatus.loading) {
+      if (authState.status == AuthStatus.initial ||
+          authState.status == AuthStatus.loading) {
         return isSplash ? null : '/splash';
       }
 
       if (authState.status == AuthStatus.unauthenticated ||
           authState.status == AuthStatus.error ||
           authState.status == AuthStatus.emailVerificationPending) {
-        return isPublicRoute ? null : '/login?prompt=Sign%20in%20to%20save%20your%20farm';
+        return isPublicRoute
+            ? null
+            : '/login?prompt=Sign%20in%20to%20save%20your%20farm';
       }
 
       if (authState.status == AuthStatus.otpVerificationPending) {
@@ -124,7 +168,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         return location == '/farm-details' ? null : '/farm-details';
       }
 
-      if (isAuthRoute || isSplash ||
+      if (isAuthRoute ||
+          isSplash ||
           location == '/otp-verification' ||
           location == '/permission-setup' ||
           location == '/onboarding' ||

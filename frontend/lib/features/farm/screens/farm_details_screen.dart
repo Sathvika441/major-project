@@ -52,11 +52,7 @@ class FarmDetailsScreen extends ConsumerStatefulWidget {
   final String? farmId;
   final bool startNew;
 
-  const FarmDetailsScreen({
-    super.key,
-    this.farmId,
-    this.startNew = false,
-  });
+  const FarmDetailsScreen({super.key, this.farmId, this.startNew = false});
 
   @override
   ConsumerState<FarmDetailsScreen> createState() => _FarmDetailsScreenState();
@@ -164,7 +160,8 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
     _taluk = _taluks.contains(taluk) ? taluk : null;
     _villages = _taluk == null ? [] : locationMaster.villagesFor(_taluk!);
     _village = _villages.cast<VillageEntry?>().firstWhere(
-      (entry) => entry?.name.trim().toLowerCase() == villageName.trim().toLowerCase(),
+      (entry) =>
+          entry?.name.trim().toLowerCase() == villageName.trim().toLowerCase(),
       orElse: () => null,
     );
 
@@ -173,7 +170,10 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
       _farmName.text = farm.name;
       _survey.text = farm.landSurveyNumber;
       _size.text = farm.sizeAcres > 0 ? farm.sizeAcres.toString() : '';
-      _cultivation = _pickOption(farm.arecanutCultivationType, cultivationTypes);
+      _cultivation = _pickOption(
+        farm.arecanutCultivationType,
+        cultivationTypes,
+      );
       _soil = _pickOption(farm.soilType, soilTypes);
       _waterSource = _pickOption(farm.waterSource, waterSources);
       _irrigationMethod = _pickOption(farm.irrigationMethod, irrigationMethods);
@@ -226,7 +226,9 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
   Future<void> _saveCurrentFarm({required bool addAnother}) async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_district == null || _taluk == null || _village == null ||
+    if (_district == null ||
+        _taluk == null ||
+        _village == null ||
         _cultivation == null ||
         _soil == null ||
         _waterSource == null ||
@@ -245,7 +247,9 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
       const CropGrowthStageService().validatePlantingDate(_plantingDate!);
     } on ArgumentError catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message?.toString() ?? 'Invalid planting date.')),
+        SnackBar(
+          content: Text(e.message?.toString() ?? 'Invalid planting date.'),
+        ),
       );
       return;
     }
@@ -312,7 +316,8 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
       // mirrored there for legacy compatibility; additional farms stay
       // independent under users/{uid}/farms/{farmId}.
       if (_savedFarmCount == 0) {
-        final profileBase = _existingProfile ??
+        final profileBase =
+            _existingProfile ??
             FarmProfileModel(
               userId: user.uid,
               name: user.name,
@@ -413,9 +418,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final editing = _editingFarm != null;
@@ -471,17 +474,17 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
                                 controller: _size,
                                 keyboardType:
                                     const TextInputType.numberWithOptions(
-                                  decimal: true,
-                                ),
+                                      decimal: true,
+                                    ),
                                 decoration: const InputDecoration(
                                   labelText: 'Farm size (acres)',
                                   hintText: 'Enter size in acres',
-                                  prefixIcon:
-                                      Icon(Icons.square_foot_outlined),
+                                  prefixIcon: Icon(Icons.square_foot_outlined),
                                 ),
                                 validator: (value) {
-                                  final parsed =
-                                      double.tryParse(value?.trim() ?? '');
+                                  final parsed = double.tryParse(
+                                    value?.trim() ?? '',
+                                  );
                                   if (parsed == null) {
                                     return 'Enter a valid farm size';
                                   }
@@ -509,8 +512,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
                           _FormSection(
                             icon: Icons.location_on_outlined,
                             title: 'Farm location',
-                            subtitle:
-                                'This location is used to resolve weather data.',
+                            subtitle: 'This location is used to resolve weather data.',
                             children: [
                               DropdownButtonFormField<String>(
                                 initialValue: _state,
@@ -533,8 +535,9 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
                                 isExpanded: true,
                                 decoration: const InputDecoration(
                                   labelText: 'District',
-                                  prefixIcon:
-                                      Icon(Icons.location_city_outlined),
+                                  prefixIcon: Icon(
+                                    Icons.location_city_outlined,
+                                  ),
                                 ),
                                 items: _districts
                                     .map(
@@ -545,8 +548,9 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
                                     )
                                     .toList(),
                                 onChanged: (value) {
-                                  final service =
-                                      ref.read(locationMasterServiceProvider);
+                                  final service = ref.read(
+                                    locationMasterServiceProvider,
+                                  );
                                   setState(() {
                                     _district = value;
                                     _taluk = null;
@@ -567,8 +571,9 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
                                 isExpanded: true,
                                 decoration: const InputDecoration(
                                   labelText: 'Taluk',
-                                  prefixIcon:
-                                      Icon(Icons.account_balance_outlined),
+                                  prefixIcon: Icon(
+                                    Icons.account_balance_outlined,
+                                  ),
                                 ),
                                 items: _taluks
                                     .map(
@@ -602,8 +607,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
                                 isExpanded: true,
                                 decoration: const InputDecoration(
                                   labelText: 'Village',
-                                  prefixIcon:
-                                      Icon(Icons.home_work_outlined),
+                                  prefixIcon: Icon(Icons.home_work_outlined),
                                 ),
                                 items: _villages
                                     .map(
@@ -616,7 +620,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
                                 onChanged: _taluk == null
                                     ? null
                                     : (value) =>
-                                        setState(() => _village = value),
+                                          setState(() => _village = value),
                                 validator: (value) => value == null
                                     ? 'Please select a village'
                                     : null,
@@ -627,8 +631,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
                           _FormSection(
                             icon: Icons.eco_outlined,
                             title: 'Crop & cultivation',
-                            subtitle:
-                                'Tell ArecaSmart how this arecanut farm is managed.',
+                            subtitle: 'Tell ArecaSmart how this arecanut farm is managed.',
                             children: [
                               DropdownButtonFormField<String>(
                                 initialValue: _cultivation,
@@ -676,17 +679,18 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
                                 child: InputDecorator(
                                   decoration: const InputDecoration(
                                     labelText: 'Planting date',
-                                    prefixIcon:
-                                        Icon(Icons.calendar_month_outlined),
+                                    prefixIcon: Icon(
+                                      Icons.calendar_month_outlined,
+                                    ),
                                   ),
                                   child: Text(
                                     _plantingDate == null
                                         ? 'Select planting date'
                                         : _plantingDate!.day.toString() +
-                                            '/' +
-                                            _plantingDate!.month.toString() +
-                                            '/' +
-                                            _plantingDate!.year.toString(),
+                                              '/' +
+                                              _plantingDate!.month.toString() +
+                                              '/' +
+                                              _plantingDate!.year.toString(),
                                     style: TextStyle(
                                       color: _plantingDate == null
                                           ? Theme.of(context).hintColor
@@ -704,8 +708,9 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
                                   child: Text(
                                     'Planting date is required',
                                     style: TextStyle(
-                                      color:
-                                          Theme.of(context).colorScheme.error,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .error,
                                       fontSize: 12,
                                     ),
                                   ),
@@ -716,16 +721,14 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
                           _FormSection(
                             icon: Icons.water_drop_outlined,
                             title: 'Water & irrigation',
-                            subtitle:
-                                'These settings feed the irrigation recommendation engine.',
+                            subtitle: 'These settings feed the irrigation recommendation engine.',
                             children: [
                               DropdownButtonFormField<String>(
                                 initialValue: _waterSource,
                                 isExpanded: true,
                                 decoration: const InputDecoration(
                                   labelText: 'Water source',
-                                  prefixIcon:
-                                      Icon(Icons.water_drop_outlined),
+                                  prefixIcon: Icon(Icons.water_drop_outlined),
                                 ),
                                 items: waterSources
                                     .map(
@@ -745,8 +748,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
                                 isExpanded: true,
                                 decoration: const InputDecoration(
                                   labelText: 'Irrigation method',
-                                  prefixIcon:
-                                      Icon(Icons.water_outlined),
+                                  prefixIcon: Icon(Icons.water_outlined),
                                 ),
                                 items: irrigationMethods
                                     .map(
@@ -756,9 +758,8 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
                                       ),
                                     )
                                     .toList(),
-                                onChanged: (value) => setState(
-                                  () => _irrigationMethod = value,
-                                ),
+                                onChanged: (value) =>
+                                    setState(() => _irrigationMethod = value),
                                 validator: _requiredSelection,
                               ),
                             ],
@@ -766,8 +767,7 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
                           const SizedBox(height: 18),
                           if (editing) ...[
                             OutlinedButton.icon(
-                              onPressed:
-                                  _saving ? null : _clearFormForNewFarm,
+                              onPressed: _saving ? null : _clearFormForNewFarm,
                               icon: const Icon(Icons.add_business_outlined),
                               label: const Text('Add another farm instead'),
                             ),
@@ -797,7 +797,9 @@ class _FarmDetailsScreenState extends ConsumerState<FarmDetailsScreen> {
                             label: Text(
                               _saving
                                   ? 'Saving...'
-                                  : (editing ? 'Save changes' : 'Save & complete setup'),
+                                  : (editing
+                                        ? 'Save changes'
+                                        : 'Save & complete setup'),
                             ),
                           ),
                           if (_savedFarmCount > 0) ...[
@@ -826,10 +828,7 @@ class _FarmDetailsHero extends StatelessWidget {
   final bool editing;
   final int savedFarmCount;
 
-  const _FarmDetailsHero({
-    required this.editing,
-    required this.savedFarmCount,
-  });
+  const _FarmDetailsHero({required this.editing, required this.savedFarmCount});
 
   @override
   Widget build(BuildContext context) {
@@ -871,16 +870,16 @@ class _FarmDetailsHero extends StatelessWidget {
                 Text(
                   editing ? 'Edit your farm' : 'Set up your farm',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: scheme.onPrimary,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    color: scheme.onPrimary,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   savedFarmCount == 0
                       ? 'Complete the details to unlock your smart workspace.'
                       : savedFarmCount.toString() +
-                          ' farm(s) saved • Add another or update this one.',
+                            ' farm(s) saved • Add another or update this one.',
                   style: TextStyle(
                     color: scheme.onPrimary.withValues(alpha: 0.82),
                   ),
@@ -935,9 +934,8 @@ class _FormSection extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
+                        style: Theme.of(context).textTheme.titleLarge
+                            ?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       const SizedBox(height: 2),
                       Text(subtitle),

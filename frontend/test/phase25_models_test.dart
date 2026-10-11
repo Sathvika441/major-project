@@ -6,8 +6,12 @@ void main() {
   test('plot crop age is derived from planting date', () {
     final plantingDate = DateTime.now().subtract(const Duration(days: 120));
     final plot = PlotModel(
-      id: 'p1', farmId: 'f1', name: 'Plot A', areaAcres: 1.0,
-      soilType: 'Loamy', plantingDate: plantingDate,
+      id: 'p1',
+      farmId: 'f1',
+      name: 'Plot A',
+      areaAcres: 1.0,
+      soilType: 'Loamy',
+      plantingDate: plantingDate,
     );
     expect(plot.cropAgeDays, inInclusiveRange(119, 121));
     expect(plot.growthStage, isNotEmpty);
@@ -37,8 +41,12 @@ void main() {
 
   test('device becomes stale after five minutes', () {
     final device = DeviceModel(
-      id: 'd1', userId: 'u1', farmId: 'f1', plotId: 'p1',
-      deviceId: 'ESP32-01', name: 'Field sensor',
+      id: 'd1',
+      userId: 'u1',
+      farmId: 'f1',
+      plotId: 'p1',
+      deviceId: 'ESP32-01',
+      name: 'Field sensor',
       lastSeen: DateTime.now().subtract(const Duration(minutes: 10)),
     );
     expect(device.connectionState, DeviceConnectionState.stale);

@@ -1,6 +1,8 @@
 import 'dart:convert';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../utils/app_logger.dart';
 import '../constants/karnataka_locations.dart';
 
@@ -34,9 +36,12 @@ class LocationMasterService {
 
   List<String> taluksFor(String district) {
     final key = _normalizeKey(district);
-    return List.unmodifiable(_taluksByDistrict[key] ??
-        KarnatakaLocations.taluksFor(
-            KarnatakaLocations.districts.contains(district) ? district : ''));
+    return List.unmodifiable(
+      _taluksByDistrict[key] ??
+          KarnatakaLocations.taluksFor(
+            KarnatakaLocations.districts.contains(district) ? district : '',
+          ),
+    );
   }
 
   List<VillageEntry> villagesFor(String taluk) {
@@ -69,9 +74,11 @@ class LocationMasterService {
     return input
         .split(RegExp(r'\s+'))
         .where((s) => s.isNotEmpty)
-        .map((word) => word.length <= 2
-            ? word.toUpperCase()
-            : word[0].toUpperCase() + word.substring(1).toLowerCase())
+        .map(
+          (word) => word.length <= 2
+              ? word.toUpperCase()
+              : word[0].toUpperCase() + word.substring(1).toLowerCase(),
+        )
         .join(' ');
   }
 
@@ -85,7 +92,9 @@ class LocationMasterService {
       final seenDistrictKeys = <String>{};
       for (final d in districtsRaw) {
         final dMap = d as Map<String, dynamic>;
-        final districtName = _toTitleCase((dMap['district_name'] as String?) ?? '');
+        final districtName = _toTitleCase(
+          (dMap['district_name'] as String?) ?? '',
+        );
         if (districtName.isEmpty) continue;
         final dKey = _normalizeKey(districtName);
         if (!seenDistrictKeys.contains(dKey)) {
@@ -116,7 +125,8 @@ class LocationMasterService {
               final vMap = v as Map<String, dynamic>;
               final vName = (vMap['village_name'] as String?) ?? '';
               final vCode = (vMap['village_code'] as String?) ?? '';
-              if (vName.isEmpty || vCode.isEmpty || seenCodes.contains(vCode)) continue;
+              if (vName.isEmpty || vCode.isEmpty || seenCodes.contains(vCode))
+                continue;
               seenCodes.add(vCode);
               _villagesByTaluk[tKey]!.add(
                 VillageEntry(name: vName.trim(), code: vCode),
@@ -164,5 +174,6 @@ class LocationMasterService {
   }
 }
 
-final locationMasterServiceProvider =
-    Provider<LocationMasterService>((ref) => LocationMasterService());
+final locationMasterServiceProvider = Provider<LocationMasterService>(
+  (ref) => LocationMasterService(),
+);

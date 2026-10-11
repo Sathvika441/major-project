@@ -78,10 +78,9 @@ class AppTheme {
           : const Color(0xFF7B2020),
       surface: surface,
       onSurface: textPrimary,
-      surfaceContainerHighest: (dark
-              ? AppColors.surfaceDarkAlt
-              : const Color(0xFFEDF3EE))
-          .withValues(alpha: dark ? 0.78 : 0.84),
+      surfaceContainerHighest:
+          (dark ? AppColors.surfaceDarkAlt : const Color(0xFFEDF3EE))
+              .withValues(alpha: dark ? 0.78 : 0.84),
       onSurfaceVariant: textSecondary,
       outline: dark ? const Color(0xFF607064) : const Color(0xFF89968C),
       outlineVariant: border,
@@ -186,9 +185,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
           side: BorderSide(
-            color: dark
-                ? colorScheme.primary.withValues(alpha: 0.28)
-                : border,
+            color: dark ? colorScheme.primary.withValues(alpha: 0.28) : border,
           ),
         ),
       ),

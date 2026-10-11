@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Phase25Storage {
@@ -21,7 +22,9 @@ class Phase25Storage {
     final value = prefs.getString(key);
     if (value == null || value.isEmpty) return [];
     return List<Map<String, dynamic>>.from(
-      (jsonDecode(value) as List).map((e) => Map<String, dynamic>.from(e as Map)),
+      (jsonDecode(value) as List).map(
+        (e) => Map<String, dynamic>.from(e as Map),
+      ),
     );
   }
 

@@ -48,10 +48,12 @@ class UserModel {
       phone: phone ?? this.phone,
       isEmailVerified: isEmailVerified ?? this.isEmailVerified,
       isPhoneVerified: isPhoneVerified ?? this.isPhoneVerified,
-      phoneVerificationOtp:
-          clearPhoneOtp == true ? null : (phoneVerificationOtp ?? this.phoneVerificationOtp),
-      phoneVerificationSentAt:
-          clearPhoneOtp == true ? null : (phoneVerificationSentAt ?? this.phoneVerificationSentAt),
+      phoneVerificationOtp: clearPhoneOtp == true
+          ? null
+          : (phoneVerificationOtp ?? this.phoneVerificationOtp),
+      phoneVerificationSentAt: clearPhoneOtp == true
+          ? null
+          : (phoneVerificationSentAt ?? this.phoneVerificationSentAt),
       termsAccepted: termsAccepted ?? this.termsAccepted,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -88,13 +90,16 @@ class UserModel {
           : null,
       termsAccepted: map['termsAccepted'] as bool? ?? true,
       createdAt: DateTime.parse(map['createdAt'] as String),
-      updatedAt: map['updatedAt'] != null ? DateTime.parse(map['updatedAt'] as String) : null,
+      updatedAt: map['updatedAt'] != null
+          ? DateTime.parse(map['updatedAt'] as String)
+          : null,
     );
   }
 
   String toJson() => json.encode(toMap());
 
-  factory UserModel.fromJson(String source) => UserModel.fromMap(json.decode(source) as Map<String, dynamic>);
+  factory UserModel.fromJson(String source) =>
+      UserModel.fromMap(json.decode(source) as Map<String, dynamic>);
 
   @override
   String toString() {

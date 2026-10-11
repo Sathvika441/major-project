@@ -7,7 +7,9 @@ import '../../../widgets/app_navigation_scaffold.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../farm/screens/farm_management_screen.dart';
 
-final devicesProvider = FutureProvider.autoDispose<List<DeviceModel>>((ref) async {
+final devicesProvider = FutureProvider.autoDispose<List<DeviceModel>>((
+  ref,
+) async {
   final uid = ref.watch(authControllerProvider).user?.uid;
   if (uid == null) return [];
   return ref.watch(deviceRepositoryProvider).getDevices(uid);
@@ -44,8 +46,10 @@ class DeviceManagementScreen extends ConsumerWidget {
         ),
         data: (items) {
           final online = items
-              .where((device) =>
-                  device.connectionState == DeviceConnectionState.online)
+              .where(
+                (device) =>
+                    device.connectionState == DeviceConnectionState.online,
+              )
               .length;
           final offline = items.length - online;
 
@@ -54,8 +58,8 @@ class DeviceManagementScreen extends ConsumerWidget {
               final columns = constraints.maxWidth >= 1200
                   ? 3
                   : constraints.maxWidth >= 720
-                      ? 2
-                      : 1;
+                  ? 2
+                  : 1;
               const gap = 18.0;
               final width = columns == 1
                   ? constraints.maxWidth
@@ -76,9 +80,16 @@ class DeviceManagementScreen extends ConsumerWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.info_outline_rounded, color: Theme.of(context).colorScheme.tertiary),
+                          Icon(
+                            Icons.info_outline_rounded,
+                            color: Theme.of(context).colorScheme.tertiary,
+                          ),
                           const SizedBox(width: 10),
-                          const Expanded(child: Text('Hardware-ready setup: register the sensor ID and assign it to a farm now. A registered device stays “Not connected” until valid telemetry arrives. No live readings are fabricated and this page will not operate a pump without a compatible controller integration.')),
+                          const Expanded(
+                            child: Text(
+                              'Hardware-ready setup: register the sensor ID and assign it to a farm now. A registered device stays “Not connected” until valid telemetry arrives. No live readings are fabricated and this page will not operate a pump without a compatible controller integration.',
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -140,11 +151,16 @@ class DeviceManagementScreen extends ConsumerWidget {
                     validator: (value) {
                       final candidate = value?.trim() ?? '';
                       if (candidate.isEmpty) return 'Enter the device ID';
-                      if (candidate.length < 3 || candidate.length > 50) return 'Use 3–50 characters';
+                      if (candidate.length < 3 || candidate.length > 50)
+                        return 'Use 3–50 characters';
                       if (!RegExp(r'^[A-Za-z0-9_-]+$').hasMatch(candidate)) {
                         return 'Use letters, numbers, hyphens or underscores only';
                       }
-                      if (existingDevices.any((device) => device.deviceId.trim().toLowerCase() == candidate.toLowerCase())) {
+                      if (existingDevices.any(
+                        (device) =>
+                            device.deviceId.trim().toLowerCase() ==
+                            candidate.toLowerCase(),
+                      )) {
                         return 'This device ID is already registered';
                       }
                       return null;
@@ -162,8 +178,10 @@ class DeviceManagementScreen extends ConsumerWidget {
                     validator: (value) {
                       final candidate = value?.trim() ?? '';
                       if (candidate.isEmpty) return 'Enter a device name';
-                      if (candidate.length < 2 || candidate.length > 60) return 'Use 2–60 characters';
-                      if (candidate.contains(RegExp(r'[<>]'))) return 'Remove unsupported characters';
+                      if (candidate.length < 2 || candidate.length > 60)
+                        return 'Use 2–60 characters';
+                      if (candidate.contains(RegExp(r'[<>]')))
+                        return 'Remove unsupported characters';
                       return null;
                     },
                   ),
@@ -182,9 +200,7 @@ class DeviceManagementScreen extends ConsumerWidget {
                             (farm) => DropdownMenuItem(
                               value: farm.id,
                               child: Text(
-                                farm.name.isEmpty
-                                    ? 'Unnamed farm'
-                                    : farm.name,
+                                farm.name.isEmpty ? 'Unnamed farm' : farm.name,
                               ),
                             ),
                           )
@@ -209,17 +225,22 @@ class DeviceManagementScreen extends ConsumerWidget {
                   : () async {
                       if (!key.currentState!.validate()) return;
                       final uid = ref.read(authControllerProvider).user!.uid;
-                      await ref.read(deviceRepositoryProvider).register(
-                        DeviceModel(
-                          id: 'device_' + DateTime.now().microsecondsSinceEpoch.toString(),
-                          userId: uid,
-                          farmId: selectedFarmId!,
-                          plotId: '',
-                          deviceId: id.text.trim(),
-                          name: name.text.trim(),
-                          lastSeen: DateTime.now(),
-                        ),
-                      );
+                      await ref
+                          .read(deviceRepositoryProvider)
+                          .register(
+                            DeviceModel(
+                              id:
+                                  'device_' +
+                                  DateTime.now().microsecondsSinceEpoch
+                                      .toString(),
+                              userId: uid,
+                              farmId: selectedFarmId!,
+                              plotId: '',
+                              deviceId: id.text.trim(),
+                              name: name.text.trim(),
+                              lastSeen: DateTime.now(),
+                            ),
+                          );
                       ref.invalidate(devicesProvider);
                       if (ctx.mounted) Navigator.pop(ctx);
                     },
@@ -262,11 +283,7 @@ class _DeviceSummary extends StatelessWidget {
                 color: scheme.primary,
               ),
             ),
-            Container(
-              width: 1,
-              height: 44,
-              color: scheme.outlineVariant,
-            ),
+            Container(width: 1, height: 44, color: scheme.outlineVariant),
             Expanded(
               child: _SummaryMetric(
                 icon: Icons.check_circle_outline_rounded,
@@ -275,11 +292,7 @@ class _DeviceSummary extends StatelessWidget {
                 color: scheme.primary,
               ),
             ),
-            Container(
-              width: 1,
-              height: 44,
-              color: scheme.outlineVariant,
-            ),
+            Container(width: 1, height: 44, color: scheme.outlineVariant),
             Expanded(
               child: _SummaryMetric(
                 icon: Icons.sync_problem_outlined,
@@ -316,9 +329,8 @@ class _SummaryMetric extends StatelessWidget {
         const SizedBox(height: 6),
         Text(
           value,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+          style: Theme.of(context).textTheme.headlineSmall
+              ?.copyWith(fontWeight: FontWeight.w800),
         ),
         Text(label, textAlign: TextAlign.center),
       ],
@@ -357,9 +369,7 @@ class _DeviceCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(15),
                   ),
                   child: Icon(
-                    online
-                        ? Icons.sensors_rounded
-                        : Icons.sensors_off_outlined,
+                    online ? Icons.sensors_rounded : Icons.sensors_off_outlined,
                     color: online ? scheme.primary : scheme.onSurfaceVariant,
                   ),
                 ),
@@ -369,22 +379,20 @@ class _DeviceCard extends StatelessWidget {
                     device.name.isEmpty ? 'Unnamed device' : device.name,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                    style: Theme.of(context).textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w800),
                   ),
                 ),
                 _StatusPill(state: connection),
               ],
             ),
             const SizedBox(height: 16),
-            Text(
-              device.deviceId,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+            Text(device.deviceId, style: Theme.of(context).textTheme.bodySmall),
             const SizedBox(height: 4),
             Text(
-              reading == null ? 'Waiting for first telemetry packet' : 'Last seen ' + _ago(device.lastSeen),
+              reading == null
+                  ? 'Waiting for first telemetry packet'
+                  : 'Last seen ' + _ago(device.lastSeen),
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 18),
@@ -430,7 +438,8 @@ class _DeviceCard extends StatelessWidget {
   String _ago(DateTime value) {
     final difference = DateTime.now().difference(value);
     if (difference.inMinutes < 1) return 'just now';
-    if (difference.inHours < 1) return difference.inMinutes.toString() + ' min ago';
+    if (difference.inHours < 1)
+      return difference.inMinutes.toString() + ' min ago';
     if (difference.inDays < 1) return difference.inHours.toString() + ' hr ago';
     return difference.inDays.toString() + ' d ago';
   }
@@ -462,7 +471,15 @@ class _StatusPill extends StatelessWidget {
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.5,
+        ),
+      ),
     );
   }
 }
@@ -520,9 +537,7 @@ class _NoReading extends StatelessWidget {
         children: [
           Icon(Icons.sensors_off_outlined, size: 18),
           SizedBox(width: 8),
-          Expanded(
-            child: Text('No sensor reading available yet.'),
-          ),
+          Expanded(child: Text('No sensor reading available yet.')),
         ],
       ),
     );
@@ -556,9 +571,8 @@ class _EmptyDeviceState extends StatelessWidget {
             const SizedBox(height: 18),
             Text(
               'No devices registered',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+              style: Theme.of(context).textTheme.headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
             const Text(
@@ -582,10 +596,7 @@ class _ErrorState extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
 
-  const _ErrorState({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ErrorState({required this.message, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {

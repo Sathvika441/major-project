@@ -19,14 +19,28 @@ void main() {
     String weather = 'dry',
     RecentIrrigation recent = const RecentIrrigation(),
   }) => IrrigationInput(
-        soilMoisture: moisture, cropAgeDays: 2500, growthStage: stage,
-        temperature: temperature, humidity: humidity, rainfall: rainfall,
-        weatherContext: weather, recentIrrigation: recent, observedAt: now,
-      );
+    soilMoisture: moisture,
+    cropAgeDays: 2500,
+    growthStage: stage,
+    temperature: temperature,
+    humidity: humidity,
+    rainfall: rainfall,
+    weatherContext: weather,
+    recentIrrigation: recent,
+    observedAt: now,
+  );
 
   test('decision uses multiple factors, not soil moisture alone', () {
-    final dry = engine.decide(input: input(), mode: IrrigationMode.recommendationOnly, now: now);
-    final wet = engine.decide(input: input(moisture: 25, rainfall: 30, weather: 'heavy rain'), mode: IrrigationMode.recommendationOnly, now: now);
+    final dry = engine.decide(
+      input: input(),
+      mode: IrrigationMode.recommendationOnly,
+      now: now,
+    );
+    final wet = engine.decide(
+      input: input(moisture: 25, rainfall: 30, weather: 'heavy rain'),
+      mode: IrrigationMode.recommendationOnly,
+      now: now,
+    );
     expect(dry.irrigationRecommended, isTrue);
     expect(wet.irrigationRecommended, isFalse);
     expect(dry.reason, isNotEmpty);
@@ -34,38 +48,103 @@ void main() {
   });
 
   test('growth stage materially changes the decision', () {
-    final establishment = engine.decide(input: input(stage: CropGrowthStage.establishment, moisture: 38, temperature: 30, humidity: 60), mode: IrrigationMode.recommendationOnly, now: now);
-    final mature = engine.decide(input: input(stage: CropGrowthStage.matureBearing, moisture: 38, temperature: 30, humidity: 60), mode: IrrigationMode.recommendationOnly, now: now);
+    final establishment = engine.decide(
+      input: input(
+        stage: CropGrowthStage.establishment,
+        moisture: 38,
+        temperature: 30,
+        humidity: 60,
+      ),
+      mode: IrrigationMode.recommendationOnly,
+      now: now,
+    );
+    final mature = engine.decide(
+      input: input(
+        stage: CropGrowthStage.matureBearing,
+        moisture: 38,
+        temperature: 30,
+        humidity: 60,
+      ),
+      mode: IrrigationMode.recommendationOnly,
+      now: now,
+    );
     expect(establishment.confidence, isNot(equals(mature.confidence)));
-    expect(establishment.suggestedDuration, isNot(equals(mature.suggestedDuration)));
+    expect(
+      establishment.suggestedDuration,
+      isNot(equals(mature.suggestedDuration)),
+    );
   });
 
   test('recent irrigation suppresses a recommendation', () {
-    final result = engine.decide(input: input(recent: RecentIrrigation(startedAt: now.subtract(const Duration(hours: 2)), duration: const Duration(minutes: 15))), mode: IrrigationMode.recommendationOnly, now: now);
+    final result = engine.decide(
+      input: input(
+        recent: RecentIrrigation(
+          startedAt: now.subtract(const Duration(hours: 2)),
+          duration: const Duration(minutes: 15),
+        ),
+      ),
+      mode: IrrigationMode.recommendationOnly,
+      now: now,
+    );
     expect(result.irrigationRecommended, isFalse);
   });
 
   test('recommendation only cannot start a pump', () async {
     final audit = InMemoryIrrigationAuditLog();
-    final pump = SafePumpController(driver: SimulatedPumpDriver(), audit: audit);
-    final result = await pump.start(commandId: 'r1', duration: const Duration(minutes: 5), mode: IrrigationMode.recommendationOnly, confirmed: true);
+    final pump = SafePumpController(
+      driver: SimulatedPumpDriver(),
+      audit: audit,
+    );
+    final result = await pump.start(
+      commandId: 'r1',
+      duration: const Duration(minutes: 5),
+      mode: IrrigationMode.recommendationOnly,
+      confirmed: true,
+    );
     expect(result.accepted, isFalse);
   });
 
   test('manual start requires confirmation and respects max runtime', () async {
     final audit = InMemoryIrrigationAuditLog();
-    final pump = SafePumpController(driver: SimulatedPumpDriver(), audit: audit, maxRuntime: const Duration(minutes: 10));
-    final noConfirm = await pump.start(commandId: 'm1', duration: const Duration(minutes: 5), mode: IrrigationMode.manual, confirmed: false);
+    final pump = SafePumpController(
+      driver: SimulatedPumpDriver(),
+      audit: audit,
+      maxRuntime: const Duration(minutes: 10),
+    );
+    final noConfirm = await pump.start(
+      commandId: 'm1',
+      duration: const Duration(minutes: 5),
+      mode: IrrigationMode.manual,
+      confirmed: false,
+    );
     expect(noConfirm.accepted, isFalse);
-    final tooLong = await pump.start(commandId: 'm2', duration: const Duration(minutes: 11), mode: IrrigationMode.manual, confirmed: true);
+    final tooLong = await pump.start(
+      commandId: 'm2',
+      duration: const Duration(minutes: 11),
+      mode: IrrigationMode.manual,
+      confirmed: true,
+    );
     expect(tooLong.accepted, isFalse);
   });
 
   test('duplicate pump commands are blocked and audited', () async {
     final audit = InMemoryIrrigationAuditLog();
-    final pump = SafePumpController(driver: SimulatedPumpDriver(), audit: audit);
-    final first = await pump.start(commandId: 'd1', duration: const Duration(minutes: 1), mode: IrrigationMode.manual, confirmed: true);
-    final second = await pump.start(commandId: 'd2', duration: const Duration(minutes: 1), mode: IrrigationMode.manual, confirmed: true);
+    final pump = SafePumpController(
+      driver: SimulatedPumpDriver(),
+      audit: audit,
+    );
+    final first = await pump.start(
+      commandId: 'd1',
+      duration: const Duration(minutes: 1),
+      mode: IrrigationMode.manual,
+      confirmed: true,
+    );
+    final second = await pump.start(
+      commandId: 'd2',
+      duration: const Duration(minutes: 1),
+      mode: IrrigationMode.manual,
+      confirmed: true,
+    );
     expect(first.accepted, isTrue);
     expect(second.accepted, isFalse);
     expect(audit.records.any((r) => r.status == 'rejected'), isTrue);
