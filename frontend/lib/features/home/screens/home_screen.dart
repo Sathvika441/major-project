@@ -632,6 +632,7 @@ class _DiseaseDetectionDialogState
     setState(() {
       _predicting = true;
       _result = null;
+      _lowConfidence = null;
       _error = null;
     });
     try {
@@ -820,7 +821,7 @@ class _DiseaseDetectionDialogState
           ),
         if (_result != null)
           FilledButton.icon(
-            onPressed: () => _viewReport(report, _image!.name),
+            onPressed: () => _viewReport(report),
             icon: const Icon(Icons.description_outlined),
             label: const Text('View report'),
           ),
@@ -853,7 +854,7 @@ class _DiseaseDetectionDialogState
     ].join('\n');
   }
 
-  Future<void> _viewReport(String report, String imageName) async {
+  Future<void> _viewReport(String report) async {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -890,7 +891,7 @@ class _DiseaseDetectionDialogState
             style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
           ),
           pw.SizedBox(height: 12),
-          ...report.split('\\n').map(
+          ...report.split('\n').map(
             (line) => pw.Padding(
               padding: const pw.EdgeInsets.only(bottom: 5),
               child: pw.Text(line.isEmpty ? ' ' : line, style: const pw.TextStyle(fontSize: 10)),
