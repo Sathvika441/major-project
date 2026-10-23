@@ -62,6 +62,18 @@ class IrrigationServiceTests(unittest.TestCase):
         cleared = self.service.set_emergency_stop(self.device_id, False)
         self.assertFalse(cleared["command"]["pump_on"])
 
+
+    def test_auto_mode_waits_for_fresh_reading_after_emergency_stop_reset(self):
+        self.service.update_settings(self.device_id, {"minimum_interval_minutes": 0})
+        self.reading(20.0)
+        self.assertTrue(self.service.get_command(self.device_id)["pump_on"])
+        self.service.set_emergency_stop(self.device_id, True)
+        cleared = self.service.set_emergency_stop(self.device_id, False)
+        self.assertFalse(cleared["command"]["pump_on"])
+        self.assertFalse(self.service.get_command(self.device_id)["pump_on"])
+        resumed = self.reading(20.0)
+        self.assertTrue(resumed["command"]["pump_on"])
+
     def test_manual_pump_has_maximum_runtime(self):
         self.reading(50.0)
         self.service.update_settings(self.device_id, {"maximum_run_seconds": 5})
