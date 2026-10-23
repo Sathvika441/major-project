@@ -173,7 +173,10 @@ class IrrigationDecisionEngine {
     }
 
     final clampedScore = score.clamp(-0.6, 1.0).toDouble();
-    final recommended = clampedScore >= 0.30;
+    final recentIrrigationSuppression = recent.hasOccurred &&
+        !createdAt.difference(recent.startedAt!).isNegative &&
+        createdAt.difference(recent.startedAt!) < const Duration(hours: 12);
+    final recommended = !recentIrrigationSuppression && clampedScore >= 0.30;
     final minutes = recommended
         ? (10 + math.max(0, clampedScore - 0.30) * 20).round()
         : 0;
