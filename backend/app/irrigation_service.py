@@ -154,6 +154,9 @@ class IrrigationService:
     def update_settings(self, device_id: str, settings: dict[str, Any]) -> dict[str, Any]:
         with self._lock:
             device = self._device(device_id)
+            candidate = {**device["settings"], **settings}
+            if candidate["stop_moisture_percent"] <= candidate["start_moisture_percent"]:
+                raise ValueError("stop_moisture_percent must be greater than start_moisture_percent.")
             device["settings"].update(settings)
             self._event(device, "settings_updated", "Irrigation safety settings updated.")
             self._evaluate(device)
