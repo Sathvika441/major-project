@@ -48,6 +48,13 @@ void main() {
       deviceId: 'ESP32-01',
       name: 'Field sensor',
       lastSeen: DateTime.now().subtract(const Duration(minutes: 10)),
+      latestReading: SensorReading(
+        soilMoisture: 35,
+        temperature: 28,
+        humidity: 65,
+        rainfall: 0,
+        timestamp: DateTime.now().subtract(const Duration(minutes: 10)),
+      ),
     );
     expect(device.connectionState, DeviceConnectionState.stale);
   });
