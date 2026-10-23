@@ -65,6 +65,8 @@ class IrrigationService:
                 },
                 "manual_pump_request": False,
                 "output_pump_on": False,
+                "resume_required": False,
+                "emergency_stop_cleared_at": None,
                 "pump_started_at": None,
                 "last_run_completed_at": None,
             }
@@ -82,6 +84,11 @@ class IrrigationService:
             reading["observed_at"] = as_utc(reading.get("observed_at"))
             reading["received_at"] = utc_now()
             device["readings"].append(reading)
+            cleared_at = device["emergency_stop_cleared_at"]
+            if device["resume_required"] and cleared_at is not None and reading["observed_at"] > cleared_at:
+                device["resume_required"] = False
+                device["emergency_stop_cleared_at"] = None
+                self._event(device, "fresh_reading_after_stop", "Fresh reading received after emergency-stop reset.")
             self._event(device, "reading_received", "Sensor reading received.")
             self._evaluate(device)
             return self._public_status(device)
@@ -128,9 +135,13 @@ class IrrigationService:
             command["emergency_stop"] = active
             command["updated_at"] = utc_now()
             if active:
+                device["resume_required"] = False
+                device["emergency_stop_cleared_at"] = None
                 device["manual_pump_request"] = False
                 self._event(device, "emergency_stop_activated", "Emergency stop activated; pump forced OFF.")
             elif was_active:
+                device["resume_required"] = True
+                device["emergency_stop_cleared_at"] = utc_now()
                 device["manual_pump_request"] = False
                 self._event(
                     device,
@@ -174,6 +185,8 @@ class IrrigationService:
 
         if command["emergency_stop"]:
             should_run, reason = False, "Emergency stop is active."
+        elif device["resume_required"]:
+            should_run, reason = False, "Emergency stop cleared; waiting for a new valid sensor reading before resuming."
         elif not settings["automatic_enabled"] and command["mode"] == "auto":
             should_run, reason = False, "Automatic irrigation is disabled in device settings."
         elif latest is None:
