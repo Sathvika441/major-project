@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import '../lib/core/irrigation/irrigation_decision_engine.dart';
-import '../lib/core/irrigation/irrigation_models.dart';
-import '../lib/core/irrigation/pump_controller.dart';
-import '../lib/core/irrigation/irrigation_audit.dart';
-import '../lib/core/services/crop_growth_stage_service.dart';
+import 'package:major_proj_1/core/irrigation/irrigation_decision_engine.dart';
+import 'package:major_proj_1/core/irrigation/irrigation_models.dart';
+import 'package:major_proj_1/core/irrigation/pump_controller.dart';
+import 'package:major_proj_1/core/irrigation/irrigation_audit.dart';
+import 'package:major_proj_1/core/services/crop_growth_stage_service.dart';
 
 void main() {
   const engine = IrrigationDecisionEngine();
