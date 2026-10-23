@@ -44,6 +44,10 @@ class SensorReadingIn(BaseModel):
     temperature_c: float | None = Field(default=None, ge=-50, le=70)
     humidity_percent: float | None = Field(default=None, ge=0, le=100)
     rainfall_mm: float | None = Field(default=None, ge=0, le=2000)
+    # These fields are also emitted by the current ESP32 sketch.
+    pump_on: bool | None = None
+    control_mode: Literal["auto", "manual"] | None = None
+    timestamp_ms: int | None = Field(default=None, ge=0)
     sensor_valid: bool = True
     observed_at: datetime = Field(default_factory=utc_now)
 
