@@ -92,6 +92,28 @@ def save_reading(reading: dict[str, Any], status: dict[str, Any] | None = None) 
     }, merge=True)
     root.collection("readings").document().set(data)
 
+    # Keep the app's existing per-user device card in sync with real telemetry.
+    # The Flutter DeviceModel expects camelCase keys for latestReading.
+    docs = (
+        db.collection_group("devices")
+        .where(filter=FieldFilter("deviceId", "==", device_id))
+        .stream()
+    )
+    app_reading = {
+        "soilMoisture": reading.get("soil_moisture_percent"),
+        "temperature": reading.get("temperature_c"),
+        "humidity": reading.get("humidity_percent"),
+        "rainfall": reading.get("rainfall_mm"),
+        "timestamp": _as_datetime(observed_at) or received_at,
+    }
+    for doc in docs:
+        if len(doc.reference.path.split("/")) == 4 and doc.reference.path.startswith("users/"):
+            doc.reference.set({
+                "latestReading": app_reading,
+                "lastSeen": _as_datetime(received_at),
+                "updatedAt": firestore.SERVER_TIMESTAMP,
+            }, merge=True)
+
 
 def save_status(device_id: str, status: dict[str, Any]) -> None:
     db = _client()
