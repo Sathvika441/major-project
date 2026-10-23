@@ -57,8 +57,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.ensureVisible(find.text('Create account'));
-    await tester.tap(find.text('Create account'));
+    final registerButton = find.widgetWithText(ElevatedButton, 'Create account');
+    expect(registerButton, findsOneWidget);
+    await tester.ensureVisible(registerButton);
+    await tester.tap(registerButton);
     await tester.pumpAndSettle();
 
     expect(find.text('Name is required'), findsOneWidget);
