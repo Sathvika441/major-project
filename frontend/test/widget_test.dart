@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:major_proj_1/app/router.dart';
 import 'package:major_proj_1/core/storage/local_storage_service.dart';
 import 'package:major_proj_1/features/auth/controllers/auth_controller.dart';
 import 'package:major_proj_1/features/auth/screens/login_screen.dart';
@@ -18,16 +19,30 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final localStorage = await LocalStorageService.init();
 
+    final router = GoRouter(
+      initialLocation: '/',
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const Scaffold(
+            body: Center(child: Text('ArecaSmart')),
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           localStorageServiceProvider.overrideWithValue(localStorage),
+          routerProvider.overrideWithValue(router),
         ],
         child: const ArecaSmartApp(),
       ),
     );
 
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(find.text('ArecaSmart'), findsOneWidget);
   });
@@ -37,7 +52,7 @@ void main() {
   ) async {
     await _pumpLoginScreen(tester);
     expect(find.text('Welcome back'), findsOneWidget);
-    expect(find.text('Sign Up'), findsOneWidget);
+    expect(find.text('Create farmer account'), findsOneWidget);
     expect(find.text('Continue with Google'), findsOneWidget);
   });
 
