@@ -60,7 +60,11 @@ class _IoTDeviceControlsState extends ConsumerState<IoTDeviceControls> {
         setState(() => _error = error.message);
       }
     } catch (_) {
-      if (mounted) setState(() => _error = 'The control request failed. Verify backend connectivity.');
+      if (mounted) {
+        setState(
+          () => _error = 'The control request failed. Verify backend connectivity.',
+        );
+      }
     } finally {
       if (mounted) {
         setState(() => _acting = false);
@@ -130,7 +134,9 @@ class _IoTDeviceControlsState extends ConsumerState<IoTDeviceControls> {
         setState(() => _error = 'Sensor history is unavailable. Check Firestore configuration.');
       }
     } finally {
-      if (mounted) setState(() => _acting = false);
+      if (mounted) {
+        setState(() => _acting = false);
+      }
     }
   }
 
