@@ -92,7 +92,15 @@ class IrrigationSettingsIn(BaseModel):
 
     @model_validator(mode="after")
     def stop_threshold_must_exceed_start(self):
-        if self.stop_moisture_percent <= self.start_moisture_percent:
+        # PATCH updates may supply only one threshold; compare both here when
+        # the caller explicitly supplied both, then validate the merged settings
+        # against the device's current configuration in the service layer.
+        supplied = self.model_fields_set
+        if (
+            "start_moisture_percent" in supplied
+            and "stop_moisture_percent" in supplied
+            and self.stop_moisture_percent <= self.start_moisture_percent
+        ):
             raise ValueError("stop_moisture_percent must be greater than start_moisture_percent.")
         return self
 
