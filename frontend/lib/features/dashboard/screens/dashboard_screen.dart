@@ -359,33 +359,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _drawerItem(
-    BuildContext context,
-    IconData icon,
-    String label,
-    VoidCallback onTap, {
-    bool selected = false,
-  }) {
-    final scheme = Theme.of(context).colorScheme;
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: selected ? scheme.primary : scheme.onSurfaceVariant,
-      ),
-      title: Text(
-        label,
-        style: TextStyle(
-          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-        ),
-      ),
-      selected: selected,
-      onTap: () {
-        Navigator.of(context).pop();
-        onTap();
-      },
-    );
-  }
-
   Future<void> _pickMlImage(BuildContext context) async {
     final picked = await FilePicker.platform.pickFiles(
       type: FileType.custom,
