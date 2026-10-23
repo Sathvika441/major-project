@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:major_proj_1/app/theme/theme_mode_controller.dart';
 import 'package:major_proj_1/core/storage/local_storage_service.dart';
+import 'package:major_proj_1/features/auth/controllers/auth_controller.dart';
+import 'package:major_proj_1/features/auth/controllers/auth_state.dart';
 import 'package:major_proj_1/features/auth/screens/login_screen.dart';
-// import 'package:major_proj_1/features/auth/controllers/auth_controller.dart';
 import 'package:major_proj_1/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -36,6 +38,8 @@ void main() {
       ProviderScope(
         overrides: [
           localStorageServiceProvider.overrideWithValue(localStorage),
+          authControllerProvider.overrideWithValue(AuthState.unauthenticated()),
+          themeModeProvider.overrideWithValue(ThemeMode.dark),
         ],
         child: const MaterialApp(home: LoginScreen()),
       ),
@@ -45,9 +49,6 @@ void main() {
 
     expect(find.text('Welcome back'), findsOneWidget);
     expect(find.text('Sign Up'), findsOneWidget);
-
-    // Navigation through LoginScreen requires GoRouter, so this
-    // test verifies the login UI independently.
     expect(find.text('Continue with Google'), findsOneWidget);
   });
 
@@ -61,6 +62,8 @@ void main() {
       ProviderScope(
         overrides: [
           localStorageServiceProvider.overrideWithValue(localStorage),
+          authControllerProvider.overrideWithValue(AuthState.unauthenticated()),
+          themeModeProvider.overrideWithValue(ThemeMode.dark),
         ],
         child: const MaterialApp(home: LoginScreen()),
       ),
