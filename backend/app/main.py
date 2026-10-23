@@ -172,50 +172,53 @@ def ingest_sensor_reading(payload: SensorReadingIn):
         raise HTTPException(status_code=400, detail="Invalid sensor reading timestamp or payload.") from exc
 
 
-@app.get("/api/v1/devices/{device_id}/command", dependencies=[__import__("fastapi").Depends(_require_device_token)])
+@app.get("/api/v1/devices/{device_id}/command", dependencies=[Depends(_require_device_token)])
 def get_device_command(device_id: str = Path(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9._:-]+$")):
     """ESP32 polling endpoint: reports auto/manual target and safety stop state."""
     return irrigation_service.get_command(device_id)
 
 
-@app.post("/api/v1/devices/{device_id}/control", dependencies=[__import__("fastapi").Depends(_require_device_token)])
+@app.post("/api/v1/devices/{device_id}/control", dependencies=[Depends(_require_device_token)])
 def set_device_control(
     payload: DeviceControlIn,
-    device_id: str = __import__("fastapi").Path(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9._:-]+$"),
+    device_id: str = Path(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9._:-]+$"),
 ):
     """Request auto/manual mode or manual pump operation; safety gates remain active."""
     return irrigation_service.set_control(device_id, mode=payload.mode, pump_on=payload.pump_on)
 
 
-@app.post("/api/v1/devices/{device_id}/emergency-stop", dependencies=[__import__("fastapi").Depends(_require_device_token)])
+@app.post("/api/v1/devices/{device_id}/emergency-stop", dependencies=[Depends(_require_device_token)])
 def set_device_emergency_stop(
     payload: EmergencyStopIn,
-    device_id: str = __import__("fastapi").Path(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9._:-]+$"),
+    device_id: str = Path(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9._:-]+$"),
 ):
     """Activate or clear the emergency stop. Clearing it never directly starts the pump."""
     return irrigation_service.set_emergency_stop(device_id, payload.active)
 
 
-@app.patch("/api/v1/devices/{device_id}/settings", dependencies=[__import__("fastapi").Depends(_require_device_token)])
+@app.patch("/api/v1/devices/{device_id}/settings", dependencies=[Depends(_require_device_token)])
 def update_device_settings(
     payload: IrrigationSettingsIn,
-    device_id: str = __import__("fastapi").Path(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9._:-]+$"),
+    device_id: str = Path(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9._:-]+$"),
 ):
     """Update safety/threshold settings. Defaults are demo values, not agronomic advice."""
-    return irrigation_service.update_settings(device_id, payload.model_dump(exclude_unset=True))
+    try:
+        return irrigation_service.update_settings(device_id, payload.model_dump(exclude_unset=True))
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
-@app.get("/api/v1/devices/{device_id}/readings", dependencies=[__import__("fastapi").Depends(_require_device_token)])
+@app.get("/api/v1/devices/{device_id}/readings", dependencies=[Depends(_require_device_token)])
 def get_device_reading_history(
-    device_id: str = __import__("fastapi").Path(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9._:-]+$"),
+    device_id: str = Path(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9._:-]+$"),
     limit: int = Query(100, ge=1, le=500),
 ):
     """Return bounded recent telemetry for the dashboard/history integration."""
     return irrigation_service.get_history(device_id, limit)
 
 
-@app.get("/api/v1/devices/{device_id}/status", dependencies=[__import__("fastapi").Depends(_require_device_token)])
-def get_device_status(device_id: str = __import__("fastapi").Path(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9._:-]+$")):
+@app.get("/api/v1/devices/{device_id}/status", dependencies=[Depends(_require_device_token)])
+def get_device_status(device_id: str = Path(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9._:-]+$")):
     return irrigation_service.get_status(device_id)
 
 
