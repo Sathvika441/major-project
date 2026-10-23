@@ -32,7 +32,7 @@ All paths below require `X-Device-Token`.
 | GET | `/api/v1/devices/{device_id}/command` | ESP32 polling endpoint; returns `mode`, `pump_on`, and `emergency_stop` |
 | POST | `/api/v1/devices/{device_id}/control` | Set automatic/manual mode or request manual pump ON/OFF |
 | POST | `/api/v1/devices/{device_id}/emergency-stop` | Activate or clear the emergency stop |
-| PUT | `/api/v1/devices/{device_id}/settings` | Set moisture thresholds and run/freshness limits |
+| PATCH | `/api/v1/devices/{device_id}/settings` | Set moisture thresholds and run/freshness limits |
 | GET | `/api/v1/devices/{device_id}/readings?limit=100` | Return recent bounded sensor history |
 | GET | `/api/v1/devices/{device_id}/status` | Return latest reading, command, settings and recent events |
 
@@ -49,8 +49,7 @@ Device IDs must contain 1–80 characters from letters, digits, dot, underscore,
   "temperature_c": 29.2,
   "humidity_percent": 68.0,
   "rainfall_mm": 0.0,
-  "sensor_valid": true,
-  "observed_at": "2026-10-23T10:00:00Z"
+  "sensor_valid": true
 }
 ```
 
