@@ -586,10 +586,19 @@ backend/app/weather_service.py
 
 | Method | Endpoint | Purpose |
 |---|---|---|
-| GET | /health | Backend + ML availability |
+| GET | /health | Backend + ML + IoT configuration status |
 | GET | /api/v1/weather | Farm location + weather |
 | POST | /api/v1/predict | Feature-prediction interface for supplied feature data |
 | POST | /api/v1/predict/image | Trained image disease prediction |
+| POST | /api/v1/sensors/readings | Validated IoT telemetry ingestion (requires `X-Device-Token`) |
+| GET | /api/v1/devices/{device_id}/command | ESP32 pump-command polling (requires `X-Device-Token`) |
+| POST | /api/v1/devices/{device_id}/control | Automatic/manual pump control request (requires `X-Device-Token`) |
+| POST | /api/v1/devices/{device_id}/emergency-stop | Emergency stop activation/reset (requires `X-Device-Token`) |
+| PATCH | /api/v1/devices/{device_id}/settings | Irrigation thresholds and safety limits (requires `X-Device-Token`) |
+| GET | /api/v1/devices/{device_id}/readings | Recent in-memory sensor history (requires `X-Device-Token`) |
+| GET | /api/v1/devices/{device_id}/status | Current readings, pump state and events (requires `X-Device-Token`) |
+
+The IoT endpoints currently use bounded in-memory state for the prototype, so telemetry and history do not survive a backend restart. Configure `ARECASMART_IOT_API_TOKEN` on the server and send it as `X-Device-Token`. Do not embed that shared device token in the Flutter client; Firebase-authenticated app control and durable Firestore history remain integration work. Detailed request examples and safety behavior are documented in [backend/IoT_API.md](backend/IoT_API.md).
 
 ## Health endpoint
 
