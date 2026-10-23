@@ -184,13 +184,13 @@ def set_device_emergency_stop(
     return irrigation_service.set_emergency_stop(device_id, payload.active)
 
 
-@app.put("/api/v1/devices/{device_id}/settings", dependencies=[__import__("fastapi").Depends(_require_device_token)])
+@app.patch("/api/v1/devices/{device_id}/settings", dependencies=[__import__("fastapi").Depends(_require_device_token)])
 def update_device_settings(
     payload: IrrigationSettingsIn,
     device_id: str = __import__("fastapi").Path(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9._:-]+$"),
 ):
     """Update safety/threshold settings. Defaults are demo values, not agronomic advice."""
-    return irrigation_service.update_settings(device_id, payload.model_dump())
+    return irrigation_service.update_settings(device_id, payload.model_dump(exclude_unset=True))
 
 
 @app.get("/api/v1/devices/{device_id}/readings", dependencies=[__import__("fastapi").Depends(_require_device_token)])
