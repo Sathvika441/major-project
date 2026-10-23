@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections import deque
 from copy import deepcopy
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from threading import RLock
 from typing import Any
 
@@ -46,8 +46,8 @@ class IrrigationService:
                 "readings": deque(maxlen=self.HISTORY_LIMIT),
                 "events": deque(maxlen=self.EVENT_LIMIT),
                 "settings": {
-                    # Exhibition defaults only; field thresholds must be configured
-                    # and validated for the actual crop, soil and sensor installation.
+                    # Exhibition defaults only; validate field thresholds for the
+                    # actual crop, soil, sensor, root zone and installation.
                     "crop": "arecanut",
                     "start_moisture_percent": 30.0,
                     "stop_moisture_percent": 45.0,
@@ -63,6 +63,8 @@ class IrrigationService:
                     "reason": "Pump is off until a valid fresh sensor reading is received.",
                     "updated_at": now,
                 },
+                "manual_pump_request": False,
+                "output_pump_on": False,
                 "pump_started_at": None,
                 "last_run_completed_at": None,
             }
@@ -70,11 +72,7 @@ class IrrigationService:
 
     @staticmethod
     def _event(device: dict[str, Any], event: str, reason: str) -> None:
-        device["events"].append({
-            "event": event,
-            "reason": reason,
-            "at": utc_now(),
-        })
+        device["events"].append({"event": event, "reason": reason, "at": utc_now()})
 
     def record_reading(self, payload: dict[str, Any]) -> dict[str, Any]:
         with self._lock:
@@ -94,15 +92,7 @@ class IrrigationService:
             self._evaluate(device)
             command = deepcopy(device["command"])
             command["device_id"] = device_id
-            # Keep this response shape simple for the ESP32 polling loop.
-            return {
-                "device_id": device_id,
-                "mode": command["mode"],
-                "pump_on": command["pump_on"],
-                "emergency_stop": command["emergency_stop"],
-                "reason": command["reason"],
-                "updated_at": command["updated_at"],
-            }
+            return command
 
     def set_control(
         self,
@@ -114,15 +104,13 @@ class IrrigationService:
         with self._lock:
             device = self._device(device_id)
             command = device["command"]
-            if mode is not None:
+            if mode is not None and mode != command["mode"]:
                 command["mode"] = mode
                 self._event(device, "mode_changed", f"Irrigation mode set to {mode}.")
-                if mode == "auto":
-                    command["pump_on"] = False
-                elif pump_on is None:
-                    command["pump_on"] = False
+                # A mode change must not accidentally preserve an earlier manual ON.
+                device["manual_pump_request"] = False
             if command["mode"] == "manual" and pump_on is not None:
-                command["pump_on"] = pump_on
+                device["manual_pump_request"] = pump_on
                 self._event(
                     device,
                     "manual_pump_requested",
@@ -140,12 +128,15 @@ class IrrigationService:
             command["emergency_stop"] = active
             command["updated_at"] = utc_now()
             if active:
-                command["pump_on"] = False
-                device["pump_started_at"] = None
+                device["manual_pump_request"] = False
                 self._event(device, "emergency_stop_activated", "Emergency stop activated; pump forced OFF.")
             elif was_active:
-                self._event(device, "emergency_stop_cleared", "Emergency stop cleared; pump remains OFF until control logic permits operation.")
-                command["pump_on"] = False
+                device["manual_pump_request"] = False
+                self._event(
+                    device,
+                    "emergency_stop_cleared",
+                    "Emergency stop cleared; pump remains OFF until control logic permits operation.",
+                )
             self._evaluate(device)
             return self._public_status(device)
 
@@ -178,7 +169,7 @@ class IrrigationService:
         command = device["command"]
         settings = device["settings"]
         now = utc_now()
-        previous_pump_on = bool(command["pump_on"])
+        previous_pump_on = bool(device["output_pump_on"])
         latest = device["readings"][-1] if device["readings"] else None
 
         if command["emergency_stop"]:
@@ -194,13 +185,13 @@ class IrrigationService:
         elif (latest["observed_at"] - now).total_seconds() > 60:
             should_run, reason = False, "Pump blocked: sensor timestamp is in the future."
         elif command["mode"] == "manual":
-            should_run = bool(command["pump_on"])
+            should_run = bool(device["manual_pump_request"])
             reason = "Manual pump control." if should_run else "Pump switched OFF by manual control."
         else:
             moisture = latest.get("soil_moisture_percent")
             if moisture is None:
                 should_run, reason = False, "Pump blocked: soil-moisture value is missing."
-            elif command["pump_on"] and moisture < settings["stop_moisture_percent"]:
+            elif previous_pump_on and moisture < settings["stop_moisture_percent"]:
                 should_run, reason = True, "Automatic irrigation continues until the stop-moisture threshold is reached."
             elif moisture <= settings["start_moisture_percent"]:
                 last_stop = device["last_run_completed_at"]
@@ -218,6 +209,7 @@ class IrrigationService:
             if elapsed >= settings["maximum_run_seconds"]:
                 should_run = False
                 reason = "Pump stopped by maximum continuous-run safety limit."
+
         if should_run and not previous_pump_on:
             device["pump_started_at"] = now
             self._event(device, "pump_started", reason)
@@ -228,6 +220,7 @@ class IrrigationService:
         elif not should_run:
             device["pump_started_at"] = None
 
+        device["output_pump_on"] = should_run
         command["pump_on"] = should_run
         command["reason"] = reason
         command["updated_at"] = now
