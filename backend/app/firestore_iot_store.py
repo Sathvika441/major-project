@@ -62,13 +62,16 @@ def owns_device(uid: str, device_id: str) -> bool:
         return False
     # Device records are already stored by the Flutter app at
     # users/{uid}/devices/{documentId}.
-    docs = (
-        db.collection("users").document(uid).collection("devices")
+    docs = list(
+        db.collection_group("devices")
         .where(filter=FieldFilter("deviceId", "==", device_id))
-        .limit(1)
         .stream()
     )
-    return any(True for _ in docs)
+    # Refuse ambiguous duplicate IDs instead of granting more than one account
+    # control over the same physical controller.
+    if len(docs) != 1:
+        return False
+    return docs[0].reference.path == f"users/{uid}/devices/{docs[0].id}"
 
 
 def save_reading(reading: dict[str, Any], status: dict[str, Any] | None = None) -> None:
@@ -94,7 +97,7 @@ def save_reading(reading: dict[str, Any], status: dict[str, Any] | None = None) 
 
     # Keep the app's existing per-user device card in sync with real telemetry.
     # The Flutter DeviceModel expects camelCase keys for latestReading.
-    docs = (
+    docs = list(
         db.collection_group("devices")
         .where(filter=FieldFilter("deviceId", "==", device_id))
         .stream()
@@ -106,13 +109,13 @@ def save_reading(reading: dict[str, Any], status: dict[str, Any] | None = None) 
         "rainfall": reading.get("rainfall_mm"),
         "timestamp": _as_datetime(observed_at) or received_at,
     }
-    for doc in docs:
-        if len(doc.reference.path.split("/")) == 4 and doc.reference.path.startswith("users/"):
-            doc.reference.set({
-                "latestReading": app_reading,
-                "lastSeen": _as_datetime(received_at),
-                "updatedAt": firestore.SERVER_TIMESTAMP,
-            }, merge=True)
+    # Only sync when the physical device ID has exactly one owner record.
+    if len(docs) == 1 and docs[0].reference.path.startswith("users/"):
+        docs[0].reference.set({
+            "latestReading": app_reading,
+            "lastSeen": _as_datetime(received_at),
+            "updatedAt": firestore.SERVER_TIMESTAMP,
+        }, merge=True)
 
 
 def save_status(device_id: str, status: dict[str, Any]) -> None:
