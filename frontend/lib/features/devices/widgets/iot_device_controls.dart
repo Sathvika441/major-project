@@ -28,7 +28,9 @@ class _IoTDeviceControlsState extends ConsumerState<IoTDeviceControls> {
     setState(() { _loading = true; _error = null; });
     try {
       final result = await ref.read(backendApiProvider).getIoTStatus(widget.deviceId);
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       setState(() { _status = result; _loading = false; });
     } on BackendApiException catch (error) {
       if (!mounted) return;
@@ -54,11 +56,15 @@ class _IoTDeviceControlsState extends ConsumerState<IoTDeviceControls> {
       }
       await _refresh();
     } on BackendApiException catch (error) {
-      if (mounted) setState(() => _error = error.message);
+      if (mounted) {
+        setState(() => _error = error.message);
+      }
     } catch (_) {
       if (mounted) setState(() => _error = 'The control request failed. Verify backend connectivity.');
     } finally {
-      if (mounted) setState(() => _acting = false);
+      if (mounted) {
+        setState(() => _acting = false);
+      }
     }
   }
 
@@ -120,7 +126,9 @@ class _IoTDeviceControlsState extends ConsumerState<IoTDeviceControls> {
     } on BackendApiException catch (error) {
       if (mounted) setState(() => _error = error.message);
     } catch (_) {
-      if (mounted) setState(() => _error = 'Sensor history is unavailable. Check Firestore configuration.');
+      if (mounted) {
+        setState(() => _error = 'Sensor history is unavailable. Check Firestore configuration.');
+      }
     } finally {
       if (mounted) setState(() => _acting = false);
     }
