@@ -1,113 +1,82 @@
-# ArecaSmart IoT irrigation API (prototype)
+# ArecaSmart IoT API and Firebase integration
 
-This API layer receives ESP32 sensor readings and issues rule-driven irrigation commands. The first version is for the local exhibition/prototype workflow.
+The backend accepts ESP32 telemetry, evaluates rule-driven irrigation safety conditions, and exposes separate endpoints for the ESP32 and the signed-in Flutter application.
 
-## Safety and deployment boundaries
+## Security and storage
 
-- Configure `ARECASMART_IOT_API_TOKEN` on the backend and send the same value as the `X-Device-Token` header from a trusted device/API client.
-- Do not commit the token or place it in source control. The Flutter app uses Firebase ID tokens on `/api/v1/app/devices/...`; it must never send `X-Device-Token`.
-- When `FIREBASE_PROJECT_ID` and Application Default Credentials are configured, telemetry and recent readings are persisted to `iot_devices/{device_id}` and `iot_devices/{device_id}/readings`. This history survives backend restarts. The current irrigation command/settings engine remains in memory; on restart it initializes with the pump OFF, so commands/settings must be reconfigured. If Firestore is not configured, history endpoints return HTTP 503.
-- App endpoints verify Firebase ID tokens and require a matching `deviceId` entry under `users/{uid}/devices`. This is an ownership check against the existing Flutter device-registration model.
-- The 30% start, 45% stop, 30-minute interval, 30-second runtime and 60-second reading freshness settings are conservative **prototype defaults only**, not agronomic recommendations for arecanut. Calibrate the sensor and set thresholds/intervals for the real crop, soil, irrigation method and installation.
-- This software endpoint does not replace physical emergency-stop wiring or safe relay/pump design. Keep the hardware fail-safe OFF on boot/network loss, use a suitable driver/relay and rated supply, and keep mains voltage out of the exhibition model.
-- No physical hardware test has been performed as part of this change.
+- The ESP32 uses the server-configured `ARECASMART_IOT_API_TOKEN` as `X-Device-Token`. Keep this secret out of source control.
+- The Flutter app uses a Firebase ID token in `Authorization: Bearer <token>`. It must never contain or send the ESP32 device token.
+- App endpoints verify the Firebase ID token and verify that the device's `deviceId` exists under `users/{uid}/devices`.
+- When Firebase Admin is configured, readings are stored in `iot_devices/{device_id}` and `iot_devices/{device_id}/readings`. History survives backend restarts.
+- **Current limitation:** irrigation commands, settings and event evaluation still use in-memory state. After a backend restart, the command state initializes with the pump OFF and settings return to defaults. Firestore stores readings and a status snapshot; it does not yet restore irrigation settings or command state.
+- If Firestore is not configured, Firebase-authenticated app endpoints and persisted history are unavailable (HTTP 503).
+- Default moisture thresholds and run limits are demonstration values, not agronomic advice. Calibrate sensors and validate thresholds for the actual crop, soil and irrigation system.
+- Software emergency stop does not replace a physical emergency-stop switch, suitable pump driver, or correctly rated power supply. Hardware has not been physically tested.
 
-## Firmware contract\n\nReference ESP32 firmware: `hardware/esp32/ArecaSmart_Irrigation.ino`. It sends the telemetry fields accepted by `SensorReadingIn`, polls the command endpoint, treats backend `pump_on` as authoritative in auto and manual modes, honors `emergency_stop`, applies a local 30-second runtime cap, and turns the pump OFF when Wi-Fi is unavailable or the last successful command is older than 15 seconds. Those local caps are intentionally conservative and must be aligned with any backend settings change.\n\n## Configure Firestore and Firebase authentication
+## Configure the backend (PowerShell)
 
-Install dependencies from the backend folder:
+Install dependencies from the `backend` directory:
 
 ```powershell
 pip install -r requirements.txt
 ```
 
-Set the Firebase project ID and credentials in the backend process. Keep the service-account JSON outside the repository and never commit it:
+Set the Firebase project ID, a service-account credential path kept outside the repository, and the ESP32-only token:
 
 ```powershell
 $env:FIREBASE_PROJECT_ID = "your-firebase-project-id"
-$env:GOOGLE_APPLICATION_CREDENTIALS = "C:\\secure\\path\\firebase-admin-service-account.json"
+$env:GOOGLE_APPLICATION_CREDENTIALS = "C:\secure\path\firebase-admin-service-account.json"
 $env:ARECASMART_IOT_API_TOKEN = "your-long-random-device-token"
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-For a deployed environment, prefer the platform's Application Default Credentials / workload identity rather than a downloaded key. The same Firebase project must be used by Flutter and the backend.
+Use the same Firebase project in the Flutter app and backend. For deployment, prefer Application Default Credentials/workload identity over a downloaded service-account key. Never commit service-account JSON or real tokens. The template is in `backend/.env.example`.
 
-## Endpoints
+## ESP32 endpoints
 
-From the backend directory, set a development-only token in the current terminal session and start Uvicorn:
-
-```powershell
-$env:ARECASMART_IOT_API_TOKEN = "replace-with-a-long-random-development-token"
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-```
-
-Use the same token in the trusted ESP32 firmware as `DEVICE_TOKEN`. If the backend is unconfigured, IoT routes return HTTP 503 instead of silently exposing pump controls. Requests with a missing/incorrect token return HTTP 401.
-
-## Endpoints
-
-Device endpoints below require `X-Device-Token`. App endpoints under `/api/v1/app/devices` require `Authorization: Bearer <Firebase ID token>`.
+Every endpoint in this section requires `X-Device-Token`.
 
 | Method | Path | Purpose |
 |---|---|---|
-| POST | `/api/v1/sensors/readings` | Validate and ingest a reading, then recalculate the pump command |
-| GET | `/api/v1/devices/{device_id}/command` | ESP32 polling endpoint; returns `mode`, `pump_on`, and `emergency_stop` |
-| POST | `/api/v1/devices/{device_id}/control` | Set automatic/manual mode or request manual pump ON/OFF |
-| POST | `/api/v1/devices/{device_id}/emergency-stop` | Activate or clear the emergency stop |
-| PATCH | `/api/v1/devices/{device_id}/settings` | Set moisture thresholds and run/freshness limits |
-| GET | `/api/v1/devices/{device_id}/readings?limit=100` | Return recent bounded sensor history |
-| GET | `/api/v1/devices/{device_id}/status` | Device-token status endpoint |
-| GET | `/api/v1/app/devices/{device_id}/status` | Firebase-authenticated app status |
-| GET | `/api/v1/app/devices/{device_id}/readings?limit=50` | Firebase-authenticated persistent history |
-| POST | `/api/v1/app/devices/{device_id}/control` | Firebase-authenticated mode/manual pump request |
-| POST | `/api/v1/app/devices/{device_id}/emergency-stop` | Firebase-authenticated emergency stop |
+| POST | `/api/v1/sensors/readings` | Validate and ingest a sensor reading |
+| GET | `/api/v1/devices/{device_id}/command` | Return mode, pump target and emergency-stop state |
+| POST | `/api/v1/devices/{device_id}/control` | Set auto/manual mode or request manual ON/OFF |
+| POST | `/api/v1/devices/{device_id}/emergency-stop` | Activate or clear emergency stop |
+| PATCH | `/api/v1/devices/{device_id}/settings` | Update thresholds and safety limits |
+| GET | `/api/v1/devices/{device_id}/readings?limit=100` | Return recent in-memory readings |
+| GET | `/api/v1/devices/{device_id}/status` | Return current command and device status |
 
-Device IDs must contain 1–80 characters from letters, digits, dot, underscore, colon or hyphen.
+## Flutter app endpoints
 
-## Sensor reading example
+Every endpoint in this section requires `Authorization: Bearer <Firebase ID token>`. The backend verifies device ownership against the signed-in user's `users/{uid}/devices` collection.
 
-```json
-{
-  "device_id": "ARECA_SENSOR_001",
-  "farm_id": "FARM_001",
-  "soil_moisture_percent": 24.5,
-  "soil_moisture_raw": 2880,
-  "temperature_c": 29.2,
-  "humidity_percent": 68.0,
-  "rainfall_mm": 0.0,
-  "sensor_valid": true
-}
-```
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/v1/app/devices/{device_id}/status` | Return current command, status and latest reading |
+| GET | `/api/v1/app/devices/{device_id}/readings?limit=50` | Read persisted sensor history |
+| POST | `/api/v1/app/devices/{device_id}/control` | Set mode or request manual pump control |
+| POST | `/api/v1/app/devices/{device_id}/emergency-stop` | Activate or clear emergency stop |
 
-Required fields: `device_id` and `soil_moisture_percent`. Soil moisture must be 0–100%; raw ADC is optional and must be 0–4095. Optional temperature, humidity and rainfall values have bounded ranges. The sensor firmware should send a current UTC timestamp (or omit `observed_at` and allow the backend to assign receipt time).
-
-## Manual control example
+Example manual pump request:
 
 ```http
-POST /api/v1/devices/ARECA_SENSOR_001/control
-X-Device-Token: <configured token>
+POST /api/v1/app/devices/ARECA_SENSOR_001/control
+Authorization: Bearer <Firebase ID token>
 Content-Type: application/json
 
-{"mode": "manual", "pump_on": true}
+{"mode":"manual","pump_on":true}
 ```
 
-Turn off manually with `{"mode":"manual","pump_on":false}`. Switch back to rule-driven mode with `{"mode":"auto"}`. Auto mode computes pump state; it does not accept `pump_on:true`.
+A valid request does not guarantee that the pump will turn on. Invalid/stale readings, emergency stop, runtime limits and other safety gates can keep it OFF. Clearing emergency stop does not directly start the pump; a fresh sensor reading is required before normal control resumes.
 
-Emergency stop:
+## Firmware contract
 
-```json
-{"active": true}
-```
+Reference sketch: `hardware/esp32/ArecaSmart_Irrigation.ino`. It sends validated telemetry, polls the device-token command endpoint, treats backend `pump_on` as authoritative, and fails OFF when Wi-Fi or the last command becomes stale. It also has an independent local maximum runtime cap. This sketch has not been compiled or physically tested.
 
-Clearing it with `{"active": false}` never directly starts the pump. The API waits for a new valid sensor reading after reset before normal manual/automatic logic can permit operation.
+## Firestore layout
 
-## Rule and safety behavior
+- Existing device registration/ownership: `users/{uid}/devices/{deviceDocumentId}` with a `deviceId` field matching the ESP32 `DEVICE_ID`.
+- Current IoT snapshot: `iot_devices/{device_id}`.
+- Durable sensor history: `iot_devices/{device_id}/readings/{autoId}`.
 
-1. Pump starts in OFF state.
-2. Invalid, missing or stale readings block pump ON in both auto and manual modes.
-3. Auto mode requests irrigation when soil moisture is at/below the configured start threshold and the minimum interval since the previous run has elapsed.
-4. During an automatic run, irrigation continues until the stop threshold is reached. The stop threshold must be greater than the start threshold (hysteresis).
-5. Emergency stop always forces OFF and clearing it does not issue a new ON request.
-6. Maximum continuous runtime is enforced for auto and manual runs.
-7. Automatic irrigation can be disabled through settings.
-8. Every state change/reading creates a bounded in-memory event record.
-
-The firmware must also implement local safety behavior for network loss and boot, because backend commands cannot stop a pump if the device cannot reach the API.
+The backend uses Firebase Admin credentials and does not depend on client Firestore rules for these server-side writes. Configure Firestore access and backend credentials before enabling app controls.
