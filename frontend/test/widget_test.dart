@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:major_proj_1/core/storage/local_storage_service.dart';
 import 'package:major_proj_1/features/auth/controllers/auth_controller.dart';
 import 'package:major_proj_1/features/auth/screens/login_screen.dart';
@@ -53,6 +54,14 @@ Future<void> _pumpLoginScreen(WidgetTester tester) async {
   SharedPreferences.setMockInitialValues({});
   final localStorage = await LocalStorageService.init();
 
+  final router = GoRouter(
+    initialLocation: '/',
+    routes: [
+      GoRoute(path: '/', builder: (context, state) => const LoginScreen()),
+    ],
+  );
+  tester.addTearDown(router.dispose);
+
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -68,7 +77,7 @@ Future<void> _pumpLoginScreen(WidgetTester tester) async {
           ),
         ),
       ],
-      child: const MaterialApp(home: LoginScreen()),
+      child: MaterialApp.router(routerConfig: router),
     ),
   );
 
