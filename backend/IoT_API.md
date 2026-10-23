@@ -11,7 +11,7 @@ This API layer receives ESP32 sensor readings and issues rule-driven irrigation 
 - This software endpoint does not replace physical emergency-stop wiring or safe relay/pump design. Keep the hardware fail-safe OFF on boot/network loss, use a suitable driver/relay and rated supply, and keep mains voltage out of the exhibition model.
 - No physical hardware test has been performed as part of this change.
 
-## Configure locally (PowerShell)
+## Firmware contract\n\nReference ESP32 firmware: `hardware/esp32/ArecaSmart_Irrigation.ino`. It sends the telemetry fields accepted by `SensorReadingIn`, polls the command endpoint, treats backend `pump_on` as authoritative in auto and manual modes, honors `emergency_stop`, applies a local 30-second runtime cap, and turns the pump OFF when Wi-Fi is unavailable or the last successful command is older than 15 seconds. Those local caps are intentionally conservative and must be aligned with any backend settings change.\n\n## Configure locally (PowerShell)
 
 From the backend directory, set a development-only token in the current terminal session and start Uvicorn:
 
