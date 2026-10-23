@@ -221,6 +221,8 @@ class IrrigationService:
             elapsed = (now - started_at).total_seconds()
             if elapsed >= settings["maximum_run_seconds"]:
                 should_run = False
+                # A timed-out manual request must not re-energize on the next poll.
+                device["manual_pump_request"] = False
                 reason = "Pump stopped by maximum continuous-run safety limit."
 
         if should_run and not previous_pump_on:
