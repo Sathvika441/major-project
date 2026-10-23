@@ -43,7 +43,7 @@ void main() {
 
     await tester.pump();
 
-    expect(find.text('Welcome Back'), findsOneWidget);
+    expect(find.text('Welcome back'), findsOneWidget);
     expect(find.text('Sign Up'), findsOneWidget);
 
     // Navigation through LoginScreen requires GoRouter, so this
@@ -68,7 +68,7 @@ void main() {
 
     await tester.pump();
 
-    expect(find.text('Welcome Back'), findsOneWidget);
+    expect(find.text('Welcome back'), findsOneWidget);
     expect(find.text('Continue with Google'), findsOneWidget);
   });
 }
