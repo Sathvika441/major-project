@@ -9,6 +9,7 @@ import 'package:major_proj_1/models/farm/farm_model.dart';
 import 'package:major_proj_1/models/user/user_model.dart';
 import 'package:major_proj_1/repositories/auth/auth_repository.dart';
 import 'package:major_proj_1/repositories/farm/farm_repository.dart';
+import 'package:major_proj_1/services/otp/otp_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
