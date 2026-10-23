@@ -31,7 +31,7 @@ void main() {
   testWidgets('registration form validates required fields', (tester) async {
     await _pumpSignupScreen(tester);
 
-    await tester.tap(find.text('Create account'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Create account'));
     await tester.pumpAndSettle();
 
     expect(find.text('Name is required'), findsOneWidget);
