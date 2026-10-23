@@ -1619,7 +1619,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildAppDrawerForRoute(
     BuildContext context,
     String farmerName, {
     String? farmId,
