@@ -65,8 +65,8 @@ class DeviceControlIn(BaseModel):
     def validate_control(self):
         if self.mode is None and self.pump_on is None:
             raise ValueError("Provide mode and/or pump_on.")
-        if self.mode == "auto" and self.pump_on is True:
-            raise ValueError("Automatic mode decides pump state from sensor data; do not request pump_on=true.")
+        if self.pump_on is not None and self.mode != "manual":
+            raise ValueError("Specify mode='manual' when requesting manual pump ON/OFF.")
         return self
 
 
