@@ -738,7 +738,7 @@ The repository also validates an attached latest reading when one exists.
 
 Registering a device in Firestore is not the same thing as connecting physical hardware.
 
-The current application contains the application-side device/sensor architecture, but a physical IoT deployment still requires the actual hardware communication layer, telemetry transport, authentication and device-side firmware/integration.
+An ESP32 reference firmware is included at `hardware/esp32/ArecaSmart_Irrigation.ino` on the IoT feature branch. It reports sensor readings, obeys backend-provided pump commands, honors the emergency-stop state, and fails OFF when Wi-Fi or backend commands become stale. It has not been physically tested. Firebase-authenticated app control and durable Firestore telemetry/history remain follow-up integration work.
 
 ---
 
