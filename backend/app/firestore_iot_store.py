@@ -13,7 +13,7 @@ from typing import Any
 
 import firebase_admin
 from firebase_admin import auth, credentials, firestore
-from google.cloud.firestore_v1 import FieldFilter
+from google.cloud.firestore_v1 import FieldFilter, Query
 
 
 _lock = RLock()
@@ -115,13 +115,25 @@ def get_status(device_id: str) -> dict[str, Any] | None:
     return _clean(data.get("status")) if data.get("status") else None
 
 
+
+def get_latest_reading(device_id: str) -> dict[str, Any] | None:
+    db = _client()
+    if db is None:
+        return None
+    snapshot = db.collection("iot_devices").document(device_id).get()
+    if not snapshot.exists:
+        return None
+    data = snapshot.to_dict() or {}
+    latest = data.get("latestReading")
+    return _clean(latest) if isinstance(latest, dict) else None
+
 def get_history(device_id: str, limit: int = 100) -> dict[str, Any]:
     db = _client()
     if db is None:
         raise RuntimeError("Firestore persistence is not configured.")
     query = (
         db.collection("iot_devices").document(device_id).collection("readings")
-        .order_by("received_at", direction=firestore.Query.DESCENDING)
+        .order_by("received_at", direction=Query.DESCENDING)
         .limit(limit)
     )
     rows = [_clean(doc.to_dict() or {}) for doc in query.stream()]
