@@ -3,10 +3,10 @@ import os
 import secrets
 import time
 from collections import defaultdict, deque
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Literal
 
-from fastapi import FastAPI, File, Header, HTTPException, Query, Request, UploadFile
+from fastapi import Depends, FastAPI, File, Header, HTTPException, Path, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -151,7 +151,7 @@ def get_weather(
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
-@app.post("/api/v1/sensors/readings", dependencies=[__import__("fastapi").Depends(_require_device_token)])
+@app.post("/api/v1/sensors/readings", dependencies=[Depends(_require_device_token)])
 def ingest_sensor_reading(payload: SensorReadingIn):
     """Receive telemetry, validate it, and recalculate the safe pump command."""
     try:
@@ -161,7 +161,7 @@ def ingest_sensor_reading(payload: SensorReadingIn):
 
 
 @app.get("/api/v1/devices/{device_id}/command", dependencies=[__import__("fastapi").Depends(_require_device_token)])
-def get_device_command(device_id: str = __import__("fastapi").Path(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9._:-]+$")):
+def get_device_command(device_id: str = Path(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9._:-]+$")):
     """ESP32 polling endpoint: reports auto/manual target and safety stop state."""
     return irrigation_service.get_command(device_id)
 
