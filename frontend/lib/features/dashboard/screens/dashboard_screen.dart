@@ -13,11 +13,9 @@ import '../../../services/backend/backend_api.dart';
 import '../../../core/irrigation/irrigation_audit.dart';
 import '../../../core/irrigation/irrigation_decision_engine.dart';
 import '../../../core/irrigation/irrigation_models.dart';
-import '../../../services/sensors/simulated_sensor_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../devices/screens/device_management_screen.dart';
 import '../../farm/screens/farm_management_screen.dart';
-import '../../profile/screens/profile_edit_screen.dart';
 import '../../../widgets/app_navigation_scaffold.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -358,19 +356,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildAppDrawer(
-    BuildContext context,
-    String farmerName,
-    String? farmId,
-  ) {
-    return _buildAppDrawerForRoute(
-      context,
-      farmerName,
-      farmId: farmId,
-      selectedRoute: farmId == null ? '/dashboard' : 'farm',
     );
   }
 
