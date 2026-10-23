@@ -566,32 +566,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _action(
-    BuildContext context,
-    IconData icon,
-    String label,
-    VoidCallback onTap,
-  ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final actionTextColor = isDark ? Colors.white : Colors.black;
-    return SizedBox(
-      width: 150,
-      child: OutlinedButton.icon(
-        onPressed: onTap,
-        icon: Icon(icon, color: actionTextColor),
-        label: Text(label, style: TextStyle(color: actionTextColor)),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: actionTextColor,
-          side: BorderSide(color: actionTextColor.withValues(alpha: 0.28)),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-        ),
-      ),
-    );
-  }
-
   static IconData _glyph(int? code) {
     if (code == null) return Icons.cloud_outlined;
     if (code == 0) return Icons.wb_sunny_outlined;
