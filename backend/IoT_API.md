@@ -5,13 +5,33 @@ This API layer receives ESP32 sensor readings and issues rule-driven irrigation 
 ## Safety and deployment boundaries
 
 - Configure `ARECASMART_IOT_API_TOKEN` on the backend and send the same value as the `X-Device-Token` header from a trusted device/API client.
-- Do not commit the token or place it in source control. Do not embed this shared device token in a distributed Flutter app. Before app-level pump control is enabled, verify Firebase ID tokens on the backend and authorize the authenticated user against the device's farm.
-- Current readings, event history, commands and settings are held **in memory**, limited to 500 readings and 200 events per device. Restarting the backend clears them. Firestore/durable historical storage is a follow-up integration, not implemented by these routes.
+- Do not commit the token or place it in source control. The Flutter app uses Firebase ID tokens on `/api/v1/app/devices/...`; it must never send `X-Device-Token`.
+- When `FIREBASE_PROJECT_ID` and Application Default Credentials are configured, telemetry and recent readings are persisted to `iot_devices/{device_id}` and `iot_devices/{device_id}/readings`. This history survives backend restarts. The current irrigation command/settings engine remains in memory; on restart it initializes with the pump OFF, so commands/settings must be reconfigured. If Firestore is not configured, history endpoints return HTTP 503.
+- App endpoints verify Firebase ID tokens and require a matching `deviceId` entry under `users/{uid}/devices`. This is an ownership check against the existing Flutter device-registration model.
 - The 30% start, 45% stop, 30-minute interval, 30-second runtime and 60-second reading freshness settings are conservative **prototype defaults only**, not agronomic recommendations for arecanut. Calibrate the sensor and set thresholds/intervals for the real crop, soil, irrigation method and installation.
 - This software endpoint does not replace physical emergency-stop wiring or safe relay/pump design. Keep the hardware fail-safe OFF on boot/network loss, use a suitable driver/relay and rated supply, and keep mains voltage out of the exhibition model.
 - No physical hardware test has been performed as part of this change.
 
-## Firmware contract\n\nReference ESP32 firmware: `hardware/esp32/ArecaSmart_Irrigation.ino`. It sends the telemetry fields accepted by `SensorReadingIn`, polls the command endpoint, treats backend `pump_on` as authoritative in auto and manual modes, honors `emergency_stop`, applies a local 30-second runtime cap, and turns the pump OFF when Wi-Fi is unavailable or the last successful command is older than 15 seconds. Those local caps are intentionally conservative and must be aligned with any backend settings change.\n\n## Configure locally (PowerShell)
+## Firmware contract\n\nReference ESP32 firmware: `hardware/esp32/ArecaSmart_Irrigation.ino`. It sends the telemetry fields accepted by `SensorReadingIn`, polls the command endpoint, treats backend `pump_on` as authoritative in auto and manual modes, honors `emergency_stop`, applies a local 30-second runtime cap, and turns the pump OFF when Wi-Fi is unavailable or the last successful command is older than 15 seconds. Those local caps are intentionally conservative and must be aligned with any backend settings change.\n\n## Configure Firestore and Firebase authentication
+
+Install dependencies from the backend folder:
+
+```powershell
+pip install -r requirements.txt
+```
+
+Set the Firebase project ID and credentials in the backend process. Keep the service-account JSON outside the repository and never commit it:
+
+```powershell
+$env:FIREBASE_PROJECT_ID = "your-firebase-project-id"
+$env:GOOGLE_APPLICATION_CREDENTIALS = "C:\\secure\\path\\firebase-admin-service-account.json"
+$env:ARECASMART_IOT_API_TOKEN = "your-long-random-device-token"
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+For a deployed environment, prefer the platform's Application Default Credentials / workload identity rather than a downloaded key. The same Firebase project must be used by Flutter and the backend.
+
+## Endpoints
 
 From the backend directory, set a development-only token in the current terminal session and start Uvicorn:
 
@@ -24,7 +44,7 @@ Use the same token in the trusted ESP32 firmware as `DEVICE_TOKEN`. If the backe
 
 ## Endpoints
 
-All paths below require `X-Device-Token`.
+Device endpoints below require `X-Device-Token`. App endpoints under `/api/v1/app/devices` require `Authorization: Bearer <Firebase ID token>`.
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -34,7 +54,11 @@ All paths below require `X-Device-Token`.
 | POST | `/api/v1/devices/{device_id}/emergency-stop` | Activate or clear the emergency stop |
 | PATCH | `/api/v1/devices/{device_id}/settings` | Set moisture thresholds and run/freshness limits |
 | GET | `/api/v1/devices/{device_id}/readings?limit=100` | Return recent bounded sensor history |
-| GET | `/api/v1/devices/{device_id}/status` | Return latest reading, command, settings and recent events |
+| GET | `/api/v1/devices/{device_id}/status` | Device-token status endpoint |
+| GET | `/api/v1/app/devices/{device_id}/status` | Firebase-authenticated app status |
+| GET | `/api/v1/app/devices/{device_id}/readings?limit=50` | Firebase-authenticated persistent history |
+| POST | `/api/v1/app/devices/{device_id}/control` | Firebase-authenticated mode/manual pump request |
+| POST | `/api/v1/app/devices/{device_id}/emergency-stop` | Firebase-authenticated emergency stop |
 
 Device IDs must contain 1–80 characters from letters, digits, dot, underscore, colon or hyphen.
 
