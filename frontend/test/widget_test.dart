@@ -60,7 +60,7 @@ Future<void> _pumpLoginScreen(WidgetTester tester) async {
       GoRoute(path: '/', builder: (context, state) => const LoginScreen()),
     ],
   );
-  tester.addTearDown(router.dispose);
+  addTearDown(router.dispose);
 
   await tester.pumpWidget(
     ProviderScope(
