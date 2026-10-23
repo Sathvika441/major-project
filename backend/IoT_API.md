@@ -73,7 +73,7 @@ Emergency stop:
 {"active": true}
 ```
 
-Clearing it with `{"active": false}` never directly starts the pump; normal manual/automatic logic must subsequently permit operation.
+Clearing it with `{"active": false}` never directly starts the pump. The API waits for a new valid sensor reading after reset before normal manual/automatic logic can permit operation.
 
 ## Rule and safety behavior
 
