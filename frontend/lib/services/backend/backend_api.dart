@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -108,6 +109,82 @@ class BackendApi {
           );
     final response = await http.Response.fromStream(await request.send());
     return _decode(response);
+  }
+
+
+  Future<Map<String, dynamic>> getIoTStatus(String deviceId) async {
+    final response = await _authorizedRequest(
+      'GET',
+      '/api/v1/app/devices/${Uri.encodeComponent(deviceId)}/status',
+    );
+    return _decode(response);
+  }
+
+  Future<Map<String, dynamic>> getIoTReadings(
+    String deviceId, {
+    int limit = 50,
+  }) async {
+    final uri = Uri.parse(
+      '$baseUrl/api/v1/app/devices/${Uri.encodeComponent(deviceId)}/readings',
+    ).replace(queryParameters: {'limit': '$limit'});
+    final response = await _authorizedRequest('GET', uri.toString());
+    return _decode(response);
+  }
+
+  Future<Map<String, dynamic>> setIoTControl(
+    String deviceId, {
+    String? mode,
+    bool? pumpOn,
+  }) async {
+    final body = <String, dynamic>{};
+    if (mode != null) body['mode'] = mode;
+    if (pumpOn != null) body['pump_on'] = pumpOn;
+    final response = await _authorizedRequest(
+      'POST',
+      '/api/v1/app/devices/${Uri.encodeComponent(deviceId)}/control',
+      body: body,
+    );
+    return _decode(response);
+  }
+
+  Future<Map<String, dynamic>> setIoTEmergencyStop(
+    String deviceId, {
+    required bool active,
+  }) async {
+    final response = await _authorizedRequest(
+      'POST',
+      '/api/v1/app/devices/${Uri.encodeComponent(deviceId)}/emergency-stop',
+      body: {'active': active},
+    );
+    return _decode(response);
+  }
+
+  Future<http.Response> _authorizedRequest(
+    String method,
+    String path, {
+    Map<String, dynamic>? body,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw const BackendApiException(401, 'Please sign in to control this device.');
+    }
+    final token = await user.getIdToken();
+    if (token == null || token.isEmpty) {
+      throw const BackendApiException(401, 'Could not obtain a Firebase ID token.');
+    }
+    final uri = path.startsWith('http') ? Uri.parse(path) : Uri.parse('$baseUrl$path');
+    final headers = <String, String>{
+      'Authorization': 'Bearer $token',
+      if (body != null) 'Content-Type': 'application/json',
+    };
+    switch (method) {
+      case 'GET':
+        return _client.get(uri, headers: headers);
+      case 'POST':
+        return _client.post(uri, headers: headers, body: jsonEncode(body ?? {}));
+      default:
+        throw UnsupportedError('Unsupported authorized HTTP method: $method');
+    }
   }
 
   Map<String, dynamic> _decode(http.Response response) {
