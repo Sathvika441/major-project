@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/device/device_model.dart';
 import '../../../repositories/device/device_repository.dart';
+import '../widgets/iot_device_controls.dart';
 import '../../../widgets/app_navigation_scaffold.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../farm/screens/farm_management_screen.dart';
@@ -438,6 +439,8 @@ class _DeviceCard extends StatelessWidget {
                   ),
                 ],
               ),
+            const SizedBox(height: 8),
+            IoTDeviceControls(deviceId: device.deviceId),
           ],
         ),
       ),
