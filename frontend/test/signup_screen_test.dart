@@ -19,7 +19,7 @@ void main() {
 
     expect(find.text('Join ArecaSmart'), findsOneWidget);
     expect(find.byType(TextFormField), findsNWidgets(5));
-    expect(find.text('Create account'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, 'Create account'), findsOneWidget);
     expect(
       find.text(
         'I agree to the Terms of Service and Privacy Policy for agricultural data usage.',
@@ -31,11 +31,15 @@ void main() {
   testWidgets('registration form validates required fields', (tester) async {
     await _pumpSignupScreen(tester);
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Create account'));
+    final createAccountButton =
+        find.widgetWithText(ElevatedButton, 'Create account');
+    await tester.ensureVisible(createAccountButton);
+    await tester.pumpAndSettle();
+    await tester.tap(createAccountButton);
     await tester.pumpAndSettle();
 
-    expect(find.text('Name is required'), findsOneWidget);
-    expect(find.text('Email is required'), findsOneWidget);
+    expect(find.text('Full name is required.'), findsOneWidget);
+    expect(find.text('Email address is required.'), findsOneWidget);
   });
 }
 
