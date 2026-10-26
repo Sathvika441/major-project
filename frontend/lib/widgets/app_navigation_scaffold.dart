@@ -132,11 +132,23 @@ class AppNavigationScaffold extends ConsumerWidget {
                   )
                 : null,
             title: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title),
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: false,
+                ),
                 if (subtitle != null)
-                  Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
+                  Text(
+                    subtitle!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
               ],
             ),
             actions: [
