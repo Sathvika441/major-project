@@ -63,7 +63,8 @@ class _IoTDeviceControlsState extends ConsumerState<IoTDeviceControls> {
   }
 
   Future<void> _showHistory() async {
-    setState(() => _acting = true);
+    if (_acting) return;
+    setState(() { _acting = true; _error = null; });
     try {
       final result = await ref.read(backendApiProvider).getIoTReadings(widget.deviceId, limit: 50);
       if (!mounted) return;
