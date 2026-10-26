@@ -75,11 +75,22 @@ def owns_device(uid: str, device_id: str) -> bool:
         return False
     doc = docs[0]
     data = doc.to_dict() or {}
-    return (
-        doc.reference.path == f"users/{uid}/devices/{doc.id}"
-        and data.get("userId") == uid
-        and data.get("isActive", True) is True
+    path = doc.reference.path.split("/")
+    if (
+        len(path) != 6
+        or path[0] != "users"
+        or path[1] != uid
+        or path[2] != "farms"
+        or path[4] != "devices"
+        or data.get("isActive", True) is not True
+    ):
+        return False
+    farm = (
+        db.collection("users").document(uid)
+        .collection("farms").document(path[3]).get()
     )
+    farm_data = farm.to_dict() or {}
+    return farm.exists and farm_data.get("isActive", True) is True
 
 
 def save_reading(reading: dict[str, Any], status: dict[str, Any] | None = None) -> None:
@@ -87,7 +98,7 @@ def save_reading(reading: dict[str, Any], status: dict[str, Any] | None = None) 
 
     Canonical relationships:
     - users/{uid}/farms/{farmId}: farm profile
-    - users/{uid}/devices/{deviceDocumentId}: user-owned registered device
+    - users/{uid}/farms/{farmId}/devices/{deviceDocumentId}: farm-owned registered device
     - iot_devices/{deviceId}: backend device snapshot and farm link
     - iot_devices/{deviceId}/readings/{readingId}: durable telemetry history
 
@@ -114,8 +125,16 @@ def save_reading(reading: dict[str, Any], status: dict[str, Any] | None = None) 
 
     # Resolve the registered farm under the same owner. The Flutter registration
     # is the source of truth; never trust telemetry to overwrite its farm link.
-    registered_uid = registered.get("userId")
-    registered_farm_id = registered.get("farmId")
+    device_path = device_ref.reference.path.split("/") if device_ref is not None else []
+    registered_uid = (
+        device_path[1]
+        if len(device_path) == 6
+        and device_path[0] == "users"
+        and device_path[2] == "farms"
+        and device_path[4] == "devices"
+        else None
+    )
+    registered_farm_id = device_path[3] if registered_uid else None
     telemetry_farm_id = reading.get("farm_id")
 
     if device_ref is not None and (
