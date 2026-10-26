@@ -94,6 +94,13 @@ Then follow the backend dependency and run instructions maintained in that direc
 - Kept connection status, farm association, available sensor readings, and irrigation safety controls visible.
 - Validation note: source was updated on GitHub; Flutter analysis/tests have not been run.
 
+### 2026-10-27 — Align device card contents
+
+- Standardized the farm name and device ID into a clear stacked metadata section.
+- Changed irrigation action buttons to a consistent full-width vertical layout so their left and right edges align.
+- Kept Emergency stop and History together in a balanced two-column row.
+- Validation note: source was updated on GitHub; Flutter analysis/tests have not been run.
+
 ## Branch and contribution workflow
 
 Current working branch for these improvements: `feature/bug-fixes-improvements`.
