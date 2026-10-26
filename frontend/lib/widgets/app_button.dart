@@ -25,7 +25,6 @@ class AppButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     final foregroundColor =
         type == AppButtonType.outline || type == AppButtonType.text
         ? theme.colorScheme.primary
@@ -68,21 +67,13 @@ class AppButton extends StatelessWidget {
     );
 
     final buttonWidth = width ?? double.infinity;
-    final buttonStyle = ButtonStyle(
-      minimumSize: WidgetStatePropertyAll(Size(buttonWidth, height)),
-      padding: const WidgetStatePropertyAll(
-        EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      ),
-      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-    );
-
     switch (type) {
       case AppButtonType.primary:
         return ElevatedButton(
           onPressed: isLoading ? null : onPressed,
           style: ElevatedButton.styleFrom(
             minimumSize: Size(buttonWidth, height),
-            padding: buttonStyle.padding?.resolve({}),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
           child: childContent,
