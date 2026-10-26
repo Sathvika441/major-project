@@ -240,11 +240,10 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
 
   Widget _hero(BuildContext context, WeatherData? weather) {
     final scheme = Theme.of(context).colorScheme;
+    final heroRadius = BorderRadius.circular(26);
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
       decoration: BoxDecoration(
-        color: scheme.primary.withValues(alpha: 0.34),
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: heroRadius,
         border: Border.all(color: scheme.primary.withValues(alpha: 0.4)),
         boxShadow: [
           BoxShadow(
@@ -254,9 +253,37 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: ClipRRect(
+        borderRadius: heroRadius,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Image.asset(
+                'assets/images/25_Areca-nut-trees_Rao_s-plantation_Sharmila-V-768x512.jpg.jpeg',
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+              ),
+            ),
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      scheme.primary.withValues(alpha: 0.90),
+                      const Color(0xD900100B),
+                      const Color(0xB3000805),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
           Row(
             children: [
               Expanded(
@@ -365,7 +392,11 @@ class _WeatherScreenState extends ConsumerState<WeatherScreen> {
               ),
             ],
           ),
-        ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
