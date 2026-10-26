@@ -36,8 +36,8 @@ void main() {
       password: 'Password123',
     );
 
-    expect(
-      () => authService.signUp(
+    await expectLater(
+      authService.signUp(
         name: 'Another Farmer',
         email: email.toUpperCase(),
         phone: '+919876543211',
