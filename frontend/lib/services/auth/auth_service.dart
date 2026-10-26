@@ -157,13 +157,31 @@ class FirebaseAuthService implements AuthService {
     provider.addScope('email');
     provider.setCustomParameters({'prompt': 'select_account'});
 
-    final credential = await _auth.signInWithPopup(provider);
-    final user = credential.user;
-    if (user == null) {
-      throw StateError('Google sign-in completed without a Firebase user.');
-    }
+    try {
+      final credential = await _auth.signInWithPopup(provider);
+      final user = credential.user;
+      if (user == null) {
+        throw StateError('Google sign-in completed without a Firebase user.');
+      }
 
-    return _userModel(user);
+      return await _userModel(user);
+    } on FirebaseAuthException catch (authError) {
+      // Preserve the Firebase error code so the UI can distinguish an actual
+      // auth/configuration error from a user closing the popup.
+      AppLogger.error(
+        'Google sign-in failed (' + authError.code + ')',
+        tag: 'AuthService',
+        error: authError,
+      );
+      rethrow;
+    } catch (error) {
+      AppLogger.error(
+        'Google sign-in could not be completed',
+        tag: 'AuthService',
+        error: error,
+      );
+      rethrow;
+    }
   }
 
   @override
