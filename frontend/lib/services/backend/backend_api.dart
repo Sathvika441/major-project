@@ -165,37 +165,20 @@ class BackendApi {
     Map<String, dynamic>? body,
   }) async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      throw const BackendApiException(401, 'Please sign in to control this device.');
-    }
-
+    if (user == null) throw const BackendApiException(401, 'Please sign in to control this device.');
     String? token;
     try {
       token = await user.getIdToken(true);
     } on FirebaseAuthException catch (error) {
-      throw BackendApiException(
-        401,
-        error.code == 'user-token-expired'
-            ? 'Your session expired. Please sign in again.'
-            : 'Could not refresh your Firebase session. Please sign in again.',
-      );
+      throw BackendApiException(401, error.code == 'user-token-expired' ? 'Your session expired. Please sign in again.' : 'Could not refresh your Firebase session. Please sign in again.');
     }
-    if (token == null || token.isEmpty) {
-      throw const BackendApiException(401, 'Could not obtain a Firebase ID token. Please sign in again.');
-    }
-
+    if (token == null || token.isEmpty) throw const BackendApiException(401, 'Could not obtain a Firebase ID token. Please sign in again.');
     final uri = path.startsWith('http') ? Uri.parse(path) : Uri.parse('$baseUrl$path');
-    final headers = <String, String>{
-      'Authorization': 'Bearer $token',
-      if (body != null) 'Content-Type': 'application/json',
-    };
+    final headers = <String, String>{'Authorization': 'Bearer $token', if (body != null) 'Content-Type': 'application/json'};
     switch (method) {
-      case 'GET':
-        return _client.get(uri, headers: headers);
-      case 'POST':
-        return _client.post(uri, headers: headers, body: jsonEncode(body ?? {}));
-      default:
-        throw UnsupportedError('Unsupported authorized HTTP method: $method');
+      case 'GET': return _client.get(uri, headers: headers);
+      case 'POST': return _client.post(uri, headers: headers, body: jsonEncode(body ?? {}));
+      default: throw UnsupportedError('Unsupported authorized HTTP method: $method');
     }
   }
 
