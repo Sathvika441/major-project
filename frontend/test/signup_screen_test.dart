@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:major_proj_1/core/storage/local_storage_service.dart';
 import 'package:major_proj_1/features/auth/controllers/auth_controller.dart';
 import 'package:major_proj_1/features/auth/screens/signup_screen.dart';
+import 'package:major_proj_1/models/farm/farm_model.dart';
 import 'package:major_proj_1/models/user/user_model.dart';
+import 'package:major_proj_1/repositories/farm/farm_repository.dart';
 import 'package:major_proj_1/services/auth/auth_service.dart';
 import 'package:major_proj_1/services/otp/otp_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,6 +32,36 @@ class _FakeAuthService implements AuthService {
   Future<UserModel?> getCurrentUser() async => null;
   @override
   Future<void> logout() async {}
+}
+
+class _FakeFarmRepository implements FarmRepository {
+  @override
+  Future<List<FarmModel>> getFarms(String userId) async => [];
+
+  @override
+  Stream<List<FarmModel>> watchFarms(String userId) => const Stream.empty();
+
+  @override
+  Future<FarmModel> saveFarm(FarmModel farm) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> deactivateFarm(String userId, String farmId) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<List<PlotModel>> getPlots(String userId, String farmId) async => [];
+
+  @override
+  Future<PlotModel> savePlot(String userId, PlotModel plot) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> deactivatePlot(
+    String userId,
+    String farmId,
+    String plotId,
+  ) async => throw UnimplementedError();
 }
 
 void main() {
@@ -57,6 +89,7 @@ void main() {
         overrides: [
           localStorageServiceProvider.overrideWithValue(storage),
           authServiceProvider.overrideWithValue(_FakeAuthService()),
+          farmRepositoryProvider.overrideWithValue(_FakeFarmRepository()),
           otpServiceProvider.overrideWith((ref) => OtpService(storage.raw)),
         ],
         child: MaterialApp.router(routerConfig: router),
