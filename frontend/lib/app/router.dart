@@ -162,8 +162,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         return location == '/farm-details' ? null : '/farm-details';
       }
 
+      // Phase A's location form duplicated fields already collected by
+      // Farm Details. Skip the legacy onboarding screen and send incomplete
+      // registrations straight to the single consolidated farm form.
       if (!phaseADone) {
-        return location == '/onboarding' ? null : '/onboarding';
+        return location == '/farm-details' ? null : '/farm-details';
       }
 
       if (!phaseBDone) {
