@@ -80,3 +80,7 @@ Reference sketch: `hardware/esp32/ArecaSmart_Irrigation.ino`. It sends validated
 - Durable sensor history: `iot_devices/{device_id}/readings/{autoId}`.
 
 The backend uses Firebase Admin credentials and does not depend on client Firestore rules for these server-side writes. Configure Firestore access and backend credentials before enabling app controls.
+
+## Local development status notes
+
+The `/health` response reports `firestore_iot` and `iot` independently. `firestore_iot: enabled` means the Firebase Admin/Firestore client can be configured; it does not by itself prove that a particular user owns a device. `iot: unconfigured` means `ARECASMART_IOT_API_TOKEN` is unset or blank. Set this server-side token to a long random secret and configure the same value on the trusted ESP32; never embed it in Flutter or commit it to source control. Until this token is configured, ESP32 device-token routes remain disabled (HTTP 503).
