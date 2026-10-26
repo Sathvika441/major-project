@@ -81,12 +81,13 @@ def owns_device(uid: str, device_id: str) -> bool:
         and data.get("isActive", True) is True
     )
 
+
 def save_reading(reading: dict[str, Any], status: dict[str, Any] | None = None) -> None:
     """Persist telemetry and mirror it to the single registered device record.
 
     Canonical relationships:
     - users/{uid}/farms/{farmId}: farm profile
-    - users/{uid}/devices/{documentId}: user-owned registered device
+    - users/{uid}/devices/{deviceDocumentId}: user-owned registered device
     - iot_devices/{deviceId}: backend device snapshot and farm link
     - iot_devices/{deviceId}/readings/{readingId}: durable telemetry history
 
@@ -110,38 +111,43 @@ def save_reading(reading: dict[str, Any], status: dict[str, Any] | None = None) 
     docs = _device_docs(db, device_id)
     device_ref = docs[0].reference if len(docs) == 1 else None
     registered = (docs[0].to_dict() or {}) if device_ref is not None else {}
-    # An inactive or incomplete registration must not receive telemetry links.
-    if device_ref is not None and (
-        registered.get("isActive", True) is not True
-        or not registered.get("userId")
-        or not registered.get("farmId")
-    ):
-        device_ref = None
-        registered = {}
+
+    # Resolve the registered farm under the same owner. The Flutter registration
+    # is the source of truth; never trust telemetry to overwrite its farm link.
     registered_uid = registered.get("userId")
     registered_farm_id = registered.get("farmId")
     telemetry_farm_id = reading.get("farm_id")
 
-    # Resolve the registered farm under the same owner. Do not write a farm
-    # link if the user/farm relationship is inconsistent or no longer active.
-    if device_ref is not None:
-        valid_farm = False
-        if registered_uid and registered_farm_id:
-            farm_snapshot = (
-                db.collection("users")
-                .document(str(registered_uid))
-                .collection("farms")
-                .document(str(registered_farm_id))
-                .get()
-            )
-            farm_data = farm_snapshot.to_dict() or {}
-            valid_farm = farm_snapshot.exists and farm_data.get("isActive", True) is True
+    if device_ref is not None and (
+        registered.get("isActive", True) is not True
+        or not registered_uid
+        or not registered_farm_id
+    ):
+        device_ref = None
+        registered = {}
+        registered_uid = None
+        registered_farm_id = None
+
+    valid_farm = False
+    if device_ref is not None and registered_uid and registered_farm_id:
+        farm_snapshot = (
+            db.collection("users")
+            .document(str(registered_uid))
+            .collection("farms")
+            .document(str(registered_farm_id))
+            .get()
+        )
+        farm_data = farm_snapshot.to_dict() or {}
+        valid_farm = farm_snapshot.exists and farm_data.get("isActive", True) is True
         if not valid_farm:
+            # Do not attach a stale or cross-user farm relationship.
+            device_ref = None
+            registered = {}
+            registered_uid = None
             registered_farm_id = None
 
-    # Keep the user-owned registration as the source of truth for user/farm
-    # relationships. Only fall back to telemetry farm_id for unregistered
-    # prototype sensors.
+    # The registered app record wins over telemetry. For an unregistered
+    # prototype sensor only, the incoming farm_id may seed the IoT snapshot.
     farm_id = registered_farm_id if device_ref is not None else telemetry_farm_id
     data["farm_id"] = farm_id
     root_payload = {
@@ -156,19 +162,24 @@ def save_reading(reading: dict[str, Any], status: dict[str, Any] | None = None) 
     if farm_id:
         root_payload["farmId"] = farm_id
     if status is not None:
-        root_payload["status"] = _clean(status)
+        # Ensure the status mirrors the resolved registered relationship rather
+        # than a null farm_id left in in-memory state.
+        status_payload = _clean(status)
+        status_payload["farm_id"] = farm_id
+        root_payload["status"] = status_payload
     root.set(root_payload, merge=True)
     root.collection("readings").document().set(data)
 
     # DeviceModel consumes camelCase reading fields with an ISO timestamp.
+    reading_time = _as_datetime(observed_at) or received_at
     app_reading = {
         "soilMoisture": reading.get("soil_moisture_percent"),
         "temperature": reading.get("temperature_c"),
         "humidity": reading.get("humidity_percent"),
         "rainfall": reading.get("rainfall_mm"),
-        "timestamp": (_as_datetime(observed_at) or received_at).isoformat()
-        if isinstance((_as_datetime(observed_at) or received_at), datetime)
-        else str(_as_datetime(observed_at) or received_at),
+        "timestamp": reading_time.isoformat()
+        if isinstance(reading_time, datetime)
+        else str(reading_time),
     }
 
     # Avoid assigning readings to multiple users if data contains duplicate IDs.
@@ -184,15 +195,30 @@ def save_reading(reading: dict[str, Any], status: dict[str, Any] | None = None) 
             patch["farmId"] = farm_id
         device_ref.set(patch, merge=True)
 
+
 def save_status(device_id: str, status: dict[str, Any]) -> None:
     db = _client()
     if db is None:
         return
-    db.collection("iot_devices").document(device_id).set({
+    snapshot = db.collection("iot_devices").document(device_id).get()
+    existing = snapshot.to_dict() or {}
+    previous_status = existing.get("status") if isinstance(existing.get("status"), dict) else {}
+    merged_status = {**previous_status, **_clean(status)}
+    # Status polling should not erase a known farm relationship with the
+    # in-memory service's None value.
+    if not merged_status.get("farm_id") and existing.get("farmId"):
+        merged_status["farm_id"] = existing["farmId"]
+    payload = {
         "deviceId": device_id,
-        "status": _clean(status),
+        "status": merged_status,
         "updatedAt": firestore.SERVER_TIMESTAMP,
-    }, merge=True)
+    }
+    if existing.get("farmId"):
+        payload["farmId"] = existing["farmId"]
+    if existing.get("userId"):
+        payload["userId"] = existing["userId"]
+    root_ref = db.collection("iot_devices").document(device_id)
+    root_ref.set(payload, merge=True)
 
 
 def get_status(device_id: str) -> dict[str, Any] | None:
@@ -206,7 +232,6 @@ def get_status(device_id: str) -> dict[str, Any] | None:
     return _clean(data.get("status")) if data.get("status") else None
 
 
-
 def get_latest_reading(device_id: str) -> dict[str, Any] | None:
     db = _client()
     if db is None:
@@ -217,6 +242,7 @@ def get_latest_reading(device_id: str) -> dict[str, Any] | None:
     data = snapshot.to_dict() or {}
     latest = data.get("latestReading")
     return _clean(latest) if isinstance(latest, dict) else None
+
 
 def get_history(device_id: str, limit: int = 100) -> dict[str, Any]:
     db = _client()
