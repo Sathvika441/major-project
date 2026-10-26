@@ -78,6 +78,14 @@ Then follow the backend dependency and run instructions maintained in that direc
 - Removed the `/onboarding` route and changed the incomplete-profile redirect to `/farm-details`.
 - Changes are on branch `feature/bug-fixes-improvements`; Flutter analysis/tests have not been run for this change.
 
+### 2026-10-27 — Preserve farm association in IoT backend status
+
+- Updated `backend/app/firestore_iot_store.py` to resolve the authoritative farm ID from the Flutter device registration path before saving IoT status.
+- Persisted the resolved farm association as both `farmId` and `farm_id` at the IoT snapshot root, and as `farm_id` inside the backend status object, so existing Flutter and backend readers can consume the same relationship.
+- Fixed a telemetry mapping path lookup to use the Firestore `DocumentReference.path` directly.
+- This fixes the backend mapping path for future status writes; it does **not** automatically repair existing Firestore documents or generate sensor readings. Existing records may need a status refresh or a controlled data migration.
+- Validation note: source was updated on GitHub; backend tests and lint/type checks have not been run.
+
 ## Branch and contribution workflow
 
 Current working branch for these improvements: `feature/bug-fixes-improvements`.
