@@ -35,24 +35,35 @@ class FirestoreDeviceRepository implements DeviceRepository {
 
   @override
   Stream<List<DeviceModel>> watchDevices(String userId) {
-    return _devices(userId)
-        .where('isActive', isEqualTo: true)
+    // The registration lives under a farm. userId is retained as a query
+    // helper; the parent users/{uid}/farms/{farmId} path is authoritative.
+    return db.collectionGroup('devices')
+        .where('userId', isEqualTo: userId)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((d) => DeviceModel.fromMap({...d.data(), 'id': d.id}))
-              .toList(),
-        );
+        .map((snapshot) => snapshot.docs
+            .where((doc) => doc.data()['isActive'] != false)
+            .map((doc) {
+              final path = doc.reference.path.split('/');
+              final farmId = path.length == 6 ? path[3] : '';
+              return DeviceModel.fromMap({
+                ...doc.data(),
+                'id': doc.id,
+                'userId': userId,
+                'farmId': farmId,
+              });
+            })
+            .where((device) => device.farmId.isNotEmpty)
+            .toList());
   }
 
   @override
   Future<DeviceModel> register(DeviceModel device) async {
     final normalizedId = device.deviceId.trim();
-    if (normalizedId.length < 3 ||
+    if (normalizedId.length < 1 ||
         normalizedId.length > 50 ||
         !RegExp(r'^[A-Za-z0-9_-]+$').hasMatch(normalizedId)) {
       throw ArgumentError(
-        'Device ID must contain 3–50 letters, numbers, hyphens or underscores.',
+        'Device ID must contain 1–50 letters, numbers, hyphens or underscores.',
       );
     }
     if (device.userId.trim().isEmpty ||
@@ -83,10 +94,12 @@ class FirestoreDeviceRepository implements DeviceRepository {
     // A client-side collectionGroup query spans every user's private devices
     // and is normally rejected by Firestore security rules. Cross-user physical
     // ID uniqueness must be enforced by a trusted backend, not a client query.
-    final matches = await _devices(device.userId)
-        .where('deviceId', isEqualTo: normalizedId)
-        .get();
-    final conflicting = matches.docs.where((doc) => doc.id != device.id);
+    final farmSnapshots = await _farms(device.userId).get();
+    final matches = await Future.wait(farmSnapshots.docs.map((farm) =>
+        _devices(device.userId, farm.id)
+            .where('deviceId', isEqualTo: normalizedId)
+            .get()));
+    final conflicting = matches.expand((snapshot) => snapshot.docs).where((doc) => doc.id != device.id);
     if (conflicting.isNotEmpty) {
       throw StateError('This device ID is already registered to your account.');
     }
