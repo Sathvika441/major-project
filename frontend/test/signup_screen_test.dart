@@ -3,12 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:major_proj_1/core/storage/local_storage_service.dart';
-// import 'package:major_proj_1/features/auth/controllers/auth_controller.dart';
+import 'package:major_proj_1/features/auth/controllers/auth_controller.dart';
 import 'package:major_proj_1/features/auth/screens/signup_screen.dart';
 import 'package:major_proj_1/models/user/user_model.dart';
 import 'package:major_proj_1/services/auth/auth_service.dart';
 import 'package:major_proj_1/services/otp/otp_service.dart';
-// import 'package:major_proj_1/services/auth/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _FakeAuthService implements AuthService {
@@ -34,7 +33,7 @@ class _FakeAuthService implements AuthService {
 }
 
 void main() {
-  testWidgets('registration button creates an account and opens dashboard', (
+  testWidgets('registration button creates an account and opens OTP verification', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
@@ -73,7 +72,7 @@ void main() {
     await tester.enterText(fields.at(3), 'Password123');
     await tester.enterText(fields.at(4), 'Password123');
     await tester.tap(find.byType(Checkbox));
-    await tester.ensureVisible(find.text('Register Account'));
+    await tester.ensureVisible(find.text('Create account'));
     await tester.tap(find.text('Create account'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
