@@ -114,10 +114,27 @@ def save_reading(reading: dict[str, Any], status: dict[str, Any] | None = None) 
     registered_farm_id = registered.get("farmId")
     telemetry_farm_id = reading.get("farm_id")
 
+    # Resolve the registered farm under the same owner. Do not write a farm
+    # link if the user/farm relationship is inconsistent or no longer active.
+    if device_ref is not None:
+        valid_farm = False
+        if registered_uid and registered_farm_id:
+            farm_snapshot = (
+                db.collection("users")
+                .document(str(registered_uid))
+                .collection("farms")
+                .document(str(registered_farm_id))
+                .get()
+            )
+            farm_data = farm_snapshot.to_dict() or {}
+            valid_farm = farm_snapshot.exists and farm_data.get("isActive", True) is True
+        if not valid_farm:
+            registered_farm_id = None
+
     # Keep the user-owned registration as the source of truth for user/farm
     # relationships. Only fall back to telemetry farm_id for unregistered
     # prototype sensors.
-    farm_id = registered_farm_id or telemetry_farm_id
+    farm_id = registered_farm_id if device_ref is not None else telemetry_farm_id
     data["farm_id"] = farm_id
     root_payload = {
         "deviceId": device_id,
