@@ -26,9 +26,16 @@ class AppButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    Widget childContent = Row(
+    final foregroundColor =
+        type == AppButtonType.outline || type == AppButtonType.text
+        ? theme.colorScheme.primary
+        : type == AppButtonType.secondary
+        ? Colors.white
+        : theme.colorScheme.onPrimary;
+
+    final childContent = Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: MainAxisSize.max,
       children: [
         if (isLoading) ...[
           SizedBox(
@@ -36,67 +43,82 @@ class AppButton extends StatelessWidget {
             height: 20,
             child: CircularProgressIndicator(
               strokeWidth: 2.5,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                type == AppButtonType.outline || type == AppButtonType.text
-                    ? theme.primaryColor
-                    : Colors.white,
-              ),
+              valueColor: AlwaysStoppedAnimation<Color>(foregroundColor),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
         ] else if (icon != null) ...[
           Icon(icon, size: 20),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
         ],
-        Text(
-          text,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+        Flexible(
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            softWrap: false,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
+          ),
         ),
       ],
     );
 
-    Widget button;
+    final buttonWidth = width ?? double.infinity;
+    final buttonStyle = ButtonStyle(
+      minimumSize: WidgetStatePropertyAll(Size(buttonWidth, height)),
+      padding: const WidgetStatePropertyAll(
+        EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      ),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    );
+
     switch (type) {
       case AppButtonType.primary:
-        button = ElevatedButton(
+        return ElevatedButton(
           onPressed: isLoading ? null : onPressed,
           style: ElevatedButton.styleFrom(
-            minimumSize: Size(width ?? double.infinity, height),
+            minimumSize: Size(buttonWidth, height),
+            padding: buttonStyle.padding?.resolve({}),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
           child: childContent,
         );
-        break;
       case AppButtonType.secondary:
-        button = ElevatedButton(
+        return ElevatedButton(
           onPressed: isLoading ? null : onPressed,
           style: ElevatedButton.styleFrom(
             backgroundColor: theme.colorScheme.secondary,
             foregroundColor: Colors.white,
-            minimumSize: Size(width ?? double.infinity, height),
+            minimumSize: Size(buttonWidth, height),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
           child: childContent,
         );
-        break;
       case AppButtonType.outline:
-        button = OutlinedButton(
+        return OutlinedButton(
           onPressed: isLoading ? null : onPressed,
           style: OutlinedButton.styleFrom(
-            minimumSize: Size(width ?? double.infinity, height),
+            minimumSize: Size(buttonWidth, height),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
           child: childContent,
         );
-        break;
       case AppButtonType.text:
-        button = TextButton(
+        return TextButton(
           onPressed: isLoading ? null : onPressed,
           style: TextButton.styleFrom(
-            minimumSize: Size(width ?? double.infinity, height),
+            minimumSize: Size(buttonWidth, height),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
           child: childContent,
         );
-        break;
     }
-
-    return button;
   }
 }
