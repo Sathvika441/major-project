@@ -139,17 +139,12 @@ def health():
         logger.warning("ML model unavailable: %s", exc)
         ml_status = "unavailable"
 
-    # Report configured Firebase settings without initializing a Firestore
-    # client during every health request. Actual access is verified separately.
-    firebase_configured = bool(
-        os.getenv("FIREBASE_PROJECT_ID", "").strip()
-        and os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "").strip()
-    )
+    # The ESP32 shared-token API is separate from Firebase-authenticated app APIs.
     return {
         "status": "ok",
         "ml": ml_status,
         "iot": "enabled" if os.getenv("ARECASMART_IOT_API_TOKEN", "").strip() else "unconfigured",
-        "firestore_iot": "configured" if firebase_configured else "unconfigured",
+        "firestore_iot": "enabled" if firestore_iot_store.firebase_ready() else "unconfigured",
     }
 
 @app.get("/api/v1/weather")
