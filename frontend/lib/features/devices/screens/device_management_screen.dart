@@ -415,12 +415,13 @@ class _DeviceCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Icon(Icons.agriculture_outlined, size: 14, color: scheme.primary),
                 const SizedBox(width: 5),
                 Expanded(
                   child: Text(
-                    farmName,
+                    'Farm: $farmName',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -428,16 +429,14 @@ class _DeviceCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    'ID: ${device.deviceId}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
               ],
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Device ID: ${device.deviceId}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall,
             ),
             if (reading != null)
               Padding(
