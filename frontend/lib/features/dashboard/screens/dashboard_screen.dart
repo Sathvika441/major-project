@@ -139,7 +139,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [scheme.primary, scheme.primaryContainer],
+              colors: [
+                scheme.primary,
+                Color.lerp(scheme.primary, Colors.black, 0.16)!,
+              ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -483,8 +486,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             const SizedBox(height: 16),
             if (hasImage) ...[
               Container(
-                height: 280,
                 width: double.infinity,
+                height: 240,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
                   color: scheme.surfaceContainerHighest,
@@ -517,34 +520,26 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 label: const Text('Upload image'),
               )
             else
-              Row(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: _mlUploading
-                          ? null
-                          : () => _predictMlImage(context),
-                      icon: _mlUploading
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.auto_awesome),
-                      label: Text(
-                        _mlUploading ? 'Predicting...' : 'Predict',
-                      ),
+                  FilledButton.icon(
+                    onPressed: _mlUploading
+                        ? null
+                        : () => _predictMlImage(context),
+                    icon: _mlUploading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.auto_awesome),
+                    label: Text(
+                      _mlUploading ? 'Predicting...' : 'Predict',
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(height: 8),
                   OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: Size.zero,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                    ),
                     onPressed: _mlUploading ? null : _clearMlPrediction,
                     icon: const Icon(Icons.close),
                     label: const Text('Clear'),
@@ -856,7 +851,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               gradient: LinearGradient(
                                 colors: [
                                   Theme.of(context).colorScheme.primary,
-                                  Theme.of(context).colorScheme.primaryContainer,
+                                  Color.lerp(
+                                    Theme.of(context).colorScheme.primary,
+                                    Colors.black,
+                                    0.16,
+                                  )!,
                                 ],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
@@ -866,6 +865,33 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.16),
+                                    borderRadius: BorderRadius.circular(99),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.sensors_rounded, size: 15, color: Colors.white),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'FARM OVERVIEW',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 0.8,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
                                 Text(
                                   'Good day, ${user?.name ?? 'Farmer'}',
                                   style: Theme.of(context)
@@ -891,7 +917,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                         fontWeight: FontWeight.w700,
                                       ),
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${farm.crop} • ${farm.sizeAcres.toStringAsFixed(1)} acres',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onPrimary
+                                            .withValues(alpha: 0.9),
+                                      ),
+                                ),
+                                const SizedBox(height: 10),
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -1109,8 +1148,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 farm.growthStageLabel == null
                                     ? 'Planting date not available'
                                     : farm.growthStageLabel! + ' • ' +
-                                      farm.cropAgeDays.toString() + ' days (' +
-                                      farm.cropAgeYears!.toStringAsFixed(1) + ' years)',
+                                      (farm.cropAgeDays?.toString() ?? '—') + ' days (' +
+                                      (farm.cropAgeYears?.toStringAsFixed(1) ?? '—') + ' years)',
                               ),
                               trailing: const Icon(Icons.auto_graph_outlined),
                             ),
@@ -1120,6 +1159,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           const SizedBox(height: 10),
                           _buildWeatherCard(context, farm),
                           const SizedBox(height: 10),
+                          if (_weather != null) ...[
+                            _buildWeatherGuidanceCard(context, _weather!),
+                            const SizedBox(height: 10),
+                          ],
                           _buildMlPredictionCard(context),
                           const SizedBox(height: 10),
                           Card(
@@ -1629,6 +1672,55 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ],
             ),
             const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: scheme.primary,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          weather.temperature == null
+                              ? 'Current conditions'
+                              : '${weather.temperature!.toStringAsFixed(0)}°C',
+                          style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                                color: Colors.white,
+                                fontSize: 42,
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          weather.weatherDescription,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Rain ${weather.next24hPrecipitationProbability.toStringAsFixed(0)}%  •  ${weather.next24hPrecipitationMm.toStringAsFixed(1)} mm expected',
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.88)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.cloud_rounded,
+                    size: 68,
+                    color: Colors.white.withValues(alpha: 0.92),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
             LayoutBuilder(
               builder: (context, constraints) {
                 final width = constraints.maxWidth < 520
@@ -1771,6 +1863,107 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           if (_lastSyncAt != null)
             Text(_timeAgo(_lastSyncAt!), style: Theme.of(context).textTheme.bodySmall),
         ],
+      ),
+    );
+  }
+
+  Widget _buildWeatherGuidanceCard(BuildContext context, WeatherData weather) {
+    final scheme = Theme.of(context).colorScheme;
+    final guidance = weather.guidance;
+    final items = [
+      (Icons.grass_outlined, 'Spraying', guidance.spraying),
+      (Icons.wb_sunny_outlined, 'Drying produce', guidance.drying),
+      (Icons.local_shipping_outlined, 'Harvest & transport', guidance.transport),
+      (Icons.water_drop_outlined, 'Irrigation', guidance.irrigation),
+    ];
+
+    Color statusColor(String status) {
+      final value = status.toLowerCase();
+      if (value.contains('avoid') || value.contains('poor') || value.contains('not')) {
+        return scheme.error;
+      }
+      if (value.contains('caution') || value.contains('watch') || value.contains('check')) {
+        return scheme.tertiary;
+      }
+      return scheme.secondary;
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Today's farm guidance",
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: scheme.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              guidance.statusLine,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            ...items.asMap().entries.map((entry) {
+              final index = entry.key;
+              final (icon, title, status) = entry.value;
+              final color = statusColor(status);
+              return Column(
+                children: [
+                  if (index > 0) Divider(height: 1, color: scheme.outlineVariant),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: scheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(13),
+                          ),
+                          child: Icon(icon, color: scheme.primary, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          constraints: const BoxConstraints(maxWidth: 150),
+                          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.13),
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                          child: Text(
+                            status,
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: color,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }),
+          ],
+        ),
       ),
     );
   }
