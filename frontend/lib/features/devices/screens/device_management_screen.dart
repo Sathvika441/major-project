@@ -146,7 +146,7 @@ class DeviceManagementScreen extends ConsumerWidget {
                     controller: id,
                     decoration: const InputDecoration(
                       labelText: 'Device ID',
-                      hintText: 'Example: SENSOR-001',
+                      hintText: 'Example: 2 or SENSOR-001',
                     ),
                     maxLength: 50,
                     textCapitalization: TextCapitalization.characters,
@@ -158,8 +158,8 @@ class DeviceManagementScreen extends ConsumerWidget {
                     validator: (value) {
                       final candidate = value?.trim() ?? '';
                       if (candidate.isEmpty) return 'Enter the device ID';
-                      if (candidate.length < 3 || candidate.length > 50)
-                        return 'Use 3–50 characters';
+                      if (candidate.isEmpty || candidate.length > 50)
+                        return 'Use 1–50 characters';
                       if (!RegExp(r'^[A-Za-z0-9_-]+$').hasMatch(candidate)) {
                         return 'Use letters, numbers, hyphens or underscores only';
                       }
