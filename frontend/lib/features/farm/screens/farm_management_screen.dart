@@ -36,6 +36,7 @@ class FarmManagementScreen extends ConsumerWidget {
           ),
         );
         if (!context.mounted) return;
+        if (!context.mounted) return;
         ref.invalidate(farmsProvider);
         return;
       }
