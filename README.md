@@ -582,6 +582,49 @@ Weather service:
 backend/app/weather_service.py
 ~~~
 
+## Data architecture and ownership
+
+ArecaSmart uses Firebase Authentication for identity and Cloud Firestore for user-owned farm/device documents. The backend uses Firebase Admin with credentials supplied through environment variables. Keep service-account JSON files outside the repository.
+
+### Canonical relationships
+
+```text
+Firebase Authentication
+  user UID
+    |
+    +-- users/{uid}/farms/{farmId}
+    |      Farm profile: location, area, crop, soil and planting metadata
+    |        |
+    |        +-- plots/{plotId}
+    |               Plot metadata; optional deviceId association
+    |
+    +-- users/{uid}/devices/{deviceDocumentId}
+           Device registration: userId, farmId, plotId, deviceId, active state
+                 |
+                 | deviceId (unique physical controller ID)
+                 v
+           iot_devices/{deviceId}
+                 |-- latestReading
+                 |-- status snapshot
+                 |-- userId / farmId link when one unique registration exists
+                 |
+                 +-- readings/{readingId}
+                       Durable telemetry history
+```
+
+### Relationship rules
+
+- **User is the owner boundary.** Farms and registered devices are stored beneath `users/{uid}`. Requests for app-level device status, history and controls must include a Firebase ID token and pass device-ownership checks.
+- **Farm is the operational parent.** A device's `farmId` identifies the farm it is assigned to; `plotId` may identify a more specific plot. Keep these IDs consistent with the farm/plot documents owned by the same UID.
+- **The physical `deviceId` links the controller to its app registration.** It should be unique across active registrations. The backend refuses ambiguous duplicate matches rather than choosing an owner.
+- **Telemetry is separated from registration.** Device registration remains in `users/{uid}/devices/{deviceDocumentId}`; the server's device snapshot and append-only reading history live under `iot_devices/{deviceId}`. Backend ingestion mirrors the latest reading to the single matching registered device for the UI.
+- **The registration defines user/farm links.** When there is exactly one matching registration, its `userId` and `farmId` are the authoritative relationship. Incoming sensor `farm_id` is only a fallback for unregistered prototype sensors, not a way to change a registered device's farm.
+- **Avoid deleting data by accident.** Current farm/plot/device flows use soft deactivation through `isActive` where implemented. Historical telemetry should remain associated with its physical device ID unless a deliberate retention policy is introduced.
+
+### Important current boundary
+
+Sensor readings are persisted in Firestore. Irrigation command/settings evaluation is still in memory and resets to safe pump-OFF defaults after a backend restart. Firestore status snapshots are not yet a full durable command/settings store. The data model therefore supports the app-to-device relationship and history, but does not yet provide multi-instance command-state consistency.
+
 ## API endpoints
 
 | Method | Endpoint | Purpose |
