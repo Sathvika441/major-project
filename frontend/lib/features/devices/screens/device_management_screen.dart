@@ -235,24 +235,41 @@ class DeviceManagementScreen extends ConsumerWidget {
                   : () async {
                       if (!key.currentState!.validate()) return;
                       final uid = ref.read(authControllerProvider).user!.uid;
-                      await ref
-                          .read(deviceRepositoryProvider)
-                          .register(
-                            DeviceModel(
-                              id:
-                                  'device_' +
-                                  DateTime.now().microsecondsSinceEpoch
-                                      .toString(),
-                              userId: uid,
-                              farmId: selectedFarmId!,
-                              plotId: '',
-                              deviceId: id.text.trim(),
-                              name: name.text.trim(),
-                              lastSeen: DateTime.now(),
+                      try {
+                        await ref
+                            .read(deviceRepositoryProvider)
+                            .register(
+                              DeviceModel(
+                                id:
+                                    'device_' +
+                                    DateTime.now().microsecondsSinceEpoch
+                                        .toString(),
+                                userId: uid,
+                                farmId: selectedFarmId!,
+                                plotId: '',
+                                deviceId: id.text.trim(),
+                                name: name.text.trim(),
+                                lastSeen: DateTime.now(),
+                              ),
+                            );
+                        ref.invalidate(devicesProvider);
+                        ref.invalidate(farmsProvider);
+                        if (ctx.mounted) Navigator.pop(ctx);
+                      } on FirebaseException catch (error) {
+                        if (!ctx.mounted) return;
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Could not register device: ${error.message ?? error.code}',
                             ),
-                          );
-                      ref.invalidate(devicesProvider);
-                      if (ctx.mounted) Navigator.pop(ctx);
+                          ),
+                        );
+                      } catch (error) {
+                        if (!ctx.mounted) return;
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          SnackBar(content: Text(error.toString())),
+                        );
+                      }
                     },
               child: const Text('Register'),
             ),
