@@ -138,6 +138,10 @@ def health():
     except Exception as exc:
         logger.warning("ML model unavailable: %s", exc)
         ml_status = "unavailable"
+
+    # The device-token API used by the ESP32 and the Firebase-authenticated
+    # app API are separate integrations. A missing device token must not be
+    # interpreted as a Firestore configuration failure.
     return {
         "status": "ok",
         "ml": ml_status,
