@@ -152,7 +152,10 @@ class AppNavigationScaffold extends ConsumerWidget {
               ],
             ),
             actions: [
-              ...?actions,
+              // On narrow phones / resized browser windows, page-specific
+              // actions can consume the entire toolbar. Keep the overflow menu
+              // available and show optional actions only when they can fit.
+              if (constraints.maxWidth >= 420) ...?actions,
               PopupMenuButton<String>(
                 tooltip: 'More options',
                 onSelected: (value) async {
