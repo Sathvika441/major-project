@@ -110,6 +110,14 @@ def save_reading(reading: dict[str, Any], status: dict[str, Any] | None = None) 
     docs = _device_docs(db, device_id)
     device_ref = docs[0].reference if len(docs) == 1 else None
     registered = (docs[0].to_dict() or {}) if device_ref is not None else {}
+    # An inactive or incomplete registration must not receive telemetry links.
+    if device_ref is not None and (
+        registered.get("isActive", True) is not True
+        or not registered.get("userId")
+        or not registered.get("farmId")
+    ):
+        device_ref = None
+        registered = {}
     registered_uid = registered.get("userId")
     registered_farm_id = registered.get("farmId")
     telemetry_farm_id = reading.get("farm_id")
