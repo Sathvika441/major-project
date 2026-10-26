@@ -23,6 +23,11 @@ class DeviceManagementScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final devices = ref.watch(devicesProvider);
+    final farms = ref.watch(farmsProvider);
+    final farmNames = {
+      for (final farm in farms.valueOrNull ?? <dynamic>[])
+        farm.id: farm.name.trim().isEmpty ? 'Unnamed farm' : farm.name.trim(),
+    };
 
     return AppNavigationScaffold(
       title: 'Devices & sensors',
@@ -107,7 +112,10 @@ class DeviceManagementScreen extends ConsumerWidget {
                           .map(
                             (device) => SizedBox(
                               width: width,
-                              child: _DeviceCard(device: device),
+                              child: _DeviceCard(
+                                device: device,
+                                farmName: farmNames[device.farmId] ?? 'Farm not found',
+                              ),
                             ),
                           )
                           .toList(),
@@ -358,8 +366,9 @@ class _SummaryMetric extends StatelessWidget {
 
 class _DeviceCard extends StatelessWidget {
   final DeviceModel device;
+  final String farmName;
 
-  const _DeviceCard({required this.device});
+  const _DeviceCard({required this.device, required this.farmName});
 
   @override
   Widget build(BuildContext context) {
@@ -405,7 +414,25 @@ class _DeviceCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            Text(device.deviceId, style: Theme.of(context).textTheme.bodySmall),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.agriculture_outlined, size: 15, color: scheme.primary),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Farm: $farmName',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text('Device ID: ${device.deviceId}', style: Theme.of(context).textTheme.bodySmall),
             const SizedBox(height: 4),
             Text(
               reading == null
