@@ -137,6 +137,10 @@ def health():
     except Exception as exc:
         logger.warning("ML model unavailable: %s", exc)
         ml_status = "unavailable"
+
+    # The device-token IoT API and Firebase-backed app API are separate
+    # integrations. Report them independently so Firestore readiness does
+    # not get confused with whether the device/ESP32 API token is configured.
     return {
         "status": "ok",
         "ml": ml_status,
