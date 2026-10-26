@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .disease_guidance import care_guidance
+from . import firestore_iot_store
 from .irrigation_service import IrrigationService, as_utc, utc_now
 from .ml_service import ModelNotLoadedError, load_artifacts, predict_image
 from .weather_service import OpenMeteoWeatherService, WeatherServiceError
@@ -138,15 +139,17 @@ def health():
         logger.warning("ML model unavailable: %s", exc)
         ml_status = "unavailable"
 
+
     # The device-token IoT API and Firebase-backed app API are separate
     # integrations. Report them independently so Firestore readiness does
     # not get confused with whether the device/ESP32 API token is configured.
+
     return {
         "status": "ok",
         "ml": ml_status,
         "iot": "enabled" if os.getenv("ARECASMART_IOT_API_TOKEN", "").strip() else "unconfigured",
+        "firestore_iot": "enabled" if firestore_iot_store.firebase_ready() else "unconfigured",
     }
-
 
 @app.get("/api/v1/weather")
 def get_weather(
@@ -171,7 +174,14 @@ def get_weather(
 def ingest_sensor_reading(payload: SensorReadingIn):
     """Receive telemetry, validate it, and recalculate the safe pump command."""
     try:
-        return irrigation_service.record_reading(payload.model_dump())
+        result = irrigation_service.record_reading(payload.model_dump())
+        latest = result.get("latest_reading")
+        if latest and firestore_iot_store.firebase_ready():
+            try:
+                firestore_iot_store.save_reading(latest, result)
+            except Exception:
+                logger.exception("Firestore telemetry persistence failed for device %s", payload.device_id)
+        return result
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=400, detail="Invalid sensor reading timestamp or payload.") from exc
 
@@ -223,7 +233,101 @@ def get_device_reading_history(
 
 @app.get("/api/v1/devices/{device_id}/status", dependencies=[Depends(_require_device_token)])
 def get_device_status(device_id: str = Path(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9._:-]+$")):
-    return irrigation_service.get_status(device_id)
+    status = irrigation_service.get_status(device_id)
+    if firestore_iot_store.firebase_ready():
+        try:
+            firestore_iot_store.save_status(device_id, status)
+        except Exception:
+            logger.exception("Firestore status persistence failed for device %s", device_id)
+    return status
+
+
+def _require_firebase_user(authorization: str | None = Header(default=None, alias="Authorization")) -> dict:
+    if not firestore_iot_store.firebase_ready():
+        raise HTTPException(status_code=503, detail="Firebase Admin/Firestore is not configured on the backend.")
+    try:
+        claims = firestore_iot_store.verify_bearer_token(authorization)
+    except Exception as exc:
+        raise HTTPException(status_code=401, detail="Missing or invalid Firebase ID token.") from exc
+    uid = claims.get("uid")
+    if not uid:
+        raise HTTPException(status_code=401, detail="Firebase token does not contain a user ID.")
+    return claims
+
+
+def _authorize_owned_device(device_id: str, claims: dict) -> None:
+    try:
+        owned = firestore_iot_store.owns_device(str(claims["uid"]), device_id)
+    except Exception as exc:
+        logger.exception("Could not authorize device access")
+        raise HTTPException(status_code=503, detail="Could not verify device ownership.") from exc
+    if not owned:
+        raise HTTPException(status_code=403, detail="This device is not registered to your account.")
+
+
+@app.get("/api/v1/app/devices/{device_id}/status")
+def get_app_device_status(
+    device_id: str = Path(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9._:-]+$"),
+    claims: dict = Depends(_require_firebase_user),
+):
+    _authorize_owned_device(device_id, claims)
+    status = irrigation_service.get_status(device_id)
+    if status.get("latest_reading") is None:
+        try:
+            status["latest_reading"] = firestore_iot_store.get_latest_reading(device_id)
+        except Exception:
+            logger.exception("Could not load persisted latest reading for device %s", device_id)
+    try:
+        firestore_iot_store.save_status(device_id, status)
+    except Exception:
+        logger.exception("Firestore status persistence failed for device %s", device_id)
+    return status
+
+
+@app.get("/api/v1/app/devices/{device_id}/readings")
+def get_app_device_readings(
+    device_id: str = Path(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9._:-]+$"),
+    limit: int = Query(100, ge=1, le=500),
+    claims: dict = Depends(_require_firebase_user),
+):
+    _authorize_owned_device(device_id, claims)
+    try:
+        return firestore_iot_store.get_history(device_id, limit)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.exception("Could not read Firestore history for device %s", device_id)
+        raise HTTPException(status_code=503, detail="Could not load persisted sensor history.") from exc
+
+
+@app.post("/api/v1/app/devices/{device_id}/control")
+def set_app_device_control(
+    payload: DeviceControlIn,
+    device_id: str = Path(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9._:-]+$"),
+    claims: dict = Depends(_require_firebase_user),
+):
+    _authorize_owned_device(device_id, claims)
+    result = irrigation_service.set_control(device_id, mode=payload.mode, pump_on=payload.pump_on)
+    try:
+        firestore_iot_store.save_status(device_id, result)
+    except Exception:
+        logger.exception("Firestore control-state persistence failed for device %s", device_id)
+    return result
+
+
+@app.post("/api/v1/app/devices/{device_id}/emergency-stop")
+def set_app_device_emergency_stop(
+    payload: EmergencyStopIn,
+    device_id: str = Path(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9._:-]+$"),
+    claims: dict = Depends(_require_firebase_user),
+):
+    _authorize_owned_device(device_id, claims)
+    result = irrigation_service.set_emergency_stop(device_id, payload.active)
+    try:
+        firestore_iot_store.save_status(device_id, result)
+    except Exception:
+        logger.exception("Firestore emergency-stop persistence failed for device %s", device_id)
+    return result
 
 
 @app.post("/api/v1/predict")

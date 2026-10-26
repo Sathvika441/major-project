@@ -5,3 +5,4 @@ numpy>=1.26,<2
 tensorflow>=2.18,<3
 pillow>=10,<13
 pydantic>=2.7,<3
+firebase-admin>=6.5,<8
