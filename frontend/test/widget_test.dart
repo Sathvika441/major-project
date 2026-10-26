@@ -5,8 +5,9 @@ import 'package:major_proj_1/core/storage/local_storage_service.dart';
 import 'package:major_proj_1/features/auth/controllers/auth_controller.dart';
 import 'package:major_proj_1/features/auth/screens/login_screen.dart';
 import 'package:major_proj_1/main.dart';
+import 'package:major_proj_1/models/farm/farm_model.dart';
+import 'package:major_proj_1/models/user/user_model.dart';
 import 'package:major_proj_1/repositories/farm/farm_repository.dart';
-import 'package:major_proj_1/repositories/auth/auth_repository.dart';
 import 'package:major_proj_1/services/auth/auth_service.dart';
 import 'package:major_proj_1/services/otp/otp_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -75,32 +76,23 @@ class _FakeFarmRepository implements FarmRepository {
   ) async => throw UnimplementedError();
 }
 
-class _FakeOtpService extends OtpService {
-  _FakeOtpService(super.prefs);
-}
-
 void main() {
-  Future<ProviderContainer> pumpLoginScreen(WidgetTester tester) async {
+  Future<void> pumpLoginScreen(WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({});
     final localStorage = await LocalStorageService.init();
-    final container = ProviderContainer(
-      overrides: [
-        localStorageServiceProvider.overrideWithValue(localStorage),
-        authServiceProvider.overrideWithValue(_FakeAuthService()),
-        farmRepositoryProvider.overrideWithValue(_FakeFarmRepository()),
-        otpServiceProvider.overrideWith(_FakeOtpService.new),
-      ],
-    );
-    addTearDown(container.dispose);
 
     await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
+      ProviderScope(
+        overrides: [
+          localStorageServiceProvider.overrideWithValue(localStorage),
+          authServiceProvider.overrideWithValue(_FakeAuthService()),
+          farmRepositoryProvider.overrideWithValue(_FakeFarmRepository()),
+          otpServiceProvider.overrideWith((ref) => OtpService(localStorage.raw)),
+        ],
         child: const MaterialApp(home: LoginScreen()),
       ),
     );
     await tester.pumpAndSettle();
-    return container;
   }
 
   testWidgets('ArecaSmartApp launches cleanly', (WidgetTester tester) async {
@@ -113,7 +105,7 @@ void main() {
           localStorageServiceProvider.overrideWithValue(localStorage),
           authServiceProvider.overrideWithValue(_FakeAuthService()),
           farmRepositoryProvider.overrideWithValue(_FakeFarmRepository()),
-          otpServiceProvider.overrideWith(_FakeOtpService.new),
+          otpServiceProvider.overrideWith((ref) => OtpService(localStorage.raw)),
         ],
         child: const ArecaSmartApp(),
       ),
