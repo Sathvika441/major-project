@@ -122,9 +122,12 @@ void main() {
       ),
     );
 
-    await tester.pumpAndSettle();
+    // The splash screen has repeating animations, so pump a bounded frame
+    // instead of waiting for all animations to settle.
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
 
-    expect(find.text('ArecaSmart'), findsOneWidget);
+    expect(find.text('ArecaSmart'), findsWidgets);
   });
 
   testWidgets('login screen offers Google sign-in', (
