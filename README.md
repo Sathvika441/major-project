@@ -101,6 +101,13 @@ Then follow the backend dependency and run instructions maintained in that direc
 - Kept Emergency stop and History together in a balanced two-column row.
 - Validation note: source was updated on GitHub; Flutter analysis/tests have not been run.
 
+### 2026-10-27 — Farm management page layout
+
+- Increased the farm portfolio hero banner's internal padding so the image-led header is taller and its title, summary, farm/acres counts, and Add farm action have more breathing room.
+- Adjusted the hero's responsive breakpoint to stack content before the available width becomes cramped.
+- Refined farm-list spacing and card padding for a more balanced page layout.
+- Validation note: source was updated on GitHub; Flutter analysis/tests have not been run.
+
 ## Branch and contribution workflow
 
 Current working branch for these improvements: `feature/bug-fixes-improvements`.
