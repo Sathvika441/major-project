@@ -18,7 +18,6 @@ import '../features/weather/screens/weather_screen.dart';
 import '../features/devices/screens/device_management_screen.dart';
 import '../features/farm/screens/farm_details_screen.dart';
 import '../features/farm/screens/farm_management_screen.dart';
-import '../features/onboarding/screens/onboarding_screen.dart';
 import '../features/profile/screens/profile_edit_screen.dart';
 import '../models/farm/farm_profile_model.dart';
 
@@ -74,10 +73,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/permission-setup',
         builder: (context, state) => const PermissionSetupScreen(),
-      ),
-      GoRoute(
-        path: '/onboarding',
-        builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(
         path: '/farm-details',
