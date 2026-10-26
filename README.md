@@ -108,6 +108,13 @@ Then follow the backend dependency and run instructions maintained in that direc
 - Refined farm-list spacing and card padding for a more balanced page layout.
 - Validation note: source was updated on GitHub; Flutter analysis/tests have not been run.
 
+### 2026-10-27 — Weather hero background
+
+- Added the existing areca plantation image as the weather hero card background.
+- Added a dark green gradient overlay to preserve contrast and readability for the location, temperature, weather icon, and metrics.
+- Reused the existing bundled asset; no external image dependency was introduced.
+- Validation note: source was updated on GitHub; Flutter analysis/tests have not been run.
+
 ## Branch and contribution workflow
 
 Current working branch for these improvements: `feature/bug-fixes-improvements`.
