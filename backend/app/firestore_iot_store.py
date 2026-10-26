@@ -125,7 +125,7 @@ def save_reading(reading: dict[str, Any], status: dict[str, Any] | None = None) 
 
     # Resolve the registered farm under the same owner. The Flutter registration
     # is the source of truth; never trust telemetry to overwrite its farm link.
-    device_path = device_ref.reference.path.split("/") if device_ref is not None else []
+    device_path = device_ref.path.split("/") if device_ref is not None else []
     registered_uid = (
         device_path[1]
         if len(device_path) == 6
@@ -219,24 +219,60 @@ def save_status(device_id: str, status: dict[str, Any]) -> None:
     db = _client()
     if db is None:
         return
-    snapshot = db.collection("iot_devices").document(device_id).get()
+
+    root_ref = db.collection("iot_devices").document(device_id)
+    snapshot = root_ref.get()
     existing = snapshot.to_dict() or {}
     previous_status = existing.get("status") if isinstance(existing.get("status"), dict) else {}
     merged_status = {**previous_status, **_clean(status)}
-    # Status polling should not erase a known farm relationship with the
-    # in-memory service's None value.
-    if not merged_status.get("farm_id") and existing.get("farmId"):
-        merged_status["farm_id"] = existing["farmId"]
+
+    # Resolve the authoritative farm from the Flutter registration. The app
+    # stores devices under users/{uid}/farms/{farmId}/devices/{documentId},
+    # while the IoT API snapshot uses snake_case inside its status object.
+    # Never let an in-memory None overwrite a known registered relationship.
+    registered_docs = _device_docs(db, device_id)
+    registered_doc = registered_docs[0] if len(registered_docs) == 1 else None
+    registered_data = registered_doc.to_dict() or {} if registered_doc is not None else {}
+    registered_path = registered_doc.reference.path.split("/") if registered_doc is not None else []
+    registered_uid = (
+        registered_path[1]
+        if len(registered_path) == 6
+        and registered_path[0] == "users"
+        and registered_path[2] == "farms"
+        and registered_path[4] == "devices"
+        and registered_data.get("isActive", True) is True
+        else None
+    )
+    registered_farm_id = registered_path[3] if registered_uid else None
+
+    if registered_uid and registered_farm_id:
+        farm_snapshot = (
+            db.collection("users").document(registered_uid)
+            .collection("farms").document(registered_farm_id).get()
+        )
+        farm_data = farm_snapshot.to_dict() or {}
+        if not farm_snapshot.exists or farm_data.get("isActive", True) is not True:
+            registered_uid = None
+            registered_farm_id = None
+
+    farm_id = registered_farm_id or existing.get("farmId") or merged_status.get("farm_id")
+    if farm_id:
+        merged_status["farm_id"] = farm_id
+
     payload = {
         "deviceId": device_id,
         "status": merged_status,
         "updatedAt": firestore.SERVER_TIMESTAMP,
     }
-    if existing.get("farmId"):
-        payload["farmId"] = existing["farmId"]
-    if existing.get("userId"):
+    if farm_id:
+        # Keep the root snapshot compatible with existing camelCase app data
+        # and the snake_case backend status response.
+        payload["farmId"] = farm_id
+        payload["farm_id"] = farm_id
+    if registered_uid:
+        payload["userId"] = registered_uid
+    elif existing.get("userId"):
         payload["userId"] = existing["userId"]
-    root_ref = db.collection("iot_devices").document(device_id)
     root_ref.set(payload, merge=True)
 
 
