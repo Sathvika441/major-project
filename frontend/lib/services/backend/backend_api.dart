@@ -168,10 +168,22 @@ class BackendApi {
     if (user == null) {
       throw const BackendApiException(401, 'Please sign in to control this device.');
     }
-    final token = await user.getIdToken();
-    if (token == null || token.isEmpty) {
-      throw const BackendApiException(401, 'Could not obtain a Firebase ID token.');
+
+    String? token;
+    try {
+      token = await user.getIdToken(true);
+    } on FirebaseAuthException catch (error) {
+      throw BackendApiException(
+        401,
+        error.code == 'user-token-expired'
+            ? 'Your session expired. Please sign in again.'
+            : 'Could not refresh your Firebase session. Please sign in again.',
+      );
     }
+    if (token == null || token.isEmpty) {
+      throw const BackendApiException(401, 'Could not obtain a Firebase ID token. Please sign in again.');
+    }
+
     final uri = path.startsWith('http') ? Uri.parse(path) : Uri.parse('$baseUrl$path');
     final headers = <String, String>{
       'Authorization': 'Bearer $token',
