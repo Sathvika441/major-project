@@ -1,0 +1,5 @@
+alerts and notifications 
+weather in farms
+devices error
+phone number validation
+after logout it should change to sign-in
