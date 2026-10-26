@@ -35,6 +35,7 @@ class FarmManagementScreen extends ConsumerWidget {
             builder: (_) => FarmWorkspaceScreen(farm: matches.first),
           ),
         );
+        if (!context.mounted) return;
         ref.invalidate(farmsProvider);
         return;
       }
@@ -45,6 +46,7 @@ class FarmManagementScreen extends ConsumerWidget {
         builder: (_) => FarmDetailsScreen(farmId: farmId, startNew: startNew),
       ),
     );
+    if (!context.mounted) return;
     ref.invalidate(farmsProvider);
   }
 
