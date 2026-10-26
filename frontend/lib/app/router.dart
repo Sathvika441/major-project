@@ -18,7 +18,6 @@ import '../features/weather/screens/weather_screen.dart';
 import '../features/devices/screens/device_management_screen.dart';
 import '../features/farm/screens/farm_details_screen.dart';
 import '../features/farm/screens/farm_management_screen.dart';
-import '../features/onboarding/screens/onboarding_screen.dart';
 import '../features/profile/screens/profile_edit_screen.dart';
 import '../models/farm/farm_profile_model.dart';
 
@@ -74,10 +73,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/permission-setup',
         builder: (context, state) => const PermissionSetupScreen(),
-      ),
-      GoRoute(
-        path: '/onboarding',
-        builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(
         path: '/farm-details',
@@ -162,8 +157,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         return location == '/farm-details' ? null : '/farm-details';
       }
 
+      // Phase A's location form duplicated fields already collected by
+      // Farm Details. Skip the legacy onboarding screen and send incomplete
+      // registrations straight to the single consolidated farm form.
       if (!phaseADone) {
-        return location == '/onboarding' ? null : '/onboarding';
+        return location == '/farm-details' ? null : '/farm-details';
       }
 
       if (!phaseBDone) {
