@@ -86,6 +86,14 @@ Then follow the backend dependency and run instructions maintained in that direc
 - This fixes the backend mapping path for future status writes; it does **not** automatically repair existing Firestore documents or generate sensor readings. Existing records may need a status refresh or a controlled data migration.
 - Validation note: source was updated on GitHub; backend tests and lint/type checks have not been run.
 
+### 2026-10-27 — Compact Devices & Sensors cards
+
+- Reduced device-card padding, icon size, vertical spacing, and grid gaps.
+- Combined the farm name and device ID into one compact metadata row.
+- Removed the repeated “waiting for first telemetry packet” line; the no-reading state already communicates that no sensor data is available.
+- Kept connection status, farm association, available sensor readings, and irrigation safety controls visible.
+- Validation note: source was updated on GitHub; Flutter analysis/tests have not been run.
+
 ## Branch and contribution workflow
 
 Current working branch for these improvements: `feature/bug-fixes-improvements`.
