@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/failures.dart';
@@ -179,11 +180,7 @@ class AuthController extends StateNotifier<AuthState> {
         await _storage.setOtpVerified(false);
         final otpKey = _otpKeyForUser(user);
         await _otpService.generateOtp(otpKey);
-        state = AuthState.otpVerificationPending(
-          user: user,
-          phone: otpKey,
-          forPurpose: 'login',
-        );
+        state = AuthState.otpVerificationPending(user: user, phone: otpKey, forPurpose: 'login');
       } else {
         await _storage.setOtpVerified(true);
         await _migrateLegacyOnboarding(user.uid);
@@ -194,9 +191,32 @@ class AuthController extends StateNotifier<AuthState> {
     } on Failure catch (f) {
       state = AuthState.error(f.message);
       return false;
+    } on FirebaseAuthException catch (e) {
+      // Closing the Google popup is a cancellation, not an application failure.
+      if (e.code == 'popup-closed-by-user' || e.code == 'cancelled-popup-request') {
+        state = AuthState.unauthenticated();
+        return false;
+      }
+      state = AuthState.error(_googleSignInErrorMessage(e));
+      return false;
     } catch (e) {
       state = AuthState.error('Failed to sign in with Google: $e');
       return false;
+    }
+  }
+
+  String _googleSignInErrorMessage(FirebaseAuthException error) {
+    switch (error.code) {
+      case 'unauthorized-domain':
+        return 'This domain is not authorized for Google sign-in. Add the current hostname in Firebase Authentication settings.';
+      case 'operation-not-allowed':
+        return 'Google sign-in is disabled for this Firebase project.';
+      case 'popup-blocked':
+        return 'Your browser blocked the Google sign-in popup. Allow popups and try again.';
+      case 'network-request-failed':
+        return 'A network error interrupted Google sign-in. Check your connection and retry.';
+      default:
+        return 'Google sign-in failed (${error.code}). Please try again.';
     }
   }
 
