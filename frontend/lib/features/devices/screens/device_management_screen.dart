@@ -255,15 +255,6 @@ class DeviceManagementScreen extends ConsumerWidget {
                         ref.invalidate(devicesProvider);
                         ref.invalidate(farmsProvider);
                         if (ctx.mounted) Navigator.pop(ctx);
-                      } on FirebaseException catch (error) {
-                        if (!ctx.mounted) return;
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Could not register device: ${error.message ?? error.code}',
-                            ),
-                          ),
-                        );
                       } catch (error) {
                         if (!ctx.mounted) return;
                         ScaffoldMessenger.of(ctx).showSnackBar(
