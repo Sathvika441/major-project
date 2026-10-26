@@ -139,16 +139,13 @@ def health():
         logger.warning("ML model unavailable: %s", exc)
         ml_status = "unavailable"
 
-    # The device-token API used by the ESP32 and the Firebase-authenticated
-    # app API are separate integrations. A missing device token must not be
-    # interpreted as a Firestore configuration failure.
+    # The device-token API and Firebase-authenticated app API are separate.
     return {
         "status": "ok",
         "ml": ml_status,
         "iot": "enabled" if os.getenv("ARECASMART_IOT_API_TOKEN", "").strip() else "unconfigured",
         "firestore_iot": "enabled" if firestore_iot_store.firebase_ready() else "unconfigured",
     }
-
 
 @app.get("/api/v1/weather")
 def get_weather(
