@@ -28,6 +28,9 @@ class FirestoreFarmRepository implements FarmRepository {
   CollectionReference<Map<String, dynamic>> _plots(String uid, String farmId) =>
       _farms(uid).doc(farmId).collection('plots');
 
+  CollectionReference<Map<String, dynamic>> _devices(String uid, String farmId) =>
+      _farms(uid).doc(farmId).collection('devices');
+
   @override
   Future<List<FarmModel>> getFarms(String userId) async {
     final snapshot = await _farms(userId)
@@ -113,11 +116,7 @@ class FirestoreFarmRepository implements FarmRepository {
 
     // Keep the parent farm active while active devices still point to it.
     // This prevents dangling device -> farm relationships.
-    final linkedDevices = await db
-        .collection('users')
-        .doc(userId)
-        .collection('devices')
-        .where('farmId', isEqualTo: farmId)
+    final linkedDevices = await _devices(userId, farmId)
         .where('isActive', isEqualTo: true)
         .limit(1)
         .get();
