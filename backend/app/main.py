@@ -139,7 +139,11 @@ def health():
         logger.warning("ML model unavailable: %s", exc)
         ml_status = "unavailable"
 
-    # The ESP32 shared-token API is separate from Firebase-authenticated app APIs.
+
+    # The device-token IoT API and Firebase-backed app API are separate
+    # integrations. Report them independently so Firestore readiness does
+    # not get confused with whether the device/ESP32 API token is configured.
+
     return {
         "status": "ok",
         "ml": ml_status,
