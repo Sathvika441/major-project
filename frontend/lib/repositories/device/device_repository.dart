@@ -20,6 +20,9 @@ class FirestoreDeviceRepository implements DeviceRepository {
   CollectionReference<Map<String, dynamic>> _devices(String uid) =>
       db.collection('users').doc(uid).collection('devices');
 
+  CollectionReference<Map<String, dynamic>> _farms(String uid) =>
+      db.collection('users').doc(uid).collection('farms');
+
   @override
   Future<List<DeviceModel>> getDevices(String userId) async {
     final snapshot = await _devices(userId)
@@ -44,13 +47,60 @@ class FirestoreDeviceRepository implements DeviceRepository {
 
   @override
   Future<DeviceModel> register(DeviceModel device) async {
+    final normalizedId = device.deviceId.trim();
+    if (normalizedId.length < 3 ||
+        normalizedId.length > 50 ||
+        !RegExp(r'^[A-Za-z0-9_-]+$').hasMatch(normalizedId)) {
+      throw ArgumentError(
+        'Device ID must contain 3–50 letters, numbers, hyphens or underscores.',
+      );
+    }
+    if (device.userId.trim().isEmpty ||
+        device.farmId.trim().isEmpty ||
+        device.id.trim().isEmpty) {
+      throw ArgumentError('User, farm and registration IDs are required.');
+    }
+    final name = device.name.trim();
+    if (name.length < 2 || name.length > 60) {
+      throw ArgumentError('Device name must contain 2–60 characters.');
+    }
+
     final reading = device.latestReading;
     if (reading != null && !reading.isValid) {
       throw ArgumentError('Sensor reading contains an abnormal value.');
     }
+
+    // Validate the farm under the same UID; a client cannot attach a device
+    // to another user's farm by passing an arbitrary farmId.
+    final farmSnapshot = await _farms(device.userId).doc(device.farmId).get();
+    final farmData = farmSnapshot.data();
+    if (!farmSnapshot.exists || farmData == null ||
+        farmData['isActive'] == false) {
+      throw StateError('Select an active farm owned by this account.');
+    }
+
+    // A physical device ID must be unique across users, not just in this
+    // user's device list. Inactive registrations still reserve the ID until
+    // an explicit reassignment/decommission workflow exists.
+    final matches = await db
+        .collectionGroup('devices')
+        .where('deviceId', isEqualTo: normalizedId)
+        .get();
+    final conflicting = matches.docs.where(
+      (doc) => doc.reference.path !=
+          'users/${device.userId}/devices/${device.id}',
+    );
+    if (conflicting.isNotEmpty) {
+      throw StateError(
+        'This physical device ID is already registered. '
+        'Decommission or reassign the existing registration first.',
+      );
+    }
+
+    final normalizedDevice = device.copyWith(name: name);
     await _devices(device.userId)
         .doc(device.id)
-        .set(device.toMap(), SetOptions(merge: true));
-    return device;
+        .set(normalizedDevice.toMap(), SetOptions(merge: true));
+    return normalizedDevice;
   }
 }
