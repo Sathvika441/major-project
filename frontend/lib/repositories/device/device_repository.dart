@@ -79,22 +79,16 @@ class FirestoreDeviceRepository implements DeviceRepository {
       throw StateError('Select an active farm owned by this account.');
     }
 
-    // A physical device ID must be unique across users, not just in this
-    // user's device list. Inactive registrations still reserve the ID until
-    // an explicit reassignment/decommission workflow exists.
-    final matches = await db
-        .collectionGroup('devices')
+    // Check duplicates only inside the signed-in user's device collection.
+    // A client-side collectionGroup query spans every user's private devices
+    // and is normally rejected by Firestore security rules. Cross-user physical
+    // ID uniqueness must be enforced by a trusted backend, not a client query.
+    final matches = await _devices(device.userId)
         .where('deviceId', isEqualTo: normalizedId)
         .get();
-    final conflicting = matches.docs.where(
-      (doc) => doc.reference.path !=
-          'users/${device.userId}/devices/${device.id}',
-    );
+    final conflicting = matches.docs.where((doc) => doc.id != device.id);
     if (conflicting.isNotEmpty) {
-      throw StateError(
-        'This physical device ID is already registered. '
-        'Decommission or reassign the existing registration first.',
-      );
+      throw StateError('This device ID is already registered to your account.');
     }
 
     final normalizedDevice = device.copyWith(name: name);
