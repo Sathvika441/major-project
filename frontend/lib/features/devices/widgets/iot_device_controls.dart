@@ -178,22 +178,60 @@ class _IoTDeviceControlsState extends ConsumerState<IoTDeviceControls> {
           Text(_error!, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error)),
         ],
         const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            OutlinedButton(onPressed: _acting ? null : () => _control(mode: 'auto'), child: const Text('Automatic mode')),
-            OutlinedButton(onPressed: _acting ? null : () => _control(mode: 'manual', pumpOn: false), child: const Text('Manual mode / OFF')),
-            FilledButton.tonal(onPressed: _acting || stopActive ? null : () => _control(mode: 'manual', pumpOn: true), child: const Text('Request pump ON')),
-            OutlinedButton(onPressed: _acting ? null : () => _control(mode: 'manual', pumpOn: false), child: const Text('Pump OFF')),
-            FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: theme.colorScheme.error, foregroundColor: theme.colorScheme.onError),
-              onPressed: _acting || stopActive ? null : () => _control(emergencyStop: true),
-              child: const Text('Emergency stop'),
+            OutlinedButton(
+              onPressed: _acting ? null : () => _control(mode: 'auto'),
+              child: const Text('Automatic mode'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton(
+              onPressed: _acting ? null : () => _control(mode: 'manual', pumpOn: false),
+              child: const Text('Manual mode / OFF'),
+            ),
+            const SizedBox(height: 8),
+            FilledButton.tonal(
+              onPressed: _acting || stopActive
+                  ? null
+                  : () => _control(mode: 'manual', pumpOn: true),
+              child: const Text('Request pump ON'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton(
+              onPressed: _acting ? null : () => _control(mode: 'manual', pumpOn: false),
+              child: const Text('Pump OFF'),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: theme.colorScheme.error,
+                      foregroundColor: theme.colorScheme.onError,
+                    ),
+                    onPressed: _acting || stopActive
+                        ? null
+                        : () => _control(emergencyStop: true),
+                    child: const Text('Emergency stop'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextButton.icon(
+                    onPressed: _acting ? null : _showHistory,
+                    icon: const Icon(Icons.history),
+                    label: const Text('History'),
+                  ),
+                ),
+              ],
             ),
             if (stopActive)
-              OutlinedButton(onPressed: _acting ? null : () => _control(emergencyStop: false), child: const Text('Clear stop')),
-            TextButton.icon(onPressed: _acting ? null : _showHistory, icon: const Icon(Icons.history), label: const Text('History')),
+              OutlinedButton(
+                onPressed: _acting ? null : () => _control(emergencyStop: false),
+                child: const Text('Clear stop'),
+              ),
           ],
         ),
         if (_acting) const Padding(padding: EdgeInsets.only(top: 8), child: LinearProgressIndicator()),
