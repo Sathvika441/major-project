@@ -75,11 +75,22 @@ Reference sketch: `hardware/esp32/ArecaSmart_Irrigation.ino`. It sends validated
 
 ## Firestore layout
 
-- Existing device registration/ownership: `users/{uid}/devices/{deviceDocumentId}` with a `deviceId` field matching the ESP32 `DEVICE_ID`.
-- Current IoT snapshot: `iot_devices/{device_id}`.
-- Durable sensor history: `iot_devices/{device_id}/readings/{autoId}`.
+- **Identity:** Firebase Authentication UID is the user boundary. The backend verifies Firebase ID tokens for app routes.
+- **Farm profile:** `users/{uid}/farms/{farmId}` stores the user's farm metadata. Plot records live at `users/{uid}/farms/{farmId}/plots/{plotId}`.
+- **Registered device:** `users/{uid}/devices/{deviceDocumentId}` stores `userId`, `farmId`, optional `plotId`, the physical `deviceId`, and `isActive`.
+- **Device snapshot:** `iot_devices/{deviceId}` stores backend-owned `latestReading`, `status`, `userId` and `farmId` relationship fields when there is exactly one matching registration.
+- **Reading history:** `iot_devices/{deviceId}/readings/{readingId}` stores each durable telemetry reading independently.
 
-The backend uses Firebase Admin credentials and does not depend on client Firestore rules for these server-side writes. Configure Firestore access and backend credentials before enabling app controls.
+### Data integrity rules
+
+1. The authenticated UID must match the owner path `users/{uid}/devices/{deviceDocumentId}`, and the registered document's `userId` must match that UID.
+2. The physical `deviceId` must resolve to exactly one registered device for app access. Zero matches, inactive registrations, or duplicate matches are denied.
+3. A registered device's `farmId` is the source of truth for its farm association. Incoming telemetry must not silently reassign a registered device to another farm.
+4. Flutter device cards consume `latestReading` using camelCase keys: `soilMoisture`, `temperature`, `humidity`, `rainfall`, and ISO-8601 `timestamp`. Backend telemetry uses snake_case fields internally; the persistence adapter maps between them.
+5. Sensor history is durable. Irrigation command/settings evaluation remains in-memory and resets to safe pump-OFF defaults after a backend restart. Firestore status snapshots do not currently restore complete command/settings state.
+
+The backend uses Firebase Admin credentials and does not rely on client Firestore security rules for its server-side writes. Keep service-account JSON outside the repository. Device registration and farm/plot records remain user-scoped in Firestore; do not embed the shared ESP32 device token in Flutter.
+
 
 ## Local development status notes
 
