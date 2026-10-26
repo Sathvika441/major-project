@@ -272,11 +272,17 @@ def get_app_device_status(
 ):
     _authorize_owned_device(device_id, claims)
     status = irrigation_service.get_status(device_id)
-    if status.get("latest_reading") is None:
-        try:
+    try:
+        # Firestore is the durable source of the registered farm association.
+        # The in-memory irrigation service starts with farm_id=None after a
+        # restart, so enrich the response before saving/returning it.
+        snapshot = firestore_iot_store.get_status(device_id)
+        if snapshot and not status.get("farm_id"):
+            status["farm_id"] = snapshot.get("farm_id") or snapshot.get("farmId")
+        if status.get("latest_reading") is None:
             status["latest_reading"] = firestore_iot_store.get_latest_reading(device_id)
-        except Exception:
-            logger.exception("Could not load persisted latest reading for device %s", device_id)
+    except Exception:
+        logger.exception("Could not load persisted device state for %s", device_id)
     try:
         firestore_iot_store.save_status(device_id, status)
     except Exception:
