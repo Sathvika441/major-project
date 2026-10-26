@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:major_proj_1/core/storage/local_storage_service.dart';
 import 'package:major_proj_1/features/auth/controllers/auth_controller.dart';
 import 'package:major_proj_1/features/auth/screens/signup_screen.dart';
+import 'package:major_proj_1/widgets/app_button.dart';
 import 'package:major_proj_1/models/farm/farm_model.dart';
 import 'package:major_proj_1/models/user/user_model.dart';
 import 'package:major_proj_1/repositories/farm/farm_repository.dart';
@@ -104,9 +105,12 @@ void main() {
     await tester.enterText(fields.at(2), '+919876543210');
     await tester.enterText(fields.at(3), 'Password123');
     await tester.enterText(fields.at(4), 'Password123');
+    await tester.ensureVisible(find.text(
+      'I agree to the Terms of Service and Privacy Policy for agricultural data usage.',
+    ));
     await tester.tap(find.byType(Checkbox));
-    await tester.ensureVisible(find.text('Create account'));
-    await tester.tap(find.text('Create account'));
+    await tester.ensureVisible(find.byType(AppButton));
+    await tester.tap(find.byType(AppButton));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
