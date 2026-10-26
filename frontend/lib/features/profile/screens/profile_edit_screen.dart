@@ -22,7 +22,6 @@ class ProfileEditScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
-  String _state = KarnatakaLocations.state;
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _name;
   late final TextEditingController _phone;
@@ -97,7 +96,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       _phone.text = existing?.phone ?? user.phone;
       _village.text = existing?.village ?? '';
       _villageCode = existing?.villageCode ?? '';
-      _state = KarnatakaLocations.state;
       _district = district;
       _taluk = taluk;
       _language = existing?.language ?? 'English';

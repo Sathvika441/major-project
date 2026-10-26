@@ -13,11 +13,9 @@ import '../../../services/backend/backend_api.dart';
 import '../../../core/irrigation/irrigation_audit.dart';
 import '../../../core/irrigation/irrigation_decision_engine.dart';
 import '../../../core/irrigation/irrigation_models.dart';
-import '../../../services/sensors/simulated_sensor_service.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../devices/screens/device_management_screen.dart';
 import '../../farm/screens/farm_management_screen.dart';
-import '../../profile/screens/profile_edit_screen.dart';
 import '../../../widgets/app_navigation_scaffold.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -358,46 +356,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildAppDrawer(
-    BuildContext context,
-    String farmerName,
-    String? farmId,
-  ) {
-    return _buildAppDrawerForRoute(
-      context,
-      farmerName,
-      farmId: farmId,
-      selectedRoute: farmId == null ? '/dashboard' : 'farm',
-    );
-  }
-
-  Widget _drawerItem(
-    BuildContext context,
-    IconData icon,
-    String label,
-    VoidCallback onTap, {
-    bool selected = false,
-  }) {
-    final scheme = Theme.of(context).colorScheme;
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: selected ? scheme.primary : scheme.onSurfaceVariant,
-      ),
-      title: Text(
-        label,
-        style: TextStyle(
-          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-        ),
-      ),
-      selected: selected,
-      onTap: () {
-        Navigator.of(context).pop();
-        onTap();
-      },
     );
   }
 
@@ -1631,121 +1589,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 );
               },
             ),
-    );
-  }
-
-  Widget _buildAppDrawerForRoute(
-    BuildContext context,
-    String farmerName, {
-    String? farmId,
-    String? selectedRoute,
-  }) {
-    final scheme = Theme.of(context).colorScheme;
-    final onFarm = farmId != null;
-    return Drawer(
-      child: SafeArea(
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
-              color: scheme.primary,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CircleAvatar(
-                    radius: 26,
-                    backgroundColor: scheme.onPrimary,
-                    child: Icon(
-                      Icons.agriculture_rounded,
-                      color: scheme.primary,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    'ArecaSmart',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: scheme.onPrimary,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    farmerName,
-                    style: TextStyle(
-                      color: scheme.onPrimary.withValues(alpha: 0.85),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                children: [
-                  _drawerItem(
-                    context,
-                    Icons.dashboard_outlined,
-                    'My farms',
-                    () => context.go('/dashboard'),
-                    selected: selectedRoute == '/dashboard',
-                  ),
-                  if (onFarm)
-                    _drawerItem(
-                      context,
-                      Icons.agriculture_outlined,
-                      'Farm overview',
-                      () => context.go('/farm/$farmId'),
-                      selected: selectedRoute == 'farm',
-                    ),
-                  _drawerItem(
-                    context,
-                    Icons.sensors_outlined,
-                    'Devices',
-                    () => context.go('/devices'),
-                    selected: selectedRoute == '/devices',
-                  ),
-                  _drawerItem(
-                    context,
-                    Icons.notifications_none_rounded,
-                    'Alerts',
-                    () => _showAlertsSheet(
-                      context,
-                      ref,
-                      ref.read(authControllerProvider).user?.uid,
-                      farmId,
-                    ),
-                    selected: selectedRoute == 'alerts',
-                  ),
-                  _drawerItem(
-                    context,
-                    Icons.person_outline_rounded,
-                    'Profile',
-                    () => context.go('/profile'),
-                    selected: selectedRoute == '/profile',
-                  ),
-                  _drawerItem(
-                    context,
-                    Icons.settings_outlined,
-                    'Farm management',
-                    () => context.go('/farms'),
-                    selected: selectedRoute == '/farms',
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            _drawerItem(
-              context,
-              Icons.logout_rounded,
-              'Sign out',
-              () => ref.read(authControllerProvider.notifier).logout(),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
     );
   }
 

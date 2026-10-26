@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/karnataka_locations.dart';
 import '../../../core/services/location_master_service.dart';
 import '../../../core/storage/local_storage_service.dart';
-import '../../../core/validators/auth_validators.dart';
 import '../../../models/farm/farm_profile_model.dart';
 import '../../../repositories/profile/profile_repository.dart';
 import '../../auth/controllers/auth_controller.dart';
