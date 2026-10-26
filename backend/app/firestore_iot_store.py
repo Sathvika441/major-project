@@ -56,67 +56,104 @@ def verify_bearer_token(authorization: str | None) -> dict[str, Any]:
     return claims
 
 
-def owns_device(uid: str, device_id: str) -> bool:
-    db = _client()
-    if db is None:
-        return False
-    # Device records are already stored by the Flutter app at
-    # users/{uid}/devices/{documentId}.
-    docs = list(
+def _device_docs(db, device_id: str):
+    """Find registered Flutter device records by their physical device ID."""
+    return list(
         db.collection_group("devices")
         .where(filter=FieldFilter("deviceId", "==", device_id))
         .stream()
     )
-    # Refuse ambiguous duplicate IDs instead of granting more than one account
-    # control over the same physical controller.
+
+
+def owns_device(uid: str, device_id: str) -> bool:
+    """Allow access only when exactly one active device record belongs to uid."""
+    db = _client()
+    if db is None:
+        return False
+    docs = _device_docs(db, device_id)
     if len(docs) != 1:
         return False
-    return docs[0].reference.path == f"users/{uid}/devices/{docs[0].id}"
-
+    doc = docs[0]
+    data = doc.to_dict() or {}
+    return (
+        doc.reference.path == f"users/{uid}/devices/{doc.id}"
+        and data.get("userId") == uid
+        and data.get("isActive", True) is True
+    )
 
 def save_reading(reading: dict[str, Any], status: dict[str, Any] | None = None) -> None:
+    """Persist telemetry and mirror it to the single registered device record.
+
+    Canonical relationships:
+    - users/{uid}/farms/{farmId}: farm profile
+    - users/{uid}/devices/{documentId}: user-owned registered device
+    - iot_devices/{deviceId}: backend device snapshot and farm link
+    - iot_devices/{deviceId}/readings/{readingId}: durable telemetry history
+
+    Telemetry is still accepted for devices without an app registration, but
+    it is not attached to a user/farm record unless exactly one record matches.
+    """
     db = _client()
     if db is None:
         return
-    device_id = reading["device_id"]
+
+    device_id = str(reading["device_id"])
     root = db.collection("iot_devices").document(device_id)
     observed_at = reading.get("observed_at")
     received_at = reading.get("received_at") or datetime.now(timezone.utc)
     data = dict(reading)
+    data["device_id"] = device_id
     data["observed_at"] = _as_datetime(observed_at)
     data["received_at"] = _as_datetime(received_at)
     data["updatedAt"] = firestore.SERVER_TIMESTAMP
-    root.set({
+
+    docs = _device_docs(db, device_id)
+    device_ref = docs[0].reference if len(docs) == 1 else None
+    registered = (docs[0].to_dict() or {}) if device_ref is not None else {}
+    registered_uid = registered.get("userId")
+    registered_farm_id = registered.get("farmId")
+    telemetry_farm_id = reading.get("farm_id")
+
+    # Keep the user-owned registration as the source of truth for user/farm
+    # relationships. Only fall back to telemetry farm_id for unregistered
+    # prototype sensors.
+    farm_id = registered_farm_id or telemetry_farm_id
+    data["farm_id"] = farm_id
+    root_payload = {
         "deviceId": device_id,
-        "farmId": reading.get("farm_id"),
+        "farmId": farm_id,
+        "userId": registered_uid,
         "latestReading": data,
         "updatedAt": firestore.SERVER_TIMESTAMP,
-        **({"status": _clean(status)} if status is not None else {}),
-    }, merge=True)
+    }
+    if status is not None:
+        root_payload["status"] = _clean(status)
+    root.set(root_payload, merge=True)
     root.collection("readings").document().set(data)
 
-    # Keep the app's existing per-user device card in sync with real telemetry.
-    # The Flutter DeviceModel expects camelCase keys for latestReading.
-    docs = list(
-        db.collection_group("devices")
-        .where(filter=FieldFilter("deviceId", "==", device_id))
-        .stream()
-    )
+    # DeviceModel consumes camelCase reading fields with an ISO timestamp.
     app_reading = {
         "soilMoisture": reading.get("soil_moisture_percent"),
         "temperature": reading.get("temperature_c"),
         "humidity": reading.get("humidity_percent"),
         "rainfall": reading.get("rainfall_mm"),
-        "timestamp": _as_datetime(observed_at) or received_at,
+        "timestamp": (_as_datetime(observed_at) or received_at).isoformat()
+        if isinstance((_as_datetime(observed_at) or received_at), datetime)
+        else str(_as_datetime(observed_at) or received_at),
     }
-    # Only sync when the physical device ID has exactly one owner record.
-    if len(docs) == 1 and docs[0].reference.path.startswith("users/"):
-        docs[0].reference.set({
-            "latestReading": app_reading,
-            "lastSeen": _as_datetime(received_at),
-            "updatedAt": firestore.SERVER_TIMESTAMP,
-        }, merge=True)
 
+    # Avoid assigning readings to multiple users if data contains duplicate IDs.
+    if device_ref is not None:
+        patch = {
+            "latestReading": app_reading,
+            "lastSeen": _as_datetime(received_at).isoformat()
+            if isinstance(_as_datetime(received_at), datetime)
+            else str(_as_datetime(received_at)),
+            "updatedAt": firestore.SERVER_TIMESTAMP,
+        }
+        if farm_id:
+            patch["farmId"] = farm_id
+        device_ref.set(patch, merge=True)
 
 def save_status(device_id: str, status: dict[str, Any]) -> None:
     db = _client()
