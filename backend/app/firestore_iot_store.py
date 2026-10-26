@@ -146,11 +146,15 @@ def save_reading(reading: dict[str, Any], status: dict[str, Any] | None = None) 
     data["farm_id"] = farm_id
     root_payload = {
         "deviceId": device_id,
-        "farmId": farm_id,
-        "userId": registered_uid,
-        "latestReading": data,
         "updatedAt": firestore.SERVER_TIMESTAMP,
+        "latestReading": data,
     }
+    # Do not erase existing ownership fields when a device has no unique,
+    # valid registration (for example during initial hardware provisioning).
+    if device_ref is not None and registered_uid:
+        root_payload["userId"] = registered_uid
+    if farm_id:
+        root_payload["farmId"] = farm_id
     if status is not None:
         root_payload["status"] = _clean(status)
     root.set(root_payload, merge=True)
