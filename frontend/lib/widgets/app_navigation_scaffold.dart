@@ -233,7 +233,7 @@ class AppNavigationScaffold extends ConsumerWidget {
           bottomNavigationBar: NavigationBar(
             selectedIndex: selectedIndex,
             onDestinationSelected: (index) => _navigate(context, index, destinations),
-            destinations: _destinations
+            destinations: destinations
                 .map(
                   (item) => NavigationDestination(
                     icon: Icon(item.icon),
