@@ -77,7 +77,9 @@ class BackendApi {
         'lon': longitude.toString(),
       },
     ).query;
-    final response = await _client.get(Uri.parse('$baseUrl/api/v1/weather?$q'));
+    final response = await _getWeatherResponse(
+      Uri.parse('$baseUrl/api/v1/weather?$q'),
+    );
     return WeatherData.fromMap(_decode(response));
   }
 
@@ -222,5 +224,5 @@ class BackendApiException implements Exception {
   final String message;
   const BackendApiException(this.statusCode, this.message);
   @override
-  String toString() => 'BackendApiException($statusCode): $message';
+  String toString() => message;
 }
