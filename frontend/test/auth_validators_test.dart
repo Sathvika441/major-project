@@ -35,10 +35,14 @@ void main() {
       expect(AuthValidators.validateName('Ramesh Gowda'), isNull);
     });
 
-    test('validatePhone checks numeric phone format', () {
+    test('validatePhone accepts formatted numbers and rejects invalid ones', () {
       expect(AuthValidators.validatePhone('abc'), isNotNull);
       expect(AuthValidators.validatePhone('123'), isNotNull);
       expect(AuthValidators.validatePhone('+919876543210'), isNull);
+      expect(AuthValidators.validatePhone('+91 98765-43210'), isNull);
+      expect(AuthValidators.validatePhone('(987) 654-3210'), isNull);
+      expect(AuthValidators.validatePhone('98+76543210'), isNotNull);
+      expect(AuthValidators.validatePhone('++++919876543210'), isNotNull);
     });
 
     test('validateTerms requires true', () {
