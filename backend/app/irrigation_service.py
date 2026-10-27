@@ -88,7 +88,7 @@ class IrrigationService:
             # Use server receipt time to determine whether this reading arrived
             # after the emergency-stop reset. The observed_at timestamp is still
             # checked separately by _evaluate for stale/future readings.
-            if device["resume_required"] and cleared_at is not None and reading["received_at"] > cleared_at:
+            if device["resume_required"] and cleared_at is not None and reading["received_at"] >= cleared_at:
                 device["resume_required"] = False
                 device["emergency_stop_cleared_at"] = None
                 self._event(device, "fresh_reading_after_stop", "Fresh reading received after emergency-stop reset.")
