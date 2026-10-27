@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -54,7 +55,9 @@ class BackendApi {
         'location': location,
       },
     ).query;
-    final response = await _client.get(Uri.parse('$baseUrl/api/v1/weather?$q'));
+    final response = await _getWeatherResponse(
+      Uri.parse('$baseUrl/api/v1/weather?$q'),
+    );
     return WeatherData.fromMap(_decode(response));
   }
 
@@ -76,6 +79,22 @@ class BackendApi {
     ).query;
     final response = await _client.get(Uri.parse('$baseUrl/api/v1/weather?$q'));
     return WeatherData.fromMap(_decode(response));
+  }
+
+  Future<http.Response> _getWeatherResponse(Uri uri) async {
+    try {
+      return await _client.get(uri).timeout(const Duration(seconds: 12));
+    } on TimeoutException {
+      throw const BackendApiException(
+        408,
+        'Weather request timed out. Check your connection and try again.',
+      );
+    } on http.ClientException {
+      throw const BackendApiException(
+        503,
+        'Unable to reach the weather service. Check that the backend is running and try again.',
+      );
+    }
   }
 
   Future<Map<String, dynamic>> predict(Map<String, dynamic> features) async {
