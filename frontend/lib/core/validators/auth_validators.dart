@@ -57,7 +57,9 @@ class AuthValidators {
     if (value == null || value.trim().isEmpty) {
       return 'Phone number is required.';
     }
-    final trimmed = value.trim().replaceAll(' ', '').replaceAll('-', '');
+    // Accept common display formatting while validating only the actual digits
+    // and an optional leading international '+'.
+    final trimmed = value.trim().replaceAll(RegExp(r'[\s().-]'), '');
     if (!_phoneRegExp.hasMatch(trimmed)) {
       return 'Please enter a valid phone number.';
     }
