@@ -60,8 +60,13 @@ class AppNavigationScaffold extends ConsumerWidget {
     ),
   ];
 
-  void _navigate(BuildContext context, int index) {
-    final route = _destinations[index].route;
+  void _navigate(
+    BuildContext context,
+    int index,
+    List<_NavDestination> destinations,
+  ) {
+    if (index < 0 || index >= destinations.length) return;
+    final route = destinations[index].route;
     // Read the router's location directly. GoRouterState.of(context) can fail
     // when this shared scaffold's context is outside a RouteBase builder.
     final location = GoRouter.of(context).routeInformationProvider.value.uri;
@@ -83,6 +88,11 @@ class AppNavigationScaffold extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
     final signedInUser = ref.watch(authControllerProvider).user;
+    // Farms, devices and profile require authentication. Keep guest navigation
+    // limited to pages that are explicitly public in router.dart.
+    final destinations = signedInUser == null
+        ? _destinations.take(2).toList(growable: false)
+        : _destinations;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -93,7 +103,7 @@ class AppNavigationScaffold extends ConsumerWidget {
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             body: Row(
               children: [
-                _buildRail(context, ref, themeMode),
+                _buildRail(context, ref, themeMode, destinations),
                 Expanded(
                   child: Column(
                     children: [
@@ -222,7 +232,7 @@ class AppNavigationScaffold extends ConsumerWidget {
           body: body,
           bottomNavigationBar: NavigationBar(
             selectedIndex: selectedIndex,
-            onDestinationSelected: (index) => _navigate(context, index),
+            onDestinationSelected: (index) => _navigate(context, index, destinations),
             destinations: _destinations
                 .map(
                   (item) => NavigationDestination(
@@ -239,7 +249,12 @@ class AppNavigationScaffold extends ConsumerWidget {
     );
   }
 
-  Widget _buildRail(BuildContext context, WidgetRef ref, ThemeMode themeMode) {
+  Widget _buildRail(
+    BuildContext context,
+    WidgetRef ref,
+    ThemeMode themeMode,
+    List<_NavDestination> destinations,
+  ) {
     final user = ref.watch(authControllerProvider).user;
     return Container(
       decoration: BoxDecoration(
@@ -254,8 +269,8 @@ class AppNavigationScaffold extends ConsumerWidget {
       child: NavigationRail(
         extended: true,
         minExtendedWidth: 248,
-        selectedIndex: selectedIndex,
-        onDestinationSelected: (index) => _navigate(context, index),
+        selectedIndex: selectedIndex.clamp(0, destinations.length - 1),
+        onDestinationSelected: (index) => _navigate(context, index, destinations),
         backgroundColor: Colors.transparent,
         leading: Padding(
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 28),
@@ -296,7 +311,7 @@ class AppNavigationScaffold extends ConsumerWidget {
             ),
           ),
         ),
-        destinations: _destinations
+        destinations: destinations
             .map(
               (item) => NavigationRailDestination(
                 icon: Icon(item.icon),
@@ -359,17 +374,18 @@ class AppNavigationScaffold extends ConsumerWidget {
                   ),
                 ),
               ),
-              SizedBox(
-                width: 220,
-                child: ListTile(
-                  leading: const Icon(Icons.logout_rounded),
-                  title: const Text('Sign out'),
-                  onTap: user == null
-                      ? null
-                      : () =>
-                            ref.read(authControllerProvider.notifier).logout(),
+              if (user != null)
+                SizedBox(
+                  width: 220,
+                  child: ListTile(
+                    leading: const Icon(Icons.logout_rounded),
+                    title: const Text('Sign out'),
+                    onTap: () async {
+                      await ref.read(authControllerProvider.notifier).logout();
+                      if (context.mounted) context.go('/login');
+                    },
+                  ),
                 ),
-              ),
               const SizedBox(height: 8),
             ],
           ),
