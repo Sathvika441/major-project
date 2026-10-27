@@ -269,7 +269,7 @@ class AppNavigationScaffold extends ConsumerWidget {
       child: NavigationRail(
         extended: true,
         minExtendedWidth: 248,
-        selectedIndex: selectedIndex.clamp(0, destinations.length - 1),
+        selectedIndex: selectedIndex.clamp(0, destinations.length - 1).toInt(),
         onDestinationSelected: (index) => _navigate(context, index, destinations),
         backgroundColor: Colors.transparent,
         leading: Padding(
