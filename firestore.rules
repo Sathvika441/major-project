@@ -1,0 +1,71 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedInAs(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function activeFarmExists(userId, farmId) {
+      let farmPath = /databases/$(database)/documents/users/$(userId)/farms/$(farmId);
+      return farmId is string
+        && exists(farmPath)
+        && get(farmPath).data.get('isActive', true) == true;
+    }
+
+    match /users/{userId} {
+      // User-owned application data is exposed only through the explicit
+      // subcollection rules below.
+      allow read, write: if false;
+
+      match /profile/{profileId} {
+        allow read, create, update, delete: if signedInAs(userId);
+      }
+
+      match /farms/{farmId} {
+        allow read, create, update, delete: if signedInAs(userId);
+
+        match /plots/{plotId} {
+          allow read: if signedInAs(userId);
+          allow create, update: if signedInAs(userId)
+            && activeFarmExists(userId, farmId);
+          allow delete: if signedInAs(userId);
+        }
+      }
+
+      match /devices/{deviceDocumentId} {
+        allow read: if signedInAs(userId);
+
+        allow create: if signedInAs(userId)
+          && request.resource.data.userId == userId
+          && request.resource.data.deviceId is string
+          && request.resource.data.deviceId.size() >= 3
+          && request.resource.data.deviceId.size() <= 50
+          && activeFarmExists(userId, request.resource.data.farmId);
+
+        allow update: if signedInAs(userId)
+          && request.resource.data.userId == userId
+          && request.resource.data.deviceId == resource.data.deviceId
+          && activeFarmExists(userId, request.resource.data.farmId);
+
+        allow delete: if signedInAs(userId);
+      }
+    }
+
+    // IoT snapshots and telemetry are backend-owned. Firebase Admin writes
+    // bypass these client rules; Flutter reads them through authenticated API
+    // routes that verify device ownership.
+    match /iot_devices/{deviceId} {
+      allow read, write: if false;
+
+      match /readings/{readingId} {
+        allow read, write: if false;
+      }
+    }
+
+    // Deny all other documents unless a more specific rule above allows them.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
