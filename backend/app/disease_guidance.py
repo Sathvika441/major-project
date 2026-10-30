@@ -87,7 +87,7 @@ def care_guidance(class_name: str) -> dict:
                 "Do not fill or treat cracks with unverified materials; request a field assessment from a horticulture officer/KVK.",
                 "If the palm is structurally unstable or the crack is rapidly progressing, keep people clear of the immediate area and obtain expert advice."
             ],
-            "fertilizer": "No corrective fertilizer dose can be inferred from stem cracking. Have underlying causes and soil nutrition assessed first."
+            "fertilizer": "Fertilizer is not a treatment for stem cracking, and no corrective dose can be inferred from an image. Have underlying causes and soil nutrition assessed first."
         },
         "yellow leaf disease": {
             "status": "Suspected yellow leaf disease",
