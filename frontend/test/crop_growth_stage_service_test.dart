@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import '../lib/core/services/crop_growth_stage_service.dart';
+import 'package:major_proj_1/core/services/crop_growth_stage_service.dart';
 
 void main() {
   const service = CropGrowthStageService();
