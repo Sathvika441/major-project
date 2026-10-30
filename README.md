@@ -1606,3 +1606,19 @@ Guidance tests:
 ```
 python -m unittest backend.tests.test_weather_guidance
 ```
+
+# 20. Firestore security rules and deployment
+
+The repository root contains `firestore.rules` and `firebase.json`. The rules restrict profile, farm, plot and device documents to the authenticated owner UID. The backend-owned `iot_devices` snapshots and telemetry history are not directly readable or writable by Flutter clients; app access goes through Firebase-authenticated FastAPI routes that verify device ownership.
+
+After signing in to the Firebase CLI and selecting the intended project, deploy the rules from the repository root:
+
+```powershell
+firebase deploy --only firestore:rules --project major-project-efb40
+```
+
+Review the Firebase project ID before deployment if using a different Firebase project. The Firebase CLI deployment is a separate step from configuring Flutter Firebase options.
+
+The backend restricts browser origins through `ARECASMART_CORS_ORIGINS`. Set it to the exact deployed Flutter web origin(s), comma-separated, including scheme and optional port. Local development origins are used when the variable is not configured. CORS is not a substitute for Firebase authentication or Firestore security rules.
+
+Image prediction validates the actual JPEG/PNG/WEBP content and rejects images above 20 megapixels before loading the ML model. The API still enforces the 10 MB upload limit.
