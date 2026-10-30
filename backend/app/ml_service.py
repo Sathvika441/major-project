@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 import tensorflow as tf
-from PIL import UnidentifiedImageError
+from PIL import Image, UnidentifiedImageError
 from tensorflow.keras.preprocessing import image
 
 
@@ -18,6 +18,7 @@ MODEL_PATH = ML_MODEL_DIR / "models" / "arecanut_model.keras"
 CLASS_NAMES_PATH = ML_MODEL_DIR / "models" / "class_names.json"
 
 IMG_SIZE = (224, 224)
+MAX_IMAGE_PIXELS = 20_000_000
 
 
 class ModelNotLoadedError(RuntimeError):
@@ -67,18 +68,28 @@ def predict_image(
 ) -> dict:
     """Run disease prediction on an uploaded image."""
 
-    model, class_names = load_artifacts()
-
+    # Validate the actual image content and dimensions before loading the ML
+    # model or decoding a potentially huge compressed image into memory.
     try:
+        with Image.open(io.BytesIO(image_bytes)) as source:
+            if source.format not in {"JPEG", "PNG", "WEBP"}:
+                raise ValueError("Unsupported image format.")
+            width, height = source.size
+            if width <= 0 or height <= 0 or width * height > MAX_IMAGE_PIXELS:
+                raise ValueError("Image dimensions are too large. Please upload an image with at most 20 megapixels.")
+            source.verify()
+
         img = image.load_img(
             io.BytesIO(image_bytes),
             target_size=IMG_SIZE,
             color_mode="rgb",
         )
-    except (UnidentifiedImageError, OSError, ValueError) as exc:
+    except (Image.DecompressionBombError, UnidentifiedImageError, OSError, ValueError) as exc:
         raise ValueError(
-            "The uploaded file is not a valid image."
+            "The uploaded file is not a supported, valid image or its dimensions are too large."
         ) from exc
+
+    model, class_names = load_artifacts()
 
     try:
         img_array = image.img_to_array(img)
