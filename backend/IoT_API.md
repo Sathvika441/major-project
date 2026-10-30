@@ -5,6 +5,7 @@ The backend accepts ESP32 telemetry, evaluates rule-driven irrigation safety con
 ## Security and storage
 
 - The ESP32 uses the server-configured `ARECASMART_IOT_API_TOKEN` as `X-Device-Token`. Keep this secret out of source control.
+- Browser access is restricted by `ARECASMART_CORS_ORIGINS`, a comma-separated list of allowed origins (scheme + host + optional port). Configure the deployed Flutter web origin; local development ports are allowed by default.
 - The Flutter app uses a Firebase ID token in `Authorization: Bearer <token>`. It must never contain or send the ESP32 device token.
 - App endpoints verify the Firebase ID token and verify that the device's `deviceId` exists under `users/{uid}/devices`.
 - When Firebase Admin is configured, readings are stored in `iot_devices/{device_id}` and `iot_devices/{device_id}/readings`. History survives backend restarts.
@@ -27,6 +28,8 @@ Set the Firebase project ID, a service-account credential path kept outside the 
 $env:FIREBASE_PROJECT_ID = "your-firebase-project-id"
 $env:GOOGLE_APPLICATION_CREDENTIALS = "C:\secure\path\firebase-admin-service-account.json"
 $env:ARECASMART_IOT_API_TOKEN = "your-long-random-device-token"
+# Optional: comma-separated Flutter web origins for deployed environments.
+$env:ARECASMART_CORS_ORIGINS = "https://your-frontend.example.com"
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
