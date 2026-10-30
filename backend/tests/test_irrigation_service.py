@@ -1,11 +1,11 @@
 """Unit tests for the prototype irrigation safety rules.
 
-Run from the backend directory with: python -m unittest discover -s tests
+Run from the repository root with: python -m pytest backend/tests
 """
 import unittest
 from datetime import timedelta
 
-from app.irrigation_service import IrrigationService, utc_now
+from backend.app.irrigation_service import IrrigationService, utc_now
 
 
 class IrrigationServiceTests(unittest.TestCase):
