@@ -20,12 +20,25 @@ logger = logging.getLogger(__name__)
 weather_service = OpenMeteoWeatherService()
 irrigation_service = IrrigationService()
 app = FastAPI(title="Major Project Backend", version="2.2.0")
+# Restrict browser origins instead of allowing every website to call the API.
+# Set ARECASMART_CORS_ORIGINS to a comma-separated list of deployed web origins.
+_default_cors_origins = (
+    "http://localhost:3000,http://127.0.0.1:3000,"
+    "http://localhost:5000,http://127.0.0.1:5000,"
+    "http://localhost:5173,http://127.0.0.1:5173,"
+    "http://localhost:8080,http://127.0.0.1:8080"
+)
+_cors_origins = [
+    origin.strip().rstrip("/")
+    for origin in os.getenv("ARECASMART_CORS_ORIGINS", _default_cors_origins).split(",")
+    if origin.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
     allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Device-Token"],
 )
 
 _PREDICT_WINDOW_SECONDS = 60
