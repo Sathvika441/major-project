@@ -14,9 +14,10 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // User-owned application data is exposed only through the explicit
-      // subcollection rules below.
-      allow read, write: if false;
+      // AuthService stores the user's profile in the root users/{uid}
+      // document. Restrict that document to its authenticated owner.
+      allow read, create, update: if signedInAs(userId);
+      allow delete: if false;
 
       match /profile/{profileId} {
         allow read, create, update, delete: if signedInAs(userId);
