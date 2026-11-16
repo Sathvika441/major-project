@@ -1,33 +1,80 @@
-# ArecaSmart — Smart Farm Workspace
+# ArecaSmart — AI and IoT-Based Arecanut Farm Management
 
-ArecaSmart is a Flutter-based smart-farming application for organizing farms, viewing weather and crop information, monitoring registered IoT sensors, and managing irrigation controls where supported by a compatible controller/backend integration.
+ArecaSmart is a smart-farming application designed to support arecanut farmers with crop disease identification, farm and weather information, and sensor-assisted irrigation management. The project combines a Flutter mobile application, a FastAPI backend, a CNN-based disease classification model, Firebase services, and an ESP32-based IoT prototype.
 
-> **Project status:** Device registration and monitoring UI are implemented. Registering a device record does not by itself connect physical hardware. A device remains **Not connected** until valid telemetry is received. Pump commands are safety-gated and must not be treated as proof that a physical pump operated.
+## Project highlights
 
-## Main features
+- **Arecanut disease detection:** Upload a crop image through the app and use the trained CNN model to classify it. The project evaluation reported **96% test accuracy** across **nine disease/healthy classes**. The backend returns the predicted class, confidence, and ranked class predictions.
+- **Disease care guidance:** The backend provides corresponding crop-care guidance for supported disease classifications.
+- **Farm management:** Create and manage farm profiles and associate registered IoT devices with the relevant farm.
+- **Weather-aware irrigation decision support:** The app's irrigation decision engine considers soil moisture, crop age and growth stage, temperature, humidity, rainfall, weather context, forecast precipitation, evapotranspiration, and recent irrigation when producing a recommendation.
+- **IoT sensor monitoring:** Receive soil-moisture readings and available environmental measurements from a registered ESP32 device. The app displays available telemetry and device connectivity information.
+- **Automatic and manual pump control:** The IoT backend supports threshold-based automatic control and farmer-requested manual ON/OFF control, with an emergency-stop function and safety checks.
+- **Sensor history:** When Firebase Admin/Firestore is configured, telemetry readings are persisted and can be retrieved by the authenticated app.
 
-- **Farm management:** Create and maintain farm details, including farm name, location, crop, acreage, and irrigation information.
-- **Weather and farm workspace:** View farm-related weather information and workspace details.
-- **Devices & sensors:** Register a device ID and display name, assign the device to a farm, and view its connectivity state and available readings.
-- **Sensor telemetry:** Display soil moisture, temperature, humidity, and rainfall only when readings are available; the UI does not fabricate live readings.
-- **IoT irrigation controls:** Show irrigation mode, pump state, moisture status, history, and safety messages. Actual operation depends on backend rules and compatible controller integration.
-- **Crop health tools:** The repository includes an AI crop-image analysis flow backed by the backend service.
+## System architecture
 
-## Device-to-farm assignment
+```text
+Flutter Mobile Application
+        |
+        +---- Firebase Authentication / Firestore
+        |
+        +---- FastAPI Backend
+        |       |
+        |       +---- CNN Arecanut Disease Classifier
+        |       +---- Disease Care Guidance
+        |       +---- Weather Service
+        |       +---- Authenticated IoT App API
+        |
+        +---- Farm, Device and Irrigation UI
+                        |
+                  FastAPI IoT API
+                        |
+                      ESP32
+                        |
+             Soil Moisture Sensor
+                        |
+                   Water Pump
+```
 
-When registering a device, select the farm it belongs to. The device record stores the farm ID, and the Devices & Sensors card resolves that ID to the farm's saved name. Each card shows the assigned farm name and device ID. If the referenced farm cannot be found, the card displays **Farm not found** rather than guessing.
+The Flutter application uses Firebase authentication for user-facing operations. The ESP32 communicates with protected device endpoints using a server-configured device token. The device token is separate from the Firebase ID token and must never be embedded in the Flutter application.
 
-## Repository layout
+## IoT irrigation workflow
 
-- `frontend/` — Flutter application, screens, models, repositories, and tests.
-- `backend/` — FastAPI service and related backend tests/services.
-- `README.md` — Project overview, implementation notes, and recent changes.
+1. The soil-moisture sensor is read by the ESP32.
+2. The ESP32 sends telemetry to the backend using the protected sensor-reading endpoint.
+3. The backend validates the device payload and evaluates the latest reading against the configured moisture thresholds and safety conditions.
+4. In automatic mode, the backend calculates the pump target. In manual mode, the farmer can request pump ON or OFF through the authenticated app.
+5. The ESP32 polls for its latest command and applies the backend-authoritative pump target. The firmware is designed to fail OFF when connectivity or command freshness checks fail.
+6. The app displays the available device status, moisture reading, pump state, control mode, emergency-stop state, and sensor history.
 
-## Development
+The application also contains a weather-aware irrigation decision engine for recommendations. The current backend's physical pump automation uses configured soil-moisture thresholds and safety rules; weather-based recommendations should not be interpreted as proof that the backend automatically actuates the pump from a weather forecast.
 
-### Flutter frontend
+### Irrigation safety
 
-From the repository root:
+- Automatic control requires a valid and sufficiently fresh sensor reading.
+- Moisture start/stop thresholds use hysteresis to reduce rapid pump switching.
+- A minimum interval between automatic runs and a maximum continuous run time are enforced.
+- Emergency stop forces the pump target OFF. Clearing the stop does not directly start the pump; a fresh reading is required before normal control resumes.
+- Firmware-side runtime limits and fail-OFF behavior provide additional safeguards.
+
+Default thresholds and run limits are demonstration settings, not agronomic recommendations. Calibrate them for the actual soil, sensor, crop, pump, and irrigation installation. Software emergency stop does not replace a physical emergency-stop switch or correctly rated electrical protection.
+
+## Repository structure
+
+| Path | Description |
+|---|---|
+| `frontend/` | Flutter application, screens, state management, repositories, and tests |
+| `backend/` | FastAPI application, disease inference, weather service, IoT APIs, and backend tests |
+| `ML model/` | Trained arecanut model and class-name metadata |
+| `hardware/esp32/ArecaSmart_Irrigation.ino` | ESP32 reference firmware for telemetry and pump control |
+| `backend/IoT_API.md` | IoT API, authentication, Firestore layout, and setup details |
+
+## Getting started
+
+### 1. Flutter application
+
+Install Flutter and configure the required Firebase project for the app. From the repository root, run:
 
 ```powershell
 cd frontend
@@ -36,92 +83,56 @@ flutter analyze
 flutter test
 ```
 
-Run the app on a supported device or browser using Flutter's device list, for example:
+To run the application in Chrome:
 
 ```powershell
 flutter devices
 flutter run -d chrome
 ```
 
-### Backend
+Use the appropriate device identifier if running on an Android device or another supported target.
 
-Backend setup depends on the Python environment and dependencies configured in `backend/`. On Windows PowerShell, activate the existing virtual environment from the backend directory if one has been created:
+### 2. FastAPI backend
+
+Use Python compatible with the dependencies in `backend/requirements.txt`. From the repository root:
 
 ```powershell
 cd backend
+python -m venv .venv
 .\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 ```
 
-Then follow the backend dependency and run instructions maintained in that directory. Do not run `cd backend` a second time when already inside the backend folder.
+Configure the backend environment. Keep the Firebase service-account file and device token outside source control:
 
-## Safety and data notes
+```powershell
+$env:FIREBASE_PROJECT_ID = "your-firebase-project-id"
+$env:GOOGLE_APPLICATION_CREDENTIALS = "C:\secure\path\firebase-admin-service-account.json"
+$env:ARECASMART_IOT_API_TOKEN = "your-long-random-device-token"
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
 
-- A registered Firestore/device record is not evidence that a physical sensor is online.
-- Sensor values should only be displayed when valid telemetry is available.
-- Irrigation/pump requests can be rejected by backend safety rules; UI status alone does not confirm physical actuation.
-- Keep credentials, API keys, service-account files, and local environment files out of version control.
+The Flutter app and backend must use the same Firebase project. The ESP32 must be configured with the same device token as `ARECASMART_IOT_API_TOKEN`. Never commit real credentials, tokens, service-account JSON, or local environment files. See [backend/IoT_API.md](backend/IoT_API.md) for endpoint details and the Firebase/IoT configuration.
 
-## Recent changes
+### 3. ESP32 prototype
 
-### 2026-10-27 — Device farm name visibility
+Open `hardware/esp32/ArecaSmart_Irrigation.ino` in the Arduino IDE, install the required board and libraries, and configure the Wi-Fi credentials, backend address, device ID, and device token for the test environment. Do not commit real Wi-Fi credentials or tokens.
 
-- Updated the Devices & Sensors cards to resolve each device's `farmId` against the user's saved farms.
-- Added a visible **Farm: <farm name>** label and made the device ID explicit.
-- Added a **Farm not found** fallback when the referenced farm record is unavailable.
-- The device registration dialog continues to assign a device to a selected farm.
-- Change committed on branch `feature/bug-fixes-improvements` (commit `e4af281`).
-- Validation note: source was checked on GitHub; Flutter analysis/tests have not been run for this change.
+The ESP32 firmware and the physical sensor/pump setup have been exercised as part of the project prototype. Validate the wiring, power supply, pump driver, sensor calibration, network behavior, and independent electrical safety measures before any field deployment.
 
-### 2026-10-27 — Removed redundant onboarding screen
+## API and data notes
 
-- Removed the separate onboarding screen that repeated farm-location entry already available in Farm Details.
-- Removed the `/onboarding` route and changed the incomplete-profile redirect to `/farm-details`.
-- Changes are on branch `feature/bug-fixes-improvements`; Flutter analysis/tests have not been run for this change.
+- ESP32 telemetry routes require `X-Device-Token`.
+- Flutter app IoT routes require `Authorization: Bearer <Firebase ID token>` and verify that the device belongs to the signed-in user.
+- When Firebase Admin/Firestore is configured, telemetry readings are persisted under `iot_devices/{deviceId}/readings`.
+- Irrigation command state, settings, and event evaluation currently use bounded in-memory backend state. They reset to safe pump-OFF defaults after a backend restart; Firestore status snapshots do not currently restore the full command/settings state.
+- Without Firebase Admin/Firestore configuration, authenticated app IoT endpoints and persisted history are unavailable.
+- The ML model must be present at the path expected by `backend/app/ml_service.py` for disease inference to be available.
 
-### 2026-10-27 — Preserve farm association in IoT backend status
+## Current implementation boundaries
 
-- Updated `backend/app/firestore_iot_store.py` to resolve the authoritative farm ID from the Flutter device registration path before saving IoT status.
-- Persisted the resolved farm association as both `farmId` and `farm_id` at the IoT snapshot root, and as `farm_id` inside the backend status object, so existing Flutter and backend readers can consume the same relationship.
-- Fixed a telemetry mapping path lookup to use the Firestore `DocumentReference.path` directly.
-- This fixes the backend mapping path for future status writes; it does **not** automatically repair existing Firestore documents or generate sensor readings. Existing records may need a status refresh or a controlled data migration.
-- Validation note: source was updated on GitHub; backend tests and lint/type checks have not been run.
+ArecaSmart is an academic prototype and decision-support system. Model accuracy is based on the project's evaluation dataset and does not guarantee correct diagnosis for every field image. Disease guidance and irrigation recommendations should be reviewed against local agricultural expertise. IoT pump commands are subject to device connectivity, sensor validity, backend safety rules, and the physical installation; an API response alone is not proof of pump actuation.
 
-### 2026-10-27 — Compact Devices & Sensors cards
+## Contributing and validation
 
-- Reduced device-card padding, icon size, vertical spacing, and grid gaps.
-- Combined the farm name and device ID into one compact metadata row.
-- Removed the repeated “waiting for first telemetry packet” line; the no-reading state already communicates that no sensor data is available.
-- Kept connection status, farm association, available sensor readings, and irrigation safety controls visible.
-- Validation note: source was updated on GitHub; Flutter analysis/tests have not been run.
-
-### 2026-10-27 — Align device card contents
-
-- Standardized the farm name and device ID into a clear stacked metadata section.
-- Changed irrigation action buttons to a consistent full-width vertical layout so their left and right edges align.
-- Kept Emergency stop and History together in a balanced two-column row.
-- Validation note: source was updated on GitHub; Flutter analysis/tests have not been run.
-
-### 2026-10-27 — Farm management page layout
-
-- Increased the farm portfolio hero banner's internal padding so the image-led header is taller and its title, summary, farm/acres counts, and Add farm action have more breathing room.
-- Adjusted the hero's responsive breakpoint to stack content before the available width becomes cramped.
-- Refined farm-list spacing and card padding for a more balanced page layout.
-- Validation note: source was updated on GitHub; Flutter analysis/tests have not been run.
-
-### 2026-10-27 — Weather hero background
-
-- Added the existing areca plantation image as the weather hero card background.
-- Added a dark green gradient overlay to preserve contrast and readability for the location, temperature, weather icon, and metrics.
-- Reused the existing bundled asset; no external image dependency was introduced.
-- Validation note: source was updated on GitHub; Flutter analysis/tests have not been run.
-
-## Branch and contribution workflow
-
-Current working branch for these improvements: `feature/bug-fixes-improvements`.
-
-For each significant code change, update this README in the same commit or immediately afterward with:
-1. What changed and why.
-2. Relevant screen/API/model behavior.
-3. Tests or checks actually run, including any that remain outstanding.
-
-Do not describe a change as tested unless the relevant command or test was actually run.
+Keep this README aligned with the implementation when adding or changing features. Record the checks that were actually run, and distinguish implemented behavior from planned work. Before submitting changes, run the relevant Flutter or Python tests and review configuration/security changes for accidentally committed credentials.
