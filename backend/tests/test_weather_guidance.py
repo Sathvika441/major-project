@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch
-from backend.app.weather_service import OpenMeteoWeatherService
+from app.weather_service import OpenMeteoWeatherService
 
 class GuidanceTests(unittest.TestCase):
     def test_clear_conditions_are_suitable(self):

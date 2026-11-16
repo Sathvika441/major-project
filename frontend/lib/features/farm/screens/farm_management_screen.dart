@@ -96,7 +96,7 @@ class FarmManagementScreen extends ConsumerWidget {
                   : (constraints.maxWidth - gap * (columns - 1)) / columns;
 
               return ListView(
-                padding: const EdgeInsets.fromLTRB(20, 22, 20, 110),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
                 children: [
                   _PortfolioHeader(
                     farmCount: items.length,
@@ -106,7 +106,7 @@ class FarmManagementScreen extends ConsumerWidget {
                     ),
                     onAdd: () => _openFarm(context, ref, startNew: true),
                   ),
-                  const SizedBox(height: 22),
+                  const SizedBox(height: 20),
                   Wrap(
                     spacing: gap,
                     runSpacing: gap,
@@ -154,24 +154,28 @@ class _PortfolioHeader extends StatelessWidget {
     return AssetGlassPanel(
       imagePath: 'assets/images/25_Areca-nut-trees_Rao_s-plantation_Sharmila-V-768x512.jpg.jpeg',
       borderRadius: BorderRadius.circular(24),
+      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final compact = constraints.maxWidth < 620;
+          final compact = constraints.maxWidth < 760;
           final intro = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Your farm portfolio',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   color: scheme.onPrimary,
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(height: 6),
-              Text(
-                'Keep every field and crop detail in one place.',
+              const SizedBox(height: 10),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 460),
+                child: Text(
+                  'Keep every field and crop detail in one place.',
                 style: TextStyle(
                   color: scheme.onPrimary.withValues(alpha: 0.86),
+                  ),
                 ),
               ),
             ],
@@ -185,7 +189,7 @@ class _PortfolioHeader extends StatelessWidget {
                 label: farmCount == 1 ? 'Farm' : 'Farms',
                 color: scheme.onPrimary,
               ),
-              const SizedBox(width: 22),
+              const SizedBox(width: 28),
               _Stat(
                 value: totalAcres.toStringAsFixed(1),
                 label: 'Acres',
@@ -221,7 +225,7 @@ class _PortfolioHeader extends StatelessWidget {
             children: [
               Expanded(child: intro),
               stats,
-              const SizedBox(width: 24),
+              const SizedBox(width: 30),
               button,
             ],
           );
@@ -274,15 +278,15 @@ class _FarmCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(22),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
                   Container(
-                    width: 52,
-                    height: 52,
+                    width: 48,
+                    height: 48,
                     decoration: BoxDecoration(
                       color: scheme.primaryContainer,
                       borderRadius: BorderRadius.circular(16),

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../models/device/device_model.dart';
 import '../../../repositories/device/device_repository.dart';
+import '../widgets/iot_device_controls.dart';
 import '../../../widgets/app_navigation_scaffold.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../farm/screens/farm_management_screen.dart';
@@ -22,6 +23,11 @@ class DeviceManagementScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final devices = ref.watch(devicesProvider);
+    final farms = ref.watch(farmsProvider);
+    final farmNames = {
+      for (final farm in farms.valueOrNull ?? <dynamic>[])
+        farm.id: farm.name.trim().isEmpty ? 'Unnamed farm' : farm.name.trim(),
+    };
 
     return AppNavigationScaffold(
       title: 'Devices & sensors',
@@ -61,23 +67,23 @@ class DeviceManagementScreen extends ConsumerWidget {
                   : constraints.maxWidth >= 720
                   ? 2
                   : 1;
-              const gap = 18.0;
+              const gap = 12.0;
               final width = columns == 1
                   ? constraints.maxWidth
                   : (constraints.maxWidth - gap * (columns - 1)) / columns;
 
               return ListView(
-                padding: const EdgeInsets.fromLTRB(20, 22, 20, 110),
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 96),
                 children: [
                   _DeviceSummary(
                     total: items.length,
                     online: online,
                     offline: offline,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   Card(
                     child: Padding(
-                      padding: const EdgeInsets.all(14),
+                      padding: const EdgeInsets.all(12),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -95,7 +101,7 @@ class DeviceManagementScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
                   if (items.isEmpty)
                     const _EmptyDeviceState()
                   else
@@ -106,7 +112,10 @@ class DeviceManagementScreen extends ConsumerWidget {
                           .map(
                             (device) => SizedBox(
                               width: width,
-                              child: _DeviceCard(device: device),
+                              child: _DeviceCard(
+                                device: device,
+                                farmName: farmNames[device.farmId] ?? 'Farm not found',
+                              ),
                             ),
                           )
                           .toList(),
@@ -145,7 +154,7 @@ class DeviceManagementScreen extends ConsumerWidget {
                     controller: id,
                     decoration: const InputDecoration(
                       labelText: 'Device ID',
-                      hintText: 'Example: SENSOR-001',
+                      hintText: 'Example: 2 or SENSOR-001',
                     ),
                     maxLength: 50,
                     textCapitalization: TextCapitalization.characters,
@@ -157,8 +166,8 @@ class DeviceManagementScreen extends ConsumerWidget {
                     validator: (value) {
                       final candidate = value?.trim() ?? '';
                       if (candidate.isEmpty) return 'Enter the device ID';
-                      if (candidate.length < 3 || candidate.length > 50)
-                        return 'Use 3–50 characters';
+                      if (candidate.isEmpty || candidate.length > 50)
+                        return 'Use 1–50 characters';
                       if (!RegExp(r'^[A-Za-z0-9_-]+$').hasMatch(candidate)) {
                         return 'Use letters, numbers, hyphens or underscores only';
                       }
@@ -234,24 +243,32 @@ class DeviceManagementScreen extends ConsumerWidget {
                   : () async {
                       if (!key.currentState!.validate()) return;
                       final uid = ref.read(authControllerProvider).user!.uid;
-                      await ref
-                          .read(deviceRepositoryProvider)
-                          .register(
-                            DeviceModel(
-                              id:
-                                  'device_' +
-                                  DateTime.now().microsecondsSinceEpoch
-                                      .toString(),
-                              userId: uid,
-                              farmId: selectedFarmId!,
-                              plotId: '',
-                              deviceId: id.text.trim(),
-                              name: name.text.trim(),
-                              lastSeen: DateTime.now(),
-                            ),
-                          );
-                      ref.invalidate(devicesProvider);
-                      if (ctx.mounted) Navigator.pop(ctx);
+                      try {
+                        await ref
+                            .read(deviceRepositoryProvider)
+                            .register(
+                              DeviceModel(
+                                id:
+                                    'device_' +
+                                    DateTime.now().microsecondsSinceEpoch
+                                        .toString(),
+                                userId: uid,
+                                farmId: selectedFarmId!,
+                                plotId: '',
+                                deviceId: id.text.trim(),
+                                name: name.text.trim(),
+                                lastSeen: DateTime.now(),
+                              ),
+                            );
+                        ref.invalidate(devicesProvider);
+                        ref.invalidate(farmsProvider);
+                        if (ctx.mounted) Navigator.pop(ctx);
+                      } catch (error) {
+                        if (!ctx.mounted) return;
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          SnackBar(content: Text(error.toString())),
+                        );
+                      }
                     },
               child: const Text('Register'),
             ),
@@ -349,8 +366,9 @@ class _SummaryMetric extends StatelessWidget {
 
 class _DeviceCard extends StatelessWidget {
   final DeviceModel device;
+  final String farmName;
 
-  const _DeviceCard({required this.device});
+  const _DeviceCard({required this.device, required this.farmName});
 
   @override
   Widget build(BuildContext context) {
@@ -362,27 +380,27 @@ class _DeviceCard extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  width: 48,
-                  height: 48,
+                  width: 38,
+                  height: 38,
                   decoration: BoxDecoration(
                     color: online
                         ? scheme.primaryContainer
                         : scheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(15),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     online ? Icons.sensors_rounded : Icons.sensors_off_outlined,
                     color: online ? scheme.primary : scheme.onSurfaceVariant,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 9),
                 Expanded(
                   child: Text(
                     device.name.isEmpty ? 'Unnamed device' : device.name,
@@ -395,16 +413,40 @@ class _DeviceCard extends StatelessWidget {
                 _StatusPill(state: connection),
               ],
             ),
-            const SizedBox(height: 16),
-            Text(device.deviceId, style: Theme.of(context).textTheme.bodySmall),
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Icon(Icons.agriculture_outlined, size: 14, color: scheme.primary),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Text(
+                    'Farm: $farmName',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 2),
             Text(
-              reading == null
-                  ? 'Waiting for first telemetry packet'
-                  : 'Last seen ' + _ago(device.lastSeen),
+              'Device ID: ${device.deviceId}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodySmall,
             ),
-            const SizedBox(height: 18),
+            if (reading != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  'Updated ${_ago(device.lastSeen)}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+            const SizedBox(height: 10),
             if (reading == null)
               _NoReading()
             else
@@ -438,6 +480,8 @@ class _DeviceCard extends StatelessWidget {
                   ),
                 ],
               ),
+            const SizedBox(height: 8),
+            IoTDeviceControls(deviceId: device.deviceId),
           ],
         ),
       ),

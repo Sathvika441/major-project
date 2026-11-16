@@ -28,6 +28,9 @@ class FirestoreFarmRepository implements FarmRepository {
   CollectionReference<Map<String, dynamic>> _plots(String uid, String farmId) =>
       _farms(uid).doc(farmId).collection('plots');
 
+  CollectionReference<Map<String, dynamic>> _devices(String uid, String farmId) =>
+      _farms(uid).doc(farmId).collection('devices');
+
   @override
   Future<List<FarmModel>> getFarms(String userId) async {
     final snapshot = await _farms(userId)
@@ -104,9 +107,30 @@ class FirestoreFarmRepository implements FarmRepository {
       a.year == b.year && a.month == b.month && a.day == b.day;
 
   @override
-  Future<void> deactivateFarm(String userId, String farmId) => _farms(userId)
-      .doc(farmId)
-      .update({'isActive': false, 'updatedAt': FieldValue.serverTimestamp()});
+  Future<void> deactivateFarm(String userId, String farmId) async {
+    final farmRef = _farms(userId).doc(farmId);
+    final farmSnapshot = await farmRef.get();
+    if (!farmSnapshot.exists) {
+      throw StateError('Farm does not exist or is not owned by this account.');
+    }
+
+    // Keep the parent farm active while active devices still point to it.
+    // This prevents dangling device -> farm relationships.
+    final linkedDevices = await _devices(userId, farmId)
+        .where('isActive', isEqualTo: true)
+        .limit(1)
+        .get();
+    if (linkedDevices.docs.isNotEmpty) {
+      throw StateError(
+        'Reassign or deactivate devices linked to this farm before deactivating it.',
+      );
+    }
+
+    await farmRef.update({
+      'isActive': false,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
 
   @override
   Future<List<PlotModel>> getPlots(String userId, String farmId) async {
@@ -121,11 +145,25 @@ class FirestoreFarmRepository implements FarmRepository {
 
   @override
   Future<PlotModel> savePlot(String userId, PlotModel plot) async {
-    await _plots(
-      userId,
-      plot.farmId,
-    ).doc(plot.id).set(plot.toMap(), SetOptions(merge: true));
-    return plot;
+    final farmSnapshot = await _farms(userId).doc(plot.farmId).get();
+    if (!farmSnapshot.exists ||
+        farmSnapshot.data()?['isActive'] == false) {
+      throw StateError('Plots can only be saved under an active farm you own.');
+    }
+
+    final normalizedName = plot.name.trim();
+    if (normalizedName.length < 2 || normalizedName.length > 80) {
+      throw ArgumentError('Plot name must contain 2–80 characters.');
+    }
+    if (plot.areaAcres <= 0) {
+      throw ArgumentError('Plot area must be greater than zero.');
+    }
+
+    final normalizedPlot = plot.copyWith(name: normalizedName);
+    await _plots(userId, plot.farmId)
+        .doc(plot.id)
+        .set(normalizedPlot.toMap(), SetOptions(merge: true));
+    return normalizedPlot;
   }
 
   @override

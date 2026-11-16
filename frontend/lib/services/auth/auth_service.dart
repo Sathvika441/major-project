@@ -163,7 +163,6 @@ class FirebaseAuthService implements AuthService {
       if (user == null) {
         throw StateError('Google sign-in completed without a Firebase user.');
       }
-
       return await _userModel(user);
     } on FirebaseAuthException catch (authError) {
       // Preserve the Firebase error code so the UI can distinguish an actual

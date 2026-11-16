@@ -132,15 +132,30 @@ class AppNavigationScaffold extends ConsumerWidget {
                   )
                 : null,
             title: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title),
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: false,
+                ),
                 if (subtitle != null)
-                  Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
+                  Text(
+                    subtitle!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
               ],
             ),
             actions: [
-              ...?actions,
+              // On narrow phones / resized browser windows, page-specific
+              // actions can consume the entire toolbar. Keep the overflow menu
+              // available and show optional actions only when they can fit.
+              if (constraints.maxWidth >= 420) ...?actions,
               PopupMenuButton<String>(
                 tooltip: 'More options',
                 onSelected: (value) async {

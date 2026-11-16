@@ -173,7 +173,14 @@ class IrrigationDecisionEngine {
     }
 
     final clampedScore = score.clamp(-0.6, 1.0).toDouble();
-    final recommended = clampedScore >= 0.30;
+    // A recent watering event is a safety cooldown, not merely one weighted
+    // factor. Avoid recommending another irrigation cycle within 12 hours.
+    final recentIrrigationCooldown =
+        recent.hasOccurred &&
+        !createdAt.difference(recent.startedAt!).isNegative &&
+        createdAt.difference(recent.startedAt!) < const Duration(hours: 12);
+    final recommended =
+        clampedScore >= 0.30 && !recentIrrigationCooldown;
     final minutes = recommended
         ? (10 + math.max(0, clampedScore - 0.30) * 20).round()
         : 0;

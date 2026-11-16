@@ -1,6 +1,6 @@
 import unittest
 
-from backend.app.disease_guidance import care_guidance
+from app.disease_guidance import care_guidance
 
 
 class DiseaseGuidanceTests(unittest.TestCase):
