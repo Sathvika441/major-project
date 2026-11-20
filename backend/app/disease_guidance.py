@@ -1,8 +1,8 @@
-"""Disease care guidance mapped to the current ArecaSmart model classes.
+"""Evidence-based arecanut crop-protection guidance for the current model classes.
 
-The guidance is conservative decision support, not an automatic pesticide/fertilizer
-prescription. The model labels alone cannot determine dose; dose depends on crop age,
-soil/tissue test, severity, product label and local extension recommendations.
+Chemical recommendations are shown only where an ICAR-CPCRI source provides a
+crop-specific product and dose. A model label is a screening result, not a field
+diagnosis. Follow the current product label and local KVK/extension advice.
 """
 
 from datetime import datetime, timezone
@@ -10,111 +10,156 @@ from datetime import datetime, timezone
 
 def care_guidance(class_name: str) -> dict:
     key = " ".join(class_name.strip().lower().replace("_", " ").split())
+
+    no_spray = {
+        "pesticide": (
+            "No pesticide is recommended for a healthy image. Continue routine "
+            "scouting and use crop-protection products only if a pest or disease "
+            "is confirmed."
+        ),
+        "pesticide_status": "No treatment indicated",
+    }
+
     entries = {
         "healthy leaf": {
             "status": "No disease detected in this class",
             "actions": [
-                "Continue weekly scouting and photograph the same area for comparison.",
-                "Keep drainage open and avoid prolonged waterlogging.",
-                "Use balanced nutrition based on soil testing and local arecanut recommendations."
+                "Continue regular inspection of leaves and the crown.",
+                "Maintain drainage and avoid prolonged waterlogging.",
+                "If spots or blight develop, obtain a field diagnosis before spraying."
             ],
-            "fertilizer": "No corrective fertilizer is indicated by this image alone. Follow soil-test-based, crop-age-specific nutrition; do not apply extra nitrogen as a disease treatment.",
-            "urgency": "Routine monitoring"
+            **no_spray,
+            "urgency": "Routine monitoring",
         },
         "healthy nut": {
             "status": "No disease detected in this class",
             "actions": [
-                "Inspect nuts and bunches regularly for lesions, rot and unusual drop.",
-                "Remove and safely dispose of obviously diseased fallen material where advised locally.",
-                "Maintain drainage and avoid injuries during garden operations."
+                "Inspect bunches regularly for water-soaked lesions, rot and premature nut fall.",
+                "Keep the garden clean and maintain drainage.",
             ],
-            "fertilizer": "No disease-specific fertilizer is indicated. Follow soil-test-based, crop-age-specific nutrition."
+            **no_spray,
         },
         "healthy trunk": {
             "status": "No disease detected in this class",
             "actions": [
-                "Inspect the stem base and trunk for fresh wounds, oozing or cracks.",
-                "Avoid mechanical injury and prevent water from stagnating around the palm.",
-                "Record recurring symptoms and seek advice if lesions appear."
+                "Inspect the trunk for fresh wounds, oozing, cracks or decay.",
+                "Avoid mechanical injury and water stagnation around the palm.",
             ],
-            "fertilizer": "No disease-specific fertilizer is indicated. Follow soil-test-based, crop-age-specific nutrition."
+            **no_spray,
         },
         "mahali koleroga": {
-            "status": "Suspected Mahali / Koleroga (fruit rot)",
+            "status": "Suspected Mahali / Koleroga (arecanut fruit rot)",
             "actions": [
-                "Inspect nuts, buttons and rachillae for water-soaked/brown lesions and premature nut fall; image predictions are not confirmation.",
-                "Improve drainage and reduce persistent wetness around bunches and the garden canopy where practical.",
-                "Collect affected fallen nuts and diseased plant material and dispose of them according to local extension advice.",
-                "Promptly consult the local horticulture officer/KVK about a locally registered, label-approved disease-management treatment and its timing, especially during wet weather."
+                "Confirm water-soaked or brown lesions on nuts and premature nut fall in the field; an image prediction alone is not confirmation.",
+                "Remove and destroy affected fallen nuts and diseased bunch material; improve garden drainage.",
+                "For Malnad Karnataka, ICAR-CPCRI reports fenamidone 10% + mancozeb 50% (w/w) at 0.3% spray concentration (3 g/L), with an adhesive, as a management option.",
+                "ICAR-CPCRI also recommends prophylactic 1% Bordeaux mixture on bunches before the monsoon, repeated after 40–45 days where monsoon conditions continue.",
+                "Use only a currently registered product whose label permits the crop and target disease; confirm product choice, spray volume, timing and any harvest interval with the local KVK."
             ],
-            "fertilizer": "Fertilizer does not cure Koleroga. Do not increase fertilizer or apply a spray solely from this prediction; use soil-test-based nutrition and obtain local plant-pathology advice for crop-protection products.",
-            "urgency": "Prompt field confirmation"
+            "pesticide": (
+                "ICAR-CPCRI Malnad Karnataka recommendation: fenamidone 10% + "
+                "mancozeb 50% (w/w) at 0.3% (3 g product/L water) with adhesive. "
+                "Alternative preventive recommendation: 1% Bordeaux mixture on "
+                "bunches. These are source-reported concentrations, not a "
+                "substitute for checking the current product label."
+            ),
+            "pesticide_status": "CPCRI recommendation available — field confirmation required",
+            "urgency": "Prompt field confirmation, especially during monsoon",
+            "sources": [
+                "ICAR-CPCRI, arecanut Koleroga management recommendation for Malnad Karnataka: https://cpcri.gov.in/page/staff_profile/1/2",
+                "ICAR-CPCRI, Farmers' Corner — Arecanut: https://cpcri.gov.in/page/article/farmers_corner_crop_advice_arecanut",
+            ],
         },
         "stem bleeding": {
             "status": "Suspected stem bleeding",
             "actions": [
-                "Examine the stem for dark bleeding patches, cracking or tissue decay; photograph the affected area and track spread.",
-                "Prevent injury to the trunk and avoid waterlogging near the palm base.",
-                "Do not scrape/cut extensively or apply unverified chemicals; seek confirmation from a horticulture officer/KVK.",
-                "Ask the local expert to assess the affected palms and recommend a registered treatment based on severity."
+                "Have the bleeding patch and trunk condition examined by a horticulture officer or KVK before treatment.",
+                "Improve drainage and prevent injuries to the trunk.",
+                "No arecanut-specific pesticide product and dosage could be verified from the cited ICAR-CPCRI recommendations for this model label; do not apply a guessed dose."
             ],
-            "fertilizer": "No fertilizer dose can be derived from an image. Nutrition supports overall palm health but will not itself cure stem bleeding; base fertilizer on soil test and crop stage."
+            "pesticide": (
+                "No verified arecanut-specific pesticide and dosage is provided "
+                "for this image class. Obtain a field diagnosis and treatment "
+                "recommendation from ICAR-CPCRI/KVK before applying chemicals."
+            ),
+            "pesticide_status": "No verified dose — expert diagnosis required",
         },
         "bud borer": {
             "status": "Suspected bud borer damage",
             "actions": [
-                "Inspect the spindle/central unopened leaf and crown for bore holes, frass, wilting or damaged tissue.",
-                "Avoid injuring the growing point; mark affected palms and inspect nearby palms.",
-                "Get prompt confirmation from a local horticulture officer/KVK because crown damage can be serious.",
-                "Use only locally registered control measures and follow the product label, protective equipment and pre-harvest interval."
+                "Inspect the spindle and growing point for bore holes, frass, wilting or damaged tissue; confirm the insect before treatment.",
+                "Mark affected palms and seek prompt assessment from a horticulture officer or KVK.",
+                "No crop-specific pesticide and dosage for an arecanut pest named bud borer could be verified in the ICAR-CPCRI sources reviewed; do not substitute a recommendation for spindle bug or another pest."
             ],
-            "fertilizer": "Fertilizer does not control borers. Do not apply a chemical or dosage from the image result; ask an extension officer to confirm the pest and recommend label-approved management."
+            "pesticide": (
+                "No verified arecanut bud-borer pesticide dose is available in "
+                "the cited official sources. Do not use a spindle-bug or other "
+                "pest recommendation for this label without expert confirmation."
+            ),
+            "pesticide_status": "No verified dose — pest identification required",
         },
         "healthy foot": {
             "status": "No disease detected in this class",
             "actions": [
-                "Keep the palm base well drained and avoid physical damage to roots and collar.",
-                "Observe for softness, rot, unusual discoloration or leaning.",
-                "Maintain organic matter and nutrition according to soil testing and local recommendations."
+                "Keep the palm base well drained and avoid root or collar injury.",
+                "Observe for softness, rot, discoloration or unusual leaning.",
             ],
-            "fertilizer": "No disease-specific dose is indicated from this image. Use soil-test-based nutrition."
+            **no_spray,
         },
         "stem cracking": {
             "status": "Suspected stem cracking",
             "actions": [
-                "Inspect cracks for fresh injury, decay, oozing or widening and record the location and progression.",
+                "Arrange field inspection to determine whether the crack is due to injury, growth stress or disease.",
                 "Avoid further mechanical injury and improve drainage around the palm.",
-                "Do not fill or treat cracks with unverified materials; request a field assessment from a horticulture officer/KVK.",
-                "If the palm is structurally unstable or the crack is rapidly progressing, keep people clear of the immediate area and obtain expert advice."
+                "No pesticide dose can be justified from a stem-cracking image label; do not fill or spray the crack with unverified chemicals."
             ],
-            "fertilizer": "There is not enough evidence to infer a corrective fertilizer dose from stem cracking. Have underlying causes and soil nutrition assessed first."
+            "pesticide": (
+                "No verified pesticide recommendation or dosage is available "
+                "for stem cracking as an image class. Obtain a field diagnosis "
+                "before any chemical treatment."
+            ),
+            "pesticide_status": "No verified dose — cause must be diagnosed",
         },
         "yellow leaf disease": {
-            "status": "Suspected yellow leaf disease",
+            "status": "Suspected arecanut Yellow Leaf Disease (YLD)",
             "actions": [
-                "Photograph the whole palm and neighbouring palms, noting which leaves yellow first and how symptoms progress.",
-                "Check drainage, soil moisture and other palms for similar symptoms; nutrient deficiencies and other stresses can look similar.",
-                "Request field diagnosis from the local horticulture department/KVK before treating; do not infer a nutrient deficiency from yellow colour alone.",
-                "Maintain recommended garden care and avoid over-irrigation or unbalanced fertilizer until the cause is confirmed."
+                "Confirm the characteristic yellowing pattern and inspect neighbouring palms; nutrient stress and other disorders can look similar.",
+                "ICAR-CPCRI identifies YLD as a phytoplasma disease and reports that it is not amenable to control by conventional plant-protection measures.",
+                "Do not recommend an insecticide as a cure for YLD. Seek local expert advice on diagnosis, garden management, drainage and nutrition."
             ],
-            "fertilizer": "Yellowing alone cannot distinguish disease from nutrient deficiency. Do not prescribe extra nitrogen, magnesium or other nutrients without soil/leaf analysis and local expert advice."
+            "pesticide": (
+                "No curative pesticide is recommended for Yellow Leaf Disease. "
+                "ICAR-CPCRI identifies it as a phytoplasma disease that is not "
+                "amenable to conventional plant-protection control. Do not "
+                "present vector-control chemicals as a cure."
+            ),
+            "pesticide_status": "No curative pesticide — disease management required",
+            "sources": [
+                "ICAR-CPCRI, Yellow Leaf Disease research and management: https://cpcri.gov.in/page/research_achievements_crop_protection/xx",
+                "ICAR-CPCRI, Arecanut Ready Reckoner: https://cpcri.gov.in/filemgr/webfs/publication/READYRECKONERENGLISH3.pdf",
+            ],
         },
     }
+
     guidance = entries.get(key, {
         "status": "Unrecognised model label",
         "actions": [
             "Retake a clear image in natural light, showing the affected part and an unaffected comparison.",
             "Seek local horticulture/KVK confirmation before any treatment."
         ],
-        "fertilizer": "No fertilizer or pesticide dose is recommended for an unrecognised label."
+        "pesticide": "No pesticide or dosage is recommended for an unrecognised model label.",
+        "pesticide_status": "No recommendation available",
     })
     return {
         **guidance,
         "class_name": class_name,
         "checked_at": datetime.now(timezone.utc).isoformat(),
         "safety_note": (
-            "AI screening only, not a confirmed diagnosis. Exact fertilizer quantity depends on "
-            "palm age, soil/leaf analysis, area, product concentration and local recommendations. "
-            "Follow the current product label and local agricultural extension advice."
+            "AI screening only, not a confirmed diagnosis. Use a pesticide only "
+            "after field confirmation and only if the current Indian product "
+            "label permits use on arecanut for the identified target. Follow "
+            "label rate, PPE, re-entry and pre-harvest instructions. Do not mix "
+            "products unless the label or an agricultural expert explicitly "
+            "allows it."
         ),
     }
