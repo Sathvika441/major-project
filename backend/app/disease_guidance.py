@@ -129,12 +129,12 @@ def care_guidance(class_name: str) -> dict:
                 "Do not recommend an insecticide as a cure for YLD. Seek local expert advice on diagnosis, garden management, drainage and nutrition."
             ],
             "pesticide": (
-                "There is no pesticide that cures Yellow Leaf Disease. Do not "
-                "spray expecting it to cure the disease. Ask your local "
-                "agriculture officer/KVK to confirm the condition and guide "
-                "garden care."
+                "Spraying will not cure Yellow Leaf Disease or make the yellow "
+                "leaves green again. Do not spend money on pesticide for this "
+                "disease. Ask your local agriculture officer or KVK to check "
+                "the palm and advise how to care for the garden."
             ),
-            "pesticide_status": "No curative pesticide — disease management required",
+            "pesticide_status": "No spray can cure this disease",
             "sources": [
                 "ICAR-CPCRI, Yellow Leaf Disease research and management: https://cpcri.gov.in/page/research_achievements_crop_protection/xx",
                 "ICAR-CPCRI, Arecanut Ready Reckoner: https://cpcri.gov.in/filemgr/webfs/publication/READYRECKONERENGLISH3.pdf",
