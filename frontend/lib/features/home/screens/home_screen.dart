@@ -875,13 +875,22 @@ class _DiseaseDetectionDialogState
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Fertilizer guidance',
+                  'Pesticide recommendation',
                   style: Theme.of(context).textTheme.titleMedium
                       ?.copyWith(fontWeight: FontWeight.w800),
                 ),
+                if (guidance['pesticide_status'] != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    guidance['pesticide_status'].toString(),
+                    style: Theme.of(context).textTheme.labelMedium
+                        ?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                ],
                 const SizedBox(height: 4),
                 Text(
-                  guidance['fertilizer']?.toString() ?? 'Use soil-test-based, crop-stage-specific nutrition and seek local extension advice.',
+                  guidance['pesticide']?.toString() ??
+                      'No verified pesticide recommendation is available for this result. Seek local KVK advice.',
                 ),
                 if (guidance['safety_note'] != null) ...[
                   const SizedBox(height: 10),
@@ -976,8 +985,8 @@ class _DiseaseDetectionDialogState
           ? '- Seek local horticulture/KVK advice before treatment.'
           : actions,
       '',
-      'Fertilizer/nutrition note:',
-      '${guidance['fertilizer'] ?? 'Dose cannot be calculated from an image alone. Use a soil test and crop-stage-specific recommendations.'}',
+      'Pesticide recommendation (${guidance['pesticide_status'] ?? 'Status not supplied'}):',
+      '${guidance['pesticide'] ?? 'No verified pesticide recommendation is available for this result.'}',
       '',
       'Safety note:',
       '${guidance['safety_note'] ?? 'AI screening only. Confirm with a qualified local horticulture expert before treatment.'}',
