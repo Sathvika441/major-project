@@ -52,7 +52,7 @@ def care_guidance(class_name: str) -> dict:
             "actions": [
                 "Confirm water-soaked or brown lesions on nuts and premature nut fall in the field; an image prediction alone is not confirmation.",
                 "Remove and destroy affected fallen nuts and diseased bunch material; improve garden drainage.",
-                "For Malnad Karnataka, ICAR-CPCRI reports fenamidone 10% + mancozeb 50% (w/w) at 0.3% spray concentration (3 g/L), with an adhesive, as a management option.",
+                For arecanut fruit rot, the January 2025 ICAR-CPCRI bulletin reports Mandipropamid 23.8% SC at 1 ml/L water, or 1% Bordeaux mixture, as management options.
                 "ICAR-CPCRI also recommends prophylactic 1% Bordeaux mixture on bunches before the monsoon, repeated after 40–45 days where monsoon conditions continue.",
                 "Use only a currently registered product whose label permits the crop and target disease; confirm product choice, spray volume, timing and any harvest interval with the local KVK."
             ],
@@ -64,26 +64,28 @@ def care_guidance(class_name: str) -> dict:
                 "allows arecanut. Ask your local agriculture officer/KVK to "
                 "confirm the product and spray timing."
             ),
-            "pesticide_status": "CPCRI advice available — ask an agriculture officer before spraying",
+            "pesticide_status": "CPCRI field-trial rate — no pesticide label claim; expert confirmation required",
             "urgency": "Prompt field confirmation, especially during monsoon",
             "sources": [
-                "ICAR-CPCRI, arecanut Koleroga management recommendation for Malnad Karnataka: https://cpcri.gov.in/page/staff_profile/1/2",
+                "ICAR-CPCRI, Good Agricultural Practices in Arecanut Cultivation (Technical Bulletin 160, January 2025), fruit rot management: https://agritech.tnau.ac.in/horticulture/pdf/Arecanut_ICAR%20CPCRI_2025.pdf",
                 "ICAR-CPCRI, Farmers' Corner — Arecanut: https://cpcri.gov.in/page/article/farmers_corner_crop_advice_arecanut",
             ],
         },
         "stem bleeding": {
-            "status": "Suspected stem bleeding",
+            "status": "Stem bleeding — check for basal stem rot (Anabe roga)",
             "actions": [
                 "Have the bleeding patch and trunk condition examined by a horticulture officer or KVK before treatment.",
                 "Improve drainage and prevent injuries to the trunk.",
-                "No arecanut-specific pesticide product and dosage could be verified from the cited ICAR-CPCRI recommendations for this model label; do not apply a guessed dose."
+                "Check for a brown patch near the palm base, brown liquid oozing from the trunk, and a bracket-like fungal growth; these are signs CPCRI describes for Anabe roga.",
+                "If field inspection confirms basal stem rot (Anabe roga) — brown patch near the base, brown oozing liquid and/or fungal bracket at the base — CPCRI 2025 reports Hexaconazole 5% root-zone drenching at 2 ml/L, 15–20 L solution per palm. The image label alone cannot confirm this disease."
             ],
             "pesticide": (
-                "A safe spray and quantity could not be confirmed for this "
-                "condition. Please show the affected palm to your local "
-                "agriculture officer/KVK before using any pesticide."
+                If an agriculture officer confirms basal stem rot (Anabe roga), the CPCRI 2025 field-trial rate is Hexaconazole 5% at 2 ml per litre of water, using 15–20 litres of solution around each affected palm's root zone. Do not use this for stem bleeding unless Anabe roga is confirmed. CPCRI states this is a field-trial recommendation without a pesticide label claim.
             ),
-            "pesticide_status": "No verified dose — expert diagnosis required",
+            "pesticide_status": "Only if Anabe roga is confirmed — CPCRI field-trial rate, no label claim",
+            "sources": [
+                "ICAR-CPCRI, Good Agricultural Practices in Arecanut Cultivation (Technical Bulletin 160, January 2025), Anabe roga management: https://agritech.tnau.ac.in/horticulture/pdf/Arecanut_ICAR%20CPCRI_2025.pdf",
+            ],
         },
         "bud borer": {
             "status": "Suspected bud borer damage",
@@ -156,10 +158,11 @@ def care_guidance(class_name: str) -> dict:
         "class_name": class_name,
         "checked_at": datetime.now(timezone.utc).isoformat(),
         "safety_note": (
-            "This result is only a computer check from your photo. It may be wrong. "
-            "Do not spray based on the photo alone. First show the palm to your "
-            "local agriculture officer/KVK. If spraying is advised, follow the "
-            "instructions on the pesticide packet and wear the safety gear "
-            "mentioned there."
+            "This result is only a computer check from your photo and may be wrong. "
+            "The pesticide rates shown are CPCRI field-trial recommendations, "
+            "not pesticide label claims. Do not spray from this result alone. "
+            "Ask your local agriculture officer/KVK to confirm the disease and "
+            "whether the product is legally registered and permitted for arecanut. "
+            "Always follow the current product label and required safety measures."
         ),
     }
