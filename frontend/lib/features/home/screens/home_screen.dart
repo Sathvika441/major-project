@@ -730,6 +730,11 @@ class _DiseaseDetectionDialogState
     final scheme = Theme.of(context).colorScheme;
     final confidence = (_result?['confidence'] as num?)?.toDouble();
     final guidance = Map<String, dynamic>.from(_result?['guidance'] as Map? ?? const {});
+    final predictionLabel = (_result?['prediction']?.toString() ?? 'Result received')
+        .replaceAll('_', ' ');
+    final pesticideStatus = guidance['pesticide_status']?.toString() ?? '';
+    final isFieldTrialAdvice = pesticideStatus.toLowerCase().contains('field-trial') ||
+        pesticideStatus.toLowerCase().contains('field trial');
     final actions = (guidance['actions'] as List? ?? const []).map((item) => item.toString()).toList();
     final predictedAt = _result?['predicted_at']?.toString();
     final displayTimestamp = predictedAt == null
@@ -774,7 +779,7 @@ class _DiseaseDetectionDialogState
               if (_image != null) ...[
                 const SizedBox(height: 8),
                 Text(
-                  'Image reference: ${_image!.name}',
+                  'Photo: ${_image!.name}',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall,
@@ -832,22 +837,29 @@ class _DiseaseDetectionDialogState
               if (_result != null) ...[
                 const Divider(height: 28),
                 Text(
-                  'Prediction result',
+                  'Result from your photo',
                   style: Theme.of(context).textTheme.titleMedium
                       ?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _result!['prediction']?.toString() ?? 'Result received',
+                  predictionLabel,
                   style: Theme.of(context).textTheme.titleLarge
                       ?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 if (confidence != null)
                   Text(
-                    'Prediction score: ${(confidence * 100).toStringAsFixed(1)}%',
+                    'Image match: ${(confidence * 100).toStringAsFixed(1)}%',
                   ),
-                if (displayTimestamp.isNotEmpty)
-                  Text('Timestamp: $displayTimestamp'),
+                if (confidence != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 3),
+                    child: Text(
+                      'This score shows how closely the photo matches a model class. It is not a confirmed diagnosis.',
+                      style: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(color: scheme.onSurfaceVariant),
+                    ),
+                  ),
                 const SizedBox(height: 12),
                 Text(
                   guidance['status']?.toString() ?? 'Management guidance',
@@ -888,11 +900,11 @@ class _DiseaseDetectionDialogState
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.local_florist_outlined, color: scheme.primary),
+                          Icon(Icons.shield_outlined, color: scheme.primary),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Spray details',
+                              'Pesticide recommendation',
                               style: Theme.of(context).textTheme.titleMedium
                                   ?.copyWith(fontWeight: FontWeight.w800),
                             ),
@@ -916,20 +928,35 @@ class _DiseaseDetectionDialogState
                     ],
                   ),
                 ),
-                if (guidance['safety_note'] != null) ...[
-                  const SizedBox(height: 10),
-                  Row(
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: scheme.tertiaryContainer.withValues(alpha: 0.45),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.info_outline, size: 18, color: scheme.primary),
+                      Icon(Icons.info_outline, size: 19, color: scheme.onTertiaryContainer),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          guidance['safety_note'].toString(),
-                          style: Theme.of(context).textTheme.bodySmall,
+                          'This is an AI result, not a confirmed diagnosis. Before buying or spraying pesticide, ask your local agriculture officer or KVK to confirm the disease. Use only a product approved for arecanut and follow its label.',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: scheme.onTertiaryContainer),
                         ),
                       ),
                     ],
+                  ),
+                ),
+                if (isFieldTrialAdvice) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    'Note: The rate shown is from CPCRI field-trial guidance. It is not a pesticide label claim.',
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600),
                   ),
                 ],
                 const SizedBox(height: 8),
@@ -1011,7 +1038,7 @@ class _DiseaseDetectionDialogState
           ? '- Seek local horticulture/KVK advice before treatment.'
           : actions,
       '',
-      'Spray details (${guidance['pesticide_status'] ?? 'Status not supplied'}):',
+      'Pesticide recommendation (${guidance['pesticide_status'] ?? 'Status not supplied'}):',
       '${guidance['pesticide'] ?? 'No verified pesticide recommendation is available for this result.'}',
       '',
       'Safety note:',
