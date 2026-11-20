@@ -57,11 +57,12 @@ def care_guidance(class_name: str) -> dict:
                 "Use only a currently registered product whose label permits the crop and target disease; confirm product choice, spray volume, timing and any harvest interval with the local KVK."
             ],
             "pesticide": (
-                "ICAR-CPCRI Malnad Karnataka recommendation: fenamidone 10% + "
-                "mancozeb 50% (w/w) at 0.3% (3 g product/L water) with adhesive. "
-                "Alternative preventive recommendation: 1% Bordeaux mixture on "
-                "bunches. These are source-reported concentrations, not a "
-                "substitute for checking the current product label."
+                "For fruit rot (Mahali/Koleroga): CPCRI recommends fenamidone "
+                "10% + mancozeb 50% mixture at 3 grams per 1 litre of water, "
+                "with a suitable sticker. A preventive option is 1% Bordeaux "
+                "mixture on the arecanut bunches. Use only if the product label "
+                "allows arecanut. Ask your local agriculture officer/KVK to "
+                "confirm the product and spray timing."
             ),
             "pesticide_status": "CPCRI advice available — ask an agriculture officer before spraying",
             "urgency": "Prompt field confirmation, especially during monsoon",
