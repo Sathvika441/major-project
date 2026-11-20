@@ -52,17 +52,17 @@ def care_guidance(class_name: str) -> dict:
             "actions": [
                 "Confirm water-soaked or brown lesions on nuts and premature nut fall in the field; an image prediction alone is not confirmation.",
                 "Remove and destroy affected fallen nuts and diseased bunch material; improve garden drainage.",
-                For arecanut fruit rot, the January 2025 ICAR-CPCRI bulletin reports Mandipropamid 23.8% SC at 1 ml/L water, or 1% Bordeaux mixture, as management options.
+                "For arecanut fruit rot, the January 2025 ICAR-CPCRI bulletin reports Mandipropamid 23.8% SC at 1 ml/L water, or 1% Bordeaux mixture, as management options.",
                 "ICAR-CPCRI also recommends prophylactic 1% Bordeaux mixture on bunches before the monsoon, repeated after 40–45 days where monsoon conditions continue.",
                 "Use only a currently registered product whose label permits the crop and target disease; confirm product choice, spray volume, timing and any harvest interval with the local KVK."
             ],
             "pesticide": (
-                "For fruit rot (Mahali/Koleroga): CPCRI recommends fenamidone "
-                "10% + mancozeb 50% mixture at 3 grams per 1 litre of water, "
-                "with a suitable sticker. A preventive option is 1% Bordeaux "
-                "mixture on the arecanut bunches. Use only if the product label "
-                "allows arecanut. Ask your local agriculture officer/KVK to "
-                "confirm the product and spray timing."
+                "For fruit rot (Mahali/Koleroga): the January 2025 ICAR-CPCRI "
+                "bulletin reports Mandipropamid 23.8% SC at 1 ml per litre of "
+                "water. Alternatively, it reports 1% Bordeaux mixture on the "
+                "bunches. These are field-trial recommendations, not pesticide "
+                "label claims. Confirm the diagnosis and legal product use "
+                "with your local agriculture officer/KVK before spraying."
             ),
             "pesticide_status": "CPCRI field-trial rate — no pesticide label claim; expert confirmation required",
             "urgency": "Prompt field confirmation, especially during monsoon",
@@ -80,7 +80,12 @@ def care_guidance(class_name: str) -> dict:
                 "If field inspection confirms basal stem rot (Anabe roga) — brown patch near the base, brown oozing liquid and/or fungal bracket at the base — CPCRI 2025 reports Hexaconazole 5% root-zone drenching at 2 ml/L, 15–20 L solution per palm. The image label alone cannot confirm this disease."
             ],
             "pesticide": (
-                If an agriculture officer confirms basal stem rot (Anabe roga), the CPCRI 2025 field-trial rate is Hexaconazole 5% at 2 ml per litre of water, using 15–20 litres of solution around each affected palm's root zone. Do not use this for stem bleeding unless Anabe roga is confirmed. CPCRI states this is a field-trial recommendation without a pesticide label claim.
+                "If an agriculture officer confirms basal stem rot (Anabe roga), "
+                "the CPCRI 2025 field-trial rate is Hexaconazole 5% at 2 ml "
+                "per litre of water, using 15–20 litres of solution around "
+                "each affected palm root zone. Do not use this for stem "
+                "bleeding unless Anabe roga is confirmed. CPCRI states this "
+                "is a field-trial recommendation without a pesticide label claim."
             ),
             "pesticide_status": "Only if Anabe roga is confirmed — CPCRI field-trial rate, no label claim",
             "sources": [
