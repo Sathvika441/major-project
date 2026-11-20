@@ -862,7 +862,7 @@ class _DiseaseDetectionDialogState
                   ),
                 const SizedBox(height: 12),
                 Text(
-                  guidance['status']?.toString() ?? 'Management guidance',
+                  (guidance['status']?.toString() ?? 'Management guidance').replaceFirst('No disease detected in this class', 'No disease signs found in this photo'),
                   style: Theme.of(context).textTheme.titleMedium
                       ?.copyWith(fontWeight: FontWeight.w800),
                 ),
@@ -933,7 +933,7 @@ class _DiseaseDetectionDialogState
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: scheme.tertiaryContainer.withValues(alpha: 0.45),
+                    color: scheme.tertiaryContainer,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
