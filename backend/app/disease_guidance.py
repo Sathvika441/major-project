@@ -63,7 +63,7 @@ def care_guidance(class_name: str) -> dict:
                 "bunches. These are source-reported concentrations, not a "
                 "substitute for checking the current product label."
             ),
-            "pesticide_status": "CPCRI recommendation available — field confirmation required",
+            "pesticide_status": "CPCRI advice available — ask an agriculture officer before spraying",
             "urgency": "Prompt field confirmation, especially during monsoon",
             "sources": [
                 "ICAR-CPCRI, arecanut Koleroga management recommendation for Malnad Karnataka: https://cpcri.gov.in/page/staff_profile/1/2",
@@ -78,9 +78,9 @@ def care_guidance(class_name: str) -> dict:
                 "No arecanut-specific pesticide product and dosage could be verified from the cited ICAR-CPCRI recommendations for this model label; do not apply a guessed dose."
             ],
             "pesticide": (
-                "No verified arecanut-specific pesticide and dosage is provided "
-                "for this image class. Obtain a field diagnosis and treatment "
-                "recommendation from ICAR-CPCRI/KVK before applying chemicals."
+                "A safe spray and quantity could not be confirmed for this "
+                "condition. Please show the affected palm to your local "
+                "agriculture officer/KVK before using any pesticide."
             ),
             "pesticide_status": "No verified dose — expert diagnosis required",
         },
@@ -92,9 +92,9 @@ def care_guidance(class_name: str) -> dict:
                 "No crop-specific pesticide and dosage for an arecanut pest named bud borer could be verified in the ICAR-CPCRI sources reviewed; do not substitute a recommendation for spindle bug or another pest."
             ],
             "pesticide": (
-                "No verified arecanut bud-borer pesticide dose is available in "
-                "the cited official sources. Do not use a spindle-bug or other "
-                "pest recommendation for this label without expert confirmation."
+                "The insect must be identified first. We do not have a verified "
+                "spray quantity for arecanut bud borer. Please ask your local "
+                "agriculture officer/KVK before spraying."
             ),
             "pesticide_status": "No verified dose — pest identification required",
         },
@@ -114,9 +114,9 @@ def care_guidance(class_name: str) -> dict:
                 "No pesticide dose can be justified from a stem-cracking image label; do not fill or spray the crack with unverified chemicals."
             ],
             "pesticide": (
-                "No verified pesticide recommendation or dosage is available "
-                "for stem cracking as an image class. Obtain a field diagnosis "
-                "before any chemical treatment."
+                "No pesticide quantity is confirmed for stem cracking. The "
+                "cause of the crack must be checked first. Please contact your "
+                "local agriculture officer/KVK."
             ),
             "pesticide_status": "No verified dose — cause must be diagnosed",
         },
@@ -128,10 +128,10 @@ def care_guidance(class_name: str) -> dict:
                 "Do not recommend an insecticide as a cure for YLD. Seek local expert advice on diagnosis, garden management, drainage and nutrition."
             ],
             "pesticide": (
-                "No curative pesticide is recommended for Yellow Leaf Disease. "
-                "ICAR-CPCRI identifies it as a phytoplasma disease that is not "
-                "amenable to conventional plant-protection control. Do not "
-                "present vector-control chemicals as a cure."
+                "There is no pesticide that cures Yellow Leaf Disease. Do not "
+                "spray expecting it to cure the disease. Ask your local "
+                "agriculture officer/KVK to confirm the condition and guide "
+                "garden care."
             ),
             "pesticide_status": "No curative pesticide — disease management required",
             "sources": [
@@ -155,11 +155,6 @@ def care_guidance(class_name: str) -> dict:
         "class_name": class_name,
         "checked_at": datetime.now(timezone.utc).isoformat(),
         "safety_note": (
-            "AI screening only, not a confirmed diagnosis. Use a pesticide only "
-            "after field confirmation and only if the current Indian product "
-            "label permits use on arecanut for the identified target. Follow "
-            "label rate, PPE, re-entry and pre-harvest instructions. Do not mix "
-            "products unless the label or an agricultural expert explicitly "
-            "allows it."
+            This result is only a computer check from your photo. It may be wrong. Do not spray based on the photo alone. First show the palm to your local agriculture officer/KVK. If spraying is advised, follow the instructions on the pesticide packet and wear the safety gear mentioned there.
         ),
     }
