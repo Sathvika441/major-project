@@ -129,22 +129,27 @@ def care_guidance(class_name: str) -> dict:
             "pesticide_status": "No verified dose — cause must be diagnosed",
         },
         "yellow leaf disease": {
-            "status": "Suspected arecanut Yellow Leaf Disease (YLD)",
+            "status": "Possible Yellow Leaf Disease (YLD)",
             "actions": [
-                "Confirm the characteristic yellowing pattern and inspect neighbouring palms; nutrient stress and other disorders can look similar.",
-                "ICAR-CPCRI identifies YLD as a phytoplasma disease and reports that it is not amenable to control by conventional plant-protection measures.",
-                "Do not recommend an insecticide as a cure for YLD. Seek local expert advice on diagnosis, garden management, drainage and nutrition."
+                "Yellowing can have other causes too. Ask an agriculture officer or KVK to confirm the disease; CPCRI recommends testing suspected palms.",
+                "ICAR-CPCRI identifies the plant hopper Proutista moesta as a carrier of the YLD phytoplasma. Check the garden for this insect, but do not assume that spraying will cure infected palms.",
+                "The 2025 ICAR-CPCRI bulletin says YLD cannot be controlled by conventional pesticide treatments. It recommends garden management, regular monitoring and removal of palms confirmed positive for YLD."
             ],
             "pesticide": (
-                "Spraying will not cure Yellow Leaf Disease or make the yellow "
-                "leaves green again. Do not spend money on pesticide for this "
-                "disease. Ask your local agriculture officer or KVK to check "
-                "the palm and advise how to care for the garden."
+                "No pesticide or spray dosage is recommended for curing Yellow Leaf "
+                "Disease. It is caused by a phytoplasma, not a fungus. CPCRI confirms "
+                "that the plant hopper Proutista moesta spreads the disease, but its "
+                "2025 arecanut bulletin does not give an insecticide and dosage for "
+                "YLD control. Do not use a guessed dose or spray to cure the palm. "
+                "Ask your local agriculture officer/KVK to confirm the disease and "
+                "check whether any separate plant-hopper treatment is currently "
+                "registered and suitable for arecanut."
             ),
-            "pesticide_status": "No spray can cure this disease",
+            "pesticide_status": "No verified pesticide dose for Yellow Leaf Disease",
             "sources": [
-                "ICAR-CPCRI, Yellow Leaf Disease research and management: https://cpcri.gov.in/page/research_achievements_crop_protection/xx",
-                "ICAR-CPCRI, Arecanut Ready Reckoner: https://cpcri.gov.in/filemgr/webfs/publication/READYRECKONERENGLISH3.pdf",
+                "ICAR-CPCRI, Good Agricultural Practices in Arecanut Cultivation, Technical Bulletin 160 (January 2025), Yellow Leaf Disease, pages 59-61: https://agritech.tnau.ac.in/horticulture/pdf/Arecanut_ICAR%20CPCRI_2025.pdf",
+                "ICAR-CPCRI, Research Achievements - Crop Protection (YLD phytoplasma and Proutista moesta vector): https://cpcri.gov.in/page/research_achievements_crop_protection/",
+                "Kerala Agricultural University, Yellow Leaf Disease page (older vector-control advice; not adopted as a current CPCRI dose): https://www.celkau.in/crops/plantation/arecanut/yellowleaf.php"
             ],
         },
     }
