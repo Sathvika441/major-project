@@ -156,6 +156,10 @@ def care_guidance(class_name: str) -> dict:
         "class_name": class_name,
         "checked_at": datetime.now(timezone.utc).isoformat(),
         "safety_note": (
-            This result is only a computer check from your photo. It may be wrong. Do not spray based on the photo alone. First show the palm to your local agriculture officer/KVK. If spraying is advised, follow the instructions on the pesticide packet and wear the safety gear mentioned there.
+            "This result is only a computer check from your photo. It may be wrong. "
+            "Do not spray based on the photo alone. First show the palm to your "
+            "local agriculture officer/KVK. If spraying is advised, follow the "
+            "instructions on the pesticide packet and wear the safety gear "
+            "mentioned there."
         ),
     }
