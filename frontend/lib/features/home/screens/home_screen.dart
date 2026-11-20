@@ -732,9 +732,6 @@ class _DiseaseDetectionDialogState
     final guidance = Map<String, dynamic>.from(_result?['guidance'] as Map? ?? const {});
     final predictionLabel = (_result?['prediction']?.toString() ?? 'Result received')
         .replaceAll('_', ' ');
-    final pesticideStatus = guidance['pesticide_status']?.toString() ?? '';
-    final isFieldTrialAdvice = pesticideStatus.toLowerCase().contains('field-trial') ||
-        pesticideStatus.toLowerCase().contains('field trial');
     final actions = (guidance['actions'] as List? ?? const []).map((item) => item.toString()).toList();
     final predictedAt = _result?['predicted_at']?.toString();
     final displayTimestamp = predictedAt == null
@@ -911,14 +908,6 @@ class _DiseaseDetectionDialogState
                           ),
                         ],
                       ),
-                      if (guidance['pesticide_status'] != null) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          guidance['pesticide_status'].toString(),
-                          style: Theme.of(context).textTheme.labelLarge
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                      ],
                       const SizedBox(height: 8),
                       Text(
                         guidance['pesticide']?.toString() ??
@@ -951,14 +940,6 @@ class _DiseaseDetectionDialogState
                     ],
                   ),
                 ),
-                if (isFieldTrialAdvice) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    'Note: The rate shown is from CPCRI field-trial guidance. It is not a pesticide label claim.',
-                    style: Theme.of(context).textTheme.bodySmall
-                        ?.copyWith(color: scheme.onSurfaceVariant, fontWeight: FontWeight.w600),
-                  ),
-                ],
                 const SizedBox(height: 8),
                 Text(
                   'Photo note: Your photo is used for this check and is not saved by this feature.',
@@ -1038,7 +1019,7 @@ class _DiseaseDetectionDialogState
           ? '- Seek local horticulture/KVK advice before treatment.'
           : actions,
       '',
-      'Pesticide recommendation (${guidance['pesticide_status'] ?? 'Status not supplied'}):',
+      'Pesticide recommendation:',
       '${guidance['pesticide'] ?? 'No verified pesticide recommendation is available for this result.'}',
       '',
       'Safety note:',
