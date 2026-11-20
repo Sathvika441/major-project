@@ -857,7 +857,7 @@ class _DiseaseDetectionDialogState
                 if (guidance['urgency'] != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
-                    child: Text('Follow-up: ${guidance['urgency']}'),
+                    child: Text('What to do next: ${guidance['urgency']}'),
                   ),
                 const SizedBox(height: 8),
                 ...actions.map(
@@ -874,41 +874,67 @@ class _DiseaseDetectionDialogState
                   ),
                 ),
                 const SizedBox(height: 6),
-                Text(
-                  'Pesticide recommendation',
-                  style: Theme.of(context).textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                if (guidance['pesticide_status'] != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    guidance['pesticide_status'].toString(),
-                    style: Theme.of(context).textTheme.labelMedium
-                        ?.copyWith(fontWeight: FontWeight.w700),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: scheme.outlineVariant),
                   ),
-                ],
-                const SizedBox(height: 4),
-                Text(
-                  guidance['pesticide']?.toString() ??
-                      'No verified pesticide recommendation is available for this result. Seek local KVK advice.',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.local_florist_outlined, color: scheme.primary),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Spray details',
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (guidance['pesticide_status'] != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          guidance['pesticide_status'].toString(),
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                      const SizedBox(height: 8),
+                      Text(
+                        guidance['pesticide']?.toString() ??
+                            'No confirmed spray advice is available. Please ask your local agriculture officer.',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                  ),
                 ),
                 if (guidance['safety_note'] != null) ...[
                   const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: scheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      guidance['safety_note'].toString(),
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.info_outline, size: 18, color: scheme.primary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          guidance['safety_note'].toString(),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
                 const SizedBox(height: 8),
                 Text(
-                  'The image is referenced by filename only; it is not uploaded to persistent storage by this feature.',
+                  'Photo note: Your photo is used for this check and is not saved by this feature.',
                   style: Theme.of(context).textTheme.bodySmall
                       ?.copyWith(color: scheme.onSurfaceVariant),
                 ),
@@ -985,7 +1011,7 @@ class _DiseaseDetectionDialogState
           ? '- Seek local horticulture/KVK advice before treatment.'
           : actions,
       '',
-      'Pesticide recommendation (${guidance['pesticide_status'] ?? 'Status not supplied'}):',
+      'Spray details (${guidance['pesticide_status'] ?? 'Status not supplied'}):',
       '${guidance['pesticide'] ?? 'No verified pesticide recommendation is available for this result.'}',
       '',
       'Safety note:',
