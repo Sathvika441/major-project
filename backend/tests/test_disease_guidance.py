@@ -23,7 +23,7 @@ class DiseaseGuidanceTests(unittest.TestCase):
 
     def test_only_verified_koleroga_recommendation_has_a_dose(self):
         result = care_guidance("Mahali_Koleroga")
-        self.assertIn("3 g product/L", result["pesticide"])
+        self.assertIn("Mandipropamid 23.8% SC", result["pesticide"])
         self.assertIn("1% Bordeaux mixture", result["pesticide"])
 
     def test_no_unverified_doses_are_returned(self):
