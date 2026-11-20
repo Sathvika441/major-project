@@ -26,20 +26,23 @@ class DiseaseGuidanceTests(unittest.TestCase):
         self.assertIn("Mandipropamid 23.8% SC", result["pesticide"])
         self.assertIn("1% Bordeaux mixture", result["pesticide"])
 
-    def test_no_unverified_doses_are_returned(self):
-        for label in [
-            "Stem_bleeding", "bud borer", "stem cracking",
-            "yellow leaf disease", "Healthy_Leaf",
-        ]:
+    def test_stem_bleeding_dose_is_conditional_on_anabe_roga_confirmation(self):
+        result = care_guidance("Stem_bleeding")
+        self.assertIn("Hexaconazole 5%", result["pesticide"])
+        self.assertIn("2 ml", result["pesticide"])
+        self.assertIn("unless Anabe roga is confirmed", result["pesticide"])
+        self.assertIn("no pesticide label claim", result["pesticide"])
+
+    def test_no_dose_is_invented_for_unmatched_model_classes(self):
+        for label in ["bud borer", "stem cracking", "yellow leaf disease", "Healthy_Leaf"]:
             with self.subTest(label=label):
                 result = care_guidance(label)
-                self.assertIn("No ", result["pesticide"])
                 self.assertNotIn("ml/L", result["pesticide"])
                 self.assertNotIn("g/L", result["pesticide"])
 
     def test_yellow_leaf_disease_does_not_claim_a_cure(self):
         result = care_guidance("yellow leaf disease")
-        self.assertIn("No curative pesticide", result["pesticide"])
+        self.assertIn("Spraying will not cure Yellow Leaf Disease", result["pesticide"])
 
     def test_unknown_label_is_safe(self):
         result = care_guidance("unknown disease")
